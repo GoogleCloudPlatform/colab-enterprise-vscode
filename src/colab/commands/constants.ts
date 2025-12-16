@@ -3,6 +3,7 @@
  * Copyright 2025 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
+import { JupyterServerCommand } from "@vscode/jupyter-extension";
 
 /** Identifying information for a Colab command. */
 export interface Command {
@@ -64,4 +65,15 @@ export const RENAME_SERVER_ALIAS: RegisteredCommand = {
 export const UPGRADE_TO_PRO: Command = {
   label: "$(accounts-view-bar-icon)  Upgrade to Pro",
   description: "More machines, more quota, more Colab!",
+};
+
+/**
+ * Command that triggers the multi-step flow to connect to a Google Cloud
+ * Workbench instance. This flow allows users to select a GCP project and then
+ * pick an active Workbench notebook instance to use as a remote Jupyter
+ * server.
+ */
+export const WORKBENCH_COMMAND: JupyterServerCommand = {
+  label: "Workbench",
+  description: "Connect to Google Cloud Workbench",
 };

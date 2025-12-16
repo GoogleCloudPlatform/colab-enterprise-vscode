@@ -5,7 +5,7 @@
  */
 
 import * as sinon from "sinon";
-import vscode from "vscode";
+import vscode from "vscode"
 import { FakeAuthenticationProviderManager } from "./authentication";
 import { TestCancellationTokenSource } from "./cancellation";
 import { TestEventEmitter } from "./events";

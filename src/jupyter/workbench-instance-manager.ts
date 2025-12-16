@@ -10,16 +10,18 @@ import vscode, { Disposable } from "vscode";
 import { AUTHORIZATION_HEADER } from "../colab/headers";
 import { NotebooksClient } from "../workbench/notebooks-client";
 
+import State = protos.google.cloud.notebooks.v2.State;
 import IInstance = protos.google.cloud.notebooks.v2.IInstance;
 
 const UNKNOWN_ID = "UNKNOWN_ID";
 const UNKNOWN_NAME = "UNKNOWN_NAME";
-const UNKNOWN_STATE = "UNKNOWN_STATE";
 
 export interface WorkbenchJupyterServer extends JupyterServer {
   name: string;
   projectId: string;
-  state: string;
+  /** The state of the instance (e.g., "ACTIVE", "STOPPED"). */
+  state: State;
+  /** The proxy URI for connecting to the Jupyter server. */
   proxyUri: string;
   connectionInformation?: {
     baseUrl: vscode.Uri;
@@ -45,6 +47,7 @@ export interface WorkbenchJupyterServer extends JupyterServer {
  * - Refreshing server state and connections on demand.
  */
 export class WorkbenchInstanceManager implements Disposable {
+  private projectId: string | undefined;
   private workbenchServers: WorkbenchJupyterServer[] = [];
 
   /**
@@ -60,23 +63,24 @@ export class WorkbenchInstanceManager implements Disposable {
     private readonly notebooksClient: NotebooksClient,
     private readonly getAccessToken: () => Promise<string>,
   ) {
+    this.serverChangeEmitter = new this.vs.EventEmitter<void>();
+    this.onDidChangeServers = this.serverChangeEmitter.event;
   }
 
+  readonly onDidChangeServers: vscode.Event<void>;
+  private readonly serverChangeEmitter: vscode.EventEmitter<void>;
+
+
   /**
-   * Loads Workbench instances for a specific project.
-   *
-   * This method fetches instances from the Notebooks API, converts them into
-   * WorkbenchJupyterServer objects, and updates the internal list of servers.
+   * Sets the current GCP project ID.
    *
    * @param projectId - The ID of the GCP project.
    */
-  async loadWorkbenchServers(projectId: string) {
-    const instances = await this.notebooksClient.listInstances(projectId);
-    this.workbenchServers = instances
-      .map((instance) =>
-        this.createWorkbenchJupyterServer(instance, projectId),
-      );
+  setProjectId(projectId: string) {
+    this.projectId = projectId;
   }
+
+
 
   /**
    * Refreshes the connection information for a server.
@@ -91,11 +95,11 @@ export class WorkbenchInstanceManager implements Disposable {
    * @throws If the server with the given ID no longer exists in the project.
    */
   async refreshConnection(id: string, projectId: string): Promise<WorkbenchJupyterServer> {
-    const [accessToken] = await Promise.all([
+    const [accessToken, servers] = await Promise.all([
       this.getAccessToken(),
       this.loadWorkbenchServers(projectId),
     ]);
-    const server = this.workbenchServers.find(s => s.id === id);
+    const server = servers.find(s => s.id === id);
 
     if (!server) {
       throw new Error(`Server with ID ${id} no longer exists in the project ${projectId}`);
@@ -105,12 +109,63 @@ export class WorkbenchInstanceManager implements Disposable {
   }
 
   /**
-   * Returns the list of currently loaded Workbench Jupyter servers.
+   * Returns the cached list of Workbench Jupyter servers.
    *
    * @returns An array of WorkbenchJupyterServer objects.
    */
-  getWorkbenchServers(): WorkbenchJupyterServer[] {
-    return this.workbenchServers;
+  async getWorkbenchServers(
+    filter: 'active' | 'inactive' | 'all' = 'all',
+  ): Promise<WorkbenchJupyterServer[]> {
+    const token = await this.getAccessToken();
+
+    if (filter === 'active') {
+      this.workbenchServers = this.workbenchServers.filter(
+        (s) => s.state === State.ACTIVE,
+      );
+    } else if (filter === 'inactive') {
+      this.workbenchServers = this.workbenchServers.filter(
+        (s) => s.state !== State.ACTIVE,
+      );
+    }
+
+    return this.workbenchServers.map(server =>
+      this.enrichServerWithConnectionInfo(server, token),
+    );
+  }
+
+  /**
+   * Fetches the list of Workbench Jupyter servers from the API and updates the
+   * cache.
+   *
+   * @param projectId - Optional project ID to fetch for. Defaults to current
+   * project ID.
+   * @returns An array of WorkbenchJupyterServer objects.
+   */
+  async loadWorkbenchServers(
+    projectId?: string,
+  ): Promise<WorkbenchJupyterServer[]> {
+    const targetProject = projectId ?? this.projectId;
+    if (!targetProject) {
+      this.workbenchServers = [];
+      return [];
+    }
+
+    try {
+      const instances = await this.notebooksClient.listInstances(targetProject);
+      this.workbenchServers = instances.map((instance) =>
+        this.createWorkbenchJupyterServer(instance, targetProject),
+      );
+      this.serverChangeEmitter.fire();
+      return this.workbenchServers;
+    } catch (error) {
+      console.error(
+        `Failed to fetch workbench servers for project ${targetProject}:`,
+        error,
+      );
+      this.workbenchServers = [];
+      this.serverChangeEmitter.fire();
+      return [];
+    }
   }
 
   /**
@@ -119,7 +174,9 @@ export class WorkbenchInstanceManager implements Disposable {
    * Clears the internal list of Workbench servers.
    */
   dispose() {
+    this.projectId = undefined;
     this.workbenchServers = [];
+    this.serverChangeEmitter.dispose();
   }
 
   /**
@@ -137,11 +194,21 @@ export class WorkbenchInstanceManager implements Disposable {
     const proxyUri = instance.proxyUri ?? "";
     const id = instance.id ?? UNKNOWN_ID;
     const name = instance.name?.split('/').pop() ?? UNKNOWN_NAME;
-    const state = instance.state?.toString() ?? UNKNOWN_STATE;
+
+    let state: State = State.STATE_UNSPECIFIED;
+    if (typeof instance.state === 'string') {
+      // If state is a string key (e.g. "ACTIVE"), convert to enum
+      const maybeState = State[instance.state];
+      if (typeof maybeState === 'number') {
+        state = maybeState;
+      }
+    } else if (typeof instance.state === 'number') {
+      state = instance.state;
+    }
 
     return {
       id,
-      label: `${name} (${projectId}) [${state}]`,
+      label: `${name} (${projectId})`,
       name,
       state,
       projectId,

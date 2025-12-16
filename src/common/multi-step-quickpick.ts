@@ -60,6 +60,10 @@ export interface QuickPickOptions<T extends QuickPickItem>
   placeholder?: string;
   /** The actively picked item. */
   activeItem?: T;
+  /**
+   * Called when the value of the quick pick changes.
+   */
+  onDidChangeValue?: (value: string, input: QuickInput) => void;
 }
 
 /**
@@ -84,7 +88,7 @@ export interface InputBoxOptions extends QuickInputOptions {
  * A chainable multi-step runner for quick-inputs.
  */
 export class MultiStepInput {
-  private constructor(readonly vs: typeof vscode) {}
+  private constructor(readonly vs: typeof vscode) { }
 
   private readonly steps: InputStep[] = [];
   private current?: QuickInput;
@@ -172,10 +176,19 @@ export class MultiStepInput {
         disposables.push(
           nav.onDidHide,
           nav.onDidTriggerButton,
-          input.onDidChangeSelection((selectedItems) => {
-            resolve(selectedItems[0]);
+          input.onDidAccept(() => {
+            resolve(input.selectedItems[0]);
           }),
         );
+
+        const onDidChangeValue = opts.onDidChangeValue;
+        if (onDidChangeValue) {
+          disposables.push(
+            input.onDidChangeValue((value) => {
+              onDidChangeValue(value, input);
+            }),
+          );
+        }
 
         this.current?.dispose();
         this.current = input;
