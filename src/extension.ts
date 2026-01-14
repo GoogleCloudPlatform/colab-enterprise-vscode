@@ -12,25 +12,26 @@ import { login } from "./auth/login";
 import { AuthStorage } from "./auth/storage";
 import { ColabClient } from "./colab/client";
 import {
-  COLAB_TOOLBAR,
-  REMOVE_SERVER,
-  RENAME_SERVER_ALIAS,
 } from "./colab/commands/constants";
-import { notebookToolbar } from "./colab/commands/notebook";
-import { renameServerAlias, removeServer } from "./colab/commands/server";
 import { ConsumptionNotifier } from "./colab/consumption/notifier";
 import { ConsumptionPoller } from "./colab/consumption/poller";
 import { ServerKeepAliveController } from "./colab/keep-alive";
-import { ServerPicker } from "./colab/server-picker";
 import { CONFIG } from "./colab-config";
 import { Toggleable } from "./common/toggleable";
 import { AssignmentManager } from "./jupyter/assignments";
 import { getJupyterApi } from "./jupyter/jupyter-extension";
-import { ColabJupyterServerProvider } from "./jupyter/provider";
+import { WorkbenchJupyterServerProvider } from "./jupyter/provider";
 import { ServerStorage } from "./jupyter/storage";
+import { WorkbenchInstanceManager } from "./jupyter/workbench-instance-manager";
 import { ExtensionUriHandler } from "./system/uri-handler";
+import { NotebooksClient } from "./workbench/notebooks-client";
+import { ProjectsClient } from "./workbench/projects-client";
 
-// Called when the extension is activated.
+/**
+ * Called when the extension is activated.
+ *
+ * @param context - The extension context.
+ */
 export async function activate(context: vscode.ExtensionContext) {
   const jupyter = await getJupyterApi(vscode);
   const uriHandler = new ExtensionUriHandler(vscode);
@@ -64,14 +65,21 @@ export async function activate(context: vscode.ExtensionContext) {
     colabClient,
     serverStorage,
   );
-  const serverProvider = new ColabJupyterServerProvider(
+
+  const notebooksClient = new NotebooksClient(authClient);
+  const projectsClient = new ProjectsClient(authClient);
+
+  const workbenchServerProvider = new WorkbenchJupyterServerProvider(
     vscode,
-    authProvider.whileAuthorized.bind(authProvider),
-    assignmentManager,
-    colabClient,
-    new ServerPicker(vscode, assignmentManager),
+    projectsClient,
+    new WorkbenchInstanceManager(vscode, notebooksClient, () =>
+      GoogleAuthProvider.getOrCreateSession(vscode).then(
+        (session) => session.accessToken,
+      ),
+    ),
     jupyter,
   );
+
   const keepServersAlive = new ServerKeepAliveController(
     vscode,
     colabClient,
@@ -93,11 +101,10 @@ export async function activate(context: vscode.ExtensionContext) {
     disposeAll(authFlows),
     authProvider,
     assignmentManager,
-    serverProvider,
+    workbenchServerProvider,
     keepServersAlive,
     ...consumptionMonitor.disposables,
     whileAuthorizedToggle,
-    ...registerCommands(serverStorage, assignmentManager),
   );
 }
 
@@ -124,28 +131,6 @@ function watchConsumption(colab: ColabClient): {
   return { toggle: poller, disposables };
 }
 
-function registerCommands(
-  serverStorage: ServerStorage,
-  assignmentManager: AssignmentManager,
-): Disposable[] {
-  return [
-    vscode.commands.registerCommand(
-      RENAME_SERVER_ALIAS.id,
-      async (withBackButton?: boolean) => {
-        await renameServerAlias(vscode, serverStorage, withBackButton);
-      },
-    ),
-    vscode.commands.registerCommand(
-      REMOVE_SERVER.id,
-      async (withBackButton?: boolean) => {
-        await removeServer(vscode, assignmentManager, withBackButton);
-      },
-    ),
-    vscode.commands.registerCommand(COLAB_TOOLBAR.id, async () => {
-      await notebookToolbar(vscode, assignmentManager);
-    }),
-  ];
-}
 
 /**
  * Returns a Disposable that calls dispose on all items in the array which are

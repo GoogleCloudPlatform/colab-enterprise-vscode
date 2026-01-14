@@ -122,7 +122,7 @@ describe("MultiStepQuickPick", () => {
     };
     let onDidTriggerButtonDisposeStub: sinon.SinonStubbedInstance<Disposable>;
     let onDidHideDisposeStub: sinon.SinonStubbedInstance<Disposable>;
-    let onDidChangeSelectionDisposeStub: sinon.SinonStubbedInstance<Disposable>;
+    let onDidAcceptDisposeStub: sinon.SinonStubbedInstance<Disposable>;
     let quickPickStub: QuickPickStub & { nextShow: () => Promise<void> };
 
     beforeEach(() => {
@@ -132,14 +132,14 @@ describe("MultiStepQuickPick", () => {
       onDidHideDisposeStub = {
         dispose: sinon.stub(),
       };
-      onDidChangeSelectionDisposeStub = {
+      onDidAcceptDisposeStub = {
         dispose: sinon.stub(),
       };
 
       quickPickStub = buildQuickPickStub({
         onDidTriggerButtonDisposeStub,
         onDidHideDisposeStub,
-        onDidChangeSelectionDisposeStub,
+        onDidAcceptDisposeStub,
       });
       vsCodeStub.window.createQuickPick.returns(
         quickPickStub as Partial<
@@ -191,9 +191,10 @@ describe("MultiStepQuickPick", () => {
 
       const inputShown = quickPickStub.nextShow();
       const input = MultiStepInput.run(vsCodeStub.asVsCode(), step);
-      // Once the quick pick has been shown, select "foo".
+      // Once the quick pick has been shown, select "foo" and trigger accept.
       await inputShown;
-      quickPickStub.onDidChangeSelection.yield([{ label: "foo" }]);
+      quickPickStub.selectedItems = [{ label: "foo" }];
+      quickPickStub.onDidAccept.yield();
 
       await expect(input).to.eventually.be.fulfilled;
       expect(selected).to.deep.equal({ label: "foo" });
@@ -226,7 +227,8 @@ describe("MultiStepQuickPick", () => {
         ...optsToCompare,
         activeItems: [activeItem],
       });
-      quickPickStub.onDidChangeSelection.yield([{ label: "foo" }]);
+      quickPickStub.selectedItems = [{ label: "foo" }];
+      quickPickStub.onDidAccept.yield();
 
       await expect(input).to.eventually.be.fulfilled;
     });
@@ -241,14 +243,15 @@ describe("MultiStepQuickPick", () => {
       const input = MultiStepInput.run(vsCodeStub.asVsCode(), step);
       // Once the quick pick has been shown, select "foo".
       await inputShown;
-      quickPickStub.onDidChangeSelection.yield([{ label: "foo" }]);
+      quickPickStub.selectedItems = [{ label: "foo" }];
+      quickPickStub.onDidAccept.yield();
 
       await expect(input).to.eventually.be.fulfilled;
       sinon.assert.calledOnce(quickPickStub.dispose);
       for (const disposable of [
         onDidTriggerButtonDisposeStub,
         onDidHideDisposeStub,
-        onDidChangeSelectionDisposeStub,
+        onDidAcceptDisposeStub,
       ]) {
         sinon.assert.calledOnce(disposable.dispose);
       }
