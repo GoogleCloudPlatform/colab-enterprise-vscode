@@ -79,6 +79,7 @@ export async function selectProjectCommand(
               console.error("Unhanded promise rejection in timeout:", err);
             });
           }, SEARCH_DEBOUNCE_MS);
+
         },
       });
 
