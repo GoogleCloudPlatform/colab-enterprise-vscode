@@ -106,8 +106,7 @@ export async function selectProjectCommand(
         items.push(
           ...activeServers.map((server) => ({
             label: server.label,
-            detail: server.id,
-            description: server.state.toString(),
+            detail: server.id
           })),
         );
       }
@@ -120,8 +119,7 @@ export async function selectProjectCommand(
         items.push(
           ...otherServers.map((server) => ({
             label: server.label,
-            detail: server.id,
-            description: server.state.toString(),
+            detail: server.id
           })),
         );
       }
@@ -136,13 +134,13 @@ export async function selectProjectCommand(
       });
 
       const serverId = selectedItem.detail;
-      const allServers = await instanceManager.getWorkbenchServers("all");
+      const allServers = instanceManager.getWorkbenchServers("all");
       selectedServer = allServers.find((s) => s.id === serverId);
 
       if (selectedServer) {
         // Trigger the kernel picker so the user can see the server's kernels
         // immediately
-        await vs.commands.executeCommand("notebook.selectKernel");
+        // await vs.commands.executeCommand("notebook.selectKernel");
       }
 
       return undefined;

@@ -15,7 +15,7 @@ import {
 import { expect } from "chai";
 import sinon from "sinon";
 import { SinonStubbedInstance } from "sinon";
-import vscode from "vscode"
+import vscode from "vscode";
 import { WORKBENCH_COMMAND } from "../colab/commands/constants";
 import {
   newVsCodeStub,
@@ -152,21 +152,21 @@ describe("WorkbenchJupyterServerProvider", () => {
   });
 
   describe("provideJupyterServers", () => {
-    it("returns active servers from multiple projects", async () => {
+    it("returns active servers from multiple projects", () => {
       const expectedServers: WorkbenchJupyterServer[] = [
         { ...MOCK_SERVER, id: "server1", state: State.ACTIVE },
         { ...MOCK_SERVER, id: "server2", state: State.ACTIVE }
       ];
-      instanceManagerStub.getWorkbenchServers.withArgs('active').resolves(expectedServers);
+      instanceManagerStub.getWorkbenchServers.withArgs('active').returns(expectedServers);
 
-      const result = await serverProvider.provideJupyterServers(
+      const result = serverProvider.provideJupyterServers(
         cancellationToken
       );
 
       expect(result).to.deep.equal(expectedServers);
     });
 
-    it("filters out inactive servers", async () => {
+    it("filters out inactive servers", () => {
       const allServers: WorkbenchJupyterServer[] = [
         { ...MOCK_SERVER, id: "s1", state: State.ACTIVE } as WorkbenchJupyterServer,
         { ...MOCK_SERVER, id: "s2", state: State.STOPPED } as WorkbenchJupyterServer,
@@ -180,9 +180,9 @@ describe("WorkbenchJupyterServerProvider", () => {
       // getWorkbenchServers('active'), so provider technically doesn't filter
       // anymore, it just returns what manager returns. So this test should
       // verification that provider calls with 'active'.
-      instanceManagerStub.getWorkbenchServers.withArgs('active').resolves([allServers[0]]);
+      instanceManagerStub.getWorkbenchServers.withArgs('active').returns([allServers[0]]);
 
-      const result = await serverProvider.provideJupyterServers(
+      const result = serverProvider.provideJupyterServers(
         cancellationToken
       );
 
@@ -190,21 +190,21 @@ describe("WorkbenchJupyterServerProvider", () => {
       expect(result[0].id).to.equal("s1");
     });
 
-    it("handles errors for individual projects gracefully", async () => {
+    it("handles errors for individual projects gracefully", () => {
       // This test is no longer relevant as provideJupyterServers doesn't fetch
       // currently, but keeping it simple if we want to add fetching later.
       // For now, testing it returns empty if manager returns empty.
-      instanceManagerStub.getWorkbenchServers.resolves([]);
-      const result = await serverProvider.provideJupyterServers(
+      instanceManagerStub.getWorkbenchServers.returns([]);
+      const result = serverProvider.provideJupyterServers(
         cancellationToken
       );
       expect(result).to.deep.equal([]);
     });
 
-    it("handles global errors gracefully", async () => {
+    it("handles global errors gracefully", () => {
       // Again, delegating to manager which is synchronous getter essentially
-      instanceManagerStub.getWorkbenchServers.resolves([]);
-      const result = await serverProvider.provideJupyterServers(
+      instanceManagerStub.getWorkbenchServers.returns([]);
+      const result = serverProvider.provideJupyterServers(
         cancellationToken
       );
       expect(result).to.deep.equal([]);
@@ -231,7 +231,7 @@ describe("WorkbenchJupyterServerProvider", () => {
       sinon.assert.notCalled(vsCodeStub.window.showInformationMessage);
     });
 
-    it("does not throw if server is not active", async () => {
+    it("throws if server is not active", async () => {
       const server = { id: "s1", projectId: "p1" } as unknown as JupyterServer;
       const inactiveServer = {
         id: "s1",
@@ -245,12 +245,12 @@ describe("WorkbenchJupyterServerProvider", () => {
       instanceManagerStub.refreshConnection.withArgs("s1", "p1").resolves(inactiveServer);
       (vsCodeStub.window.showErrorMessage as sinon.SinonStub).resolves("Open Console");
 
-      const result = await serverProvider.resolveJupyterServer(
-        server as WorkbenchJupyterServer,
-        cancellationToken
-      );
-
-      expect(result).to.equal(inactiveServer);
+      await expect(
+        serverProvider.resolveJupyterServer(
+          server as WorkbenchJupyterServer,
+          cancellationToken
+        )
+      ).to.be.rejectedWith(/Server s1 is not active/);
 
       sinon.assert.calledWith(
         vsCodeStub.window.showErrorMessage,
@@ -269,7 +269,7 @@ describe("WorkbenchJupyterServerProvider", () => {
       );
     });
 
-    it("does not open console if user dismisses error", async () => {
+    it("throws if user dismisses error", async () => {
       const server = { id: "s1", projectId: "p1" } as unknown as JupyterServer;
       const inactiveServer = {
         id: "s1",
@@ -280,11 +280,12 @@ describe("WorkbenchJupyterServerProvider", () => {
       instanceManagerStub.refreshConnection.resolves(inactiveServer);
       vsCodeStub.window.showErrorMessage.resolves(undefined);
 
-      const result = await serverProvider.resolveJupyterServer(
-        server as WorkbenchJupyterServer,
-        cancellationToken
-      );
-      expect(result).to.equal(inactiveServer);
+      await expect(
+        serverProvider.resolveJupyterServer(
+          server as WorkbenchJupyterServer,
+          cancellationToken
+        )
+      ).to.be.rejectedWith(/Server undefined is not active/);
 
       // Allow the floating promise to resolve
       await new Promise(resolve => setTimeout(resolve, 0));

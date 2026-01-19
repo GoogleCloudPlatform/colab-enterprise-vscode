@@ -72,9 +72,9 @@ export class WorkbenchJupyterServerProvider
   /**
    * Provides the list of Workbench {@link JupyterServer | Jupyter Servers}.
    */
-  async provideJupyterServers(
+  provideJupyterServers(
     _token: CancellationToken,
-  ): Promise<JupyterServer[]> {
+  ): JupyterServer[] {
     return this.instanceManager.getWorkbenchServers('active');
   }
 
@@ -104,6 +104,8 @@ export class WorkbenchJupyterServerProvider
             void this.vs.env.openExternal(this.vs.Uri.parse(consoleUrl));
           }
         });
+
+      throw new Error(message);
     }
 
     return resolvedServer;
@@ -132,7 +134,7 @@ export class WorkbenchJupyterServerProvider
           await this.instanceManager.loadWorkbenchServers();
           this.serverChangeEmitter.fire();
         } catch (error) {
-          console.error("Failed to refresh workbench servers:", error);
+          console.error("Failed to load workbench servers:", error);
         }
       },
     );

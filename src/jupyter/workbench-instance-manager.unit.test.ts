@@ -122,17 +122,13 @@ describe("WorkbenchInstanceManager", () => {
   describe("getWorkbenchServers", () => {
     it("should return cached servers (default all)", async () => {
       notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-      getAccessTokenStub.resolves(ACCESS_TOKEN);
       await manager.loadWorkbenchServers(PROJECT_ID);
 
-      const servers = await manager.getWorkbenchServers();
+      const servers = manager.getWorkbenchServers();
 
       expect(servers).to.have.lengthOf(1);
       expect(servers[0].id).to.equal(INSTANCE_ID);
-      expect(servers[0].connectionInformation).to.exist;
-      expect(
-        servers[0].connectionInformation?.headers[AUTHORIZATION_HEADER.key],
-      ).to.equal(`Bearer ${ACCESS_TOKEN}`);
+      expect(servers[0].connectionInformation).to.be.undefined;
     });
 
     it("should return only active servers when filter is 'active'", async () => {
@@ -142,10 +138,9 @@ describe("WorkbenchInstanceManager", () => {
         activeInstance,
         stoppedInstance,
       ]);
-      getAccessTokenStub.resolves(ACCESS_TOKEN);
       await manager.loadWorkbenchServers(PROJECT_ID);
 
-      const servers = await manager.getWorkbenchServers('active');
+      const servers = manager.getWorkbenchServers('active');
 
       expect(servers).to.have.lengthOf(1);
       expect(servers[0].id).to.equal('active');
@@ -158,10 +153,9 @@ describe("WorkbenchInstanceManager", () => {
         activeInstance,
         stoppedInstance,
       ]);
-      getAccessTokenStub.resolves(ACCESS_TOKEN);
       await manager.loadWorkbenchServers(PROJECT_ID);
 
-      const servers = await manager.getWorkbenchServers('inactive');
+      const servers = manager.getWorkbenchServers('inactive');
 
       expect(servers).to.have.lengthOf(1);
       expect(servers[0].id).to.equal('stopped');
@@ -174,10 +168,9 @@ describe("WorkbenchInstanceManager", () => {
         activeInstance,
         stoppedInstance,
       ]);
-      getAccessTokenStub.resolves(ACCESS_TOKEN);
       await manager.loadWorkbenchServers(PROJECT_ID);
 
-      const servers = await manager.getWorkbenchServers('all');
+      const servers = manager.getWorkbenchServers('all');
 
       expect(servers).to.have.lengthOf(2);
     });
@@ -185,26 +178,14 @@ describe("WorkbenchInstanceManager", () => {
     it(
       "should return correctly even if load was called with specific project ID distinct from stored",
       async () => {
-    // logic: loadWorkbenchServers updates cache regardless of stored
-    // projectId
-      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-      await manager.loadWorkbenchServers('other-project');
-      getAccessTokenStub.resolves(ACCESS_TOKEN);
-      const servers = await manager.getWorkbenchServers();
-      expect(servers).to.have.lengthOf(1);
-      expect(servers[0].projectId).to.equal('other-project');
-    });
-
-    it("should return servers with updated connection info", async () => {
-      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-      getAccessTokenStub.resolves(ACCESS_TOKEN);
-      await manager.loadWorkbenchServers(PROJECT_ID);
-
-      const servers = await manager.getWorkbenchServers();
-
-      expect(servers).to.have.lengthOf(1);
-      expect(servers[0].connectionInformation).to.exist;
-    });
+        // logic: loadWorkbenchServers updates cache regardless of stored
+        // projectId
+        notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
+        await manager.loadWorkbenchServers('other-project');
+        const servers = manager.getWorkbenchServers();
+        expect(servers).to.have.lengthOf(1);
+        expect(servers[0].projectId).to.equal('other-project');
+      });
   });
 
   describe("refreshConnection", () => {
@@ -259,7 +240,7 @@ describe("WorkbenchInstanceManager", () => {
 
       manager.dispose();
 
-      expect(await manager.getWorkbenchServers()).to.have.lengthOf(0);
+      expect(manager.getWorkbenchServers()).to.have.lengthOf(0);
     });
   });
 });

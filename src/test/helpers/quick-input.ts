@@ -98,9 +98,9 @@ export function buildQuickPickStub(
   };
 
   // Magic yield to simulate acceptance on selection for tests
-  (stub.onDidChangeSelection as any).yield = (items: QuickPickItem[]) => {
+  stub.onDidChangeSelection.yield = (items: QuickPickItem[]) => {
     stub.selectedItems = items;
-    stub.onDidAccept.yield();
+    return stub.onDidAccept.yield();
   };
 
   return stub;

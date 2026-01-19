@@ -113,24 +113,20 @@ export class WorkbenchInstanceManager implements Disposable {
    *
    * @returns An array of WorkbenchJupyterServer objects.
    */
-  async getWorkbenchServers(
+  getWorkbenchServers(
     filter: 'active' | 'inactive' | 'all' = 'all',
-  ): Promise<WorkbenchJupyterServer[]> {
-    const token = await this.getAccessToken();
-
+  ): WorkbenchJupyterServer[] {
     if (filter === 'active') {
-      this.workbenchServers = this.workbenchServers.filter(
+      return this.workbenchServers.filter(
         (s) => s.state === State.ACTIVE,
       );
     } else if (filter === 'inactive') {
-      this.workbenchServers = this.workbenchServers.filter(
+      return this.workbenchServers.filter(
         (s) => s.state !== State.ACTIVE,
       );
     }
 
-    return this.workbenchServers.map(server =>
-      this.enrichServerWithConnectionInfo(server, token),
-    );
+    return this.workbenchServers;
   }
 
   /**
