@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import "../test/helpers/vscode";
 
 import { Module } from "module";
 import { expect } from "chai";
