@@ -10,10 +10,8 @@ import fetch, { RequestInfo, RequestInit, Response } from "node-fetch";
 import { SinonStub, SinonStubbedInstance, SinonFakeTimers } from "sinon";
 import * as sinon from "sinon";
 import vscode from "vscode";
-import {
-  AUTHORIZATION_HEADER,
-  CONTENT_TYPE_JSON_HEADER,
-} from "../colab/headers";
+const AUTHORIZATION_HEADER = { key: "Authorization" };
+const CONTENT_TYPE_JSON_HEADER = { key: "Content-Type", value: "application/json" };
 import { Toggleable } from "../common/toggleable";
 import { PROVIDER_ID } from "../config/constants";
 import { newVsCodeStub, VsCodeStub } from "../test/helpers/vscode";

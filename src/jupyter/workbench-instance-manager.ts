@@ -7,11 +7,12 @@
 import { protos } from "@google-cloud/notebooks";
 import { JupyterServer } from "@vscode/jupyter-extension";
 import vscode, { Disposable } from "vscode";
-import { AUTHORIZATION_HEADER } from "../colab/headers";
 import { NotebooksClient } from "../workbench/notebooks-client";
 
 import State = protos.google.cloud.notebooks.v2.State;
 import IInstance = protos.google.cloud.notebooks.v2.IInstance;
+
+const AUTHORIZATION_HEADER_KEY = "Authorization";
 
 const UNKNOWN_ID = "UNKNOWN_ID";
 const UNKNOWN_NAME = "UNKNOWN_NAME";
@@ -26,7 +27,7 @@ export interface WorkbenchJupyterServer extends JupyterServer {
   connectionInformation?: {
     baseUrl: vscode.Uri;
     headers: {
-      [AUTHORIZATION_HEADER.key]: string;
+      [AUTHORIZATION_HEADER_KEY]: string;
       Cookie: string;
       "X-XSRFToken": string;
       Origin: string;
@@ -115,20 +116,27 @@ export class WorkbenchInstanceManager implements Disposable {
    */
   async getWorkbenchServers(
     filter: 'active' | 'inactive' | 'all' = 'all',
+    shouldEnrich: boolean = true,
   ): Promise<WorkbenchJupyterServer[]> {
-    const token = await this.getAccessToken();
+    let servers = this.workbenchServers;
 
     if (filter === 'active') {
-      this.workbenchServers = this.workbenchServers.filter(
+      servers = servers.filter(
         (s) => s.state === State.ACTIVE,
       );
     } else if (filter === 'inactive') {
-      this.workbenchServers = this.workbenchServers.filter(
+      servers = servers.filter(
         (s) => s.state !== State.ACTIVE,
       );
     }
 
-    return this.workbenchServers.map(server =>
+    if (!shouldEnrich) {
+      return servers;
+    }
+
+    const token = await this.getAccessToken();
+
+    return servers.map(server =>
       this.enrichServerWithConnectionInfo(server, token),
     );
   }
@@ -234,11 +242,13 @@ export class WorkbenchInstanceManager implements Disposable {
     const baseUrl = this.vs.Uri.parse(baseUrlString);
 
     const headers = {
-      [AUTHORIZATION_HEADER.key]: `Bearer ${accessToken}`,
+      [AUTHORIZATION_HEADER_KEY]: `Bearer ${accessToken}`,
       Cookie: "_xsrf=XSRF",
       "X-XSRFToken": "XSRF",
       Origin: baseUrlString,
     };
+
+
 
     return {
       ...server,

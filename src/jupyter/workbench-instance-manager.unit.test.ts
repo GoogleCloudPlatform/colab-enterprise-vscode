@@ -10,7 +10,6 @@ import { protos } from "@google-cloud/notebooks";
 import { assert, expect } from "chai";
 import sinon from "sinon";
 import { SinonStubbedInstance } from "sinon";
-import { AUTHORIZATION_HEADER } from "../colab/headers";
 import { newVsCodeStub, VsCodeStub } from "../test/helpers/vscode";
 import { NotebooksClient } from "../workbench/notebooks-client";
 import { WorkbenchInstanceManager } from "./workbench-instance-manager";
@@ -131,7 +130,7 @@ describe("WorkbenchInstanceManager", () => {
       expect(servers[0].id).to.equal(INSTANCE_ID);
       expect(servers[0].connectionInformation).to.exist;
       expect(
-        servers[0].connectionInformation?.headers[AUTHORIZATION_HEADER.key],
+        servers[0].connectionInformation?.headers["Authorization"],
       ).to.equal(`Bearer ${ACCESS_TOKEN}`);
     });
 
@@ -217,7 +216,7 @@ describe("WorkbenchInstanceManager", () => {
       expect(server.id).to.equal(INSTANCE_ID);
       expect(server.connectionInformation).to.exist;
       expect(server.connectionInformation?.baseUrl.toString()).to.equal(`https://${PROXY_URI.toLowerCase()}/`);
-      expect(server.connectionInformation?.headers[AUTHORIZATION_HEADER.key]).to.equal(`Bearer ${ACCESS_TOKEN}`);
+      expect(server.connectionInformation?.headers["Authorization"]).to.equal(`Bearer ${ACCESS_TOKEN}`);
       expect(server.connectionInformation?.headers['X-XSRFToken']).to.equal('XSRF');
 
       sinon.assert.calledWith(notebooksClientStub.listInstances, PROJECT_ID);

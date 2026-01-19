@@ -9,7 +9,7 @@ import { AddressInfo } from "net";
 import { expect } from "chai";
 import { OAuth2Client } from "google-auth-library";
 import sinon from "sinon";
-import { CONFIG } from "../../colab-config";
+import { CONFIG } from "../../config";
 import { authUriMatch } from "../../test/helpers/authentication";
 import { TestCancellationTokenSource } from "../../test/helpers/cancellation";
 import { createHttpServerMock } from "../../test/helpers/http-server";

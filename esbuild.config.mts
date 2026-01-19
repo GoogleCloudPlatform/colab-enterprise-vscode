@@ -96,13 +96,13 @@ const extensionOptions: esbuild.BuildOptions = {
  * Throws an error if the file is not found.
  */
 function ensureConfigExists(): void {
-  if (existsSync("./src/colab-config.ts")) {
+  if (existsSync("./src/config.ts")) {
     return;
   }
   console.error(
     "📣 Required source configuration file not found. Run `npm run generate:config`.",
   );
-  throw new Error("Configuration file not found: src/colab-config.ts");
+  throw new Error("Configuration file not found: src/config.ts");
 }
 
 /**

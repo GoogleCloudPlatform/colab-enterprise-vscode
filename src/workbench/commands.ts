@@ -138,10 +138,14 @@ export async function selectProjectCommand(
       const allServers = await instanceManager.getWorkbenchServers("all");
       selectedServer = allServers.find((s) => s.id === serverId);
 
-      if (selectedServer) {
+      if (selectedServer && vs.window.activeNotebookEditor) {
         // Trigger the kernel picker so the user can see the server's kernels
         // immediately
-        await vs.commands.executeCommand("notebook.selectKernel");
+        try {
+          await vs.commands.executeCommand("notebook.selectKernel");
+        } catch (err) {
+          console.warn("Failed to trigger notebook.selectKernel:", err);
+        }
       }
 
       return undefined;

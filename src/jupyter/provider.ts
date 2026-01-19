@@ -16,8 +16,8 @@ import {
 } from "@vscode/jupyter-extension";
 import type { CancellationToken, ProviderResult } from "vscode";
 import vscode from "vscode"
-import { WORKBENCH_COMMAND } from "../colab/commands/constants";
 import { selectProjectCommand } from "../workbench/commands";
+import { WORKBENCH_COMMAND } from "../workbench/constants";
 import { ProjectsClient } from "../workbench/projects-client";
 import {
   WorkbenchInstanceManager,

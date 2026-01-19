@@ -23,7 +23,6 @@ const envConfig = {
 };
 
 let colabApiDomain: string;
-let colabGapiApiDomain: string;
 try {
   if (!envConfig.env) {
     throw new Error("COLAB_EXTENSION_ENVIRONMENT is not set");
@@ -37,16 +36,13 @@ try {
   switch (envConfig.env) {
     case "production":
       colabApiDomain = "https://colab.research.google.com";
-      colabGapiApiDomain = "https://colab.pa.googleapis.com";
       break;
     case "sandbox":
       colabApiDomain = "https://colab.sandbox.google.com";
-      colabGapiApiDomain = "https://staging-colab.sandbox.googleapis.com";
       break;
     case "local":
       colabApiDomain = "https://localhost:8888";
       // It's not feasible to run this locally.
-      colabGapiApiDomain = "https://staging-colab.sandbox.googleapis.com";
       break;
     default:
       throw new Error(
@@ -60,7 +56,6 @@ try {
 
 const config = {
   ColabApiDomain: colabApiDomain,
-  ColabGapiDomain: colabGapiApiDomain,
   ClientId: envConfig.clientId,
   ClientNotSoSecret: envConfig.clientNotSoSecret,
   Environment: envConfig.env,
@@ -84,7 +79,7 @@ const output = `${licenseHeader}
 export const CONFIG = ${JSON.stringify(config, null, 2)} as const;
 `;
 
-const configFile = path.join(__dirname, "../src/colab-config.ts");
+const configFile = path.join(__dirname, "../src/config.ts");
 
 await fs.writeFile(configFile, output);
-console.log("✅ Wrote src/colab-config.ts");
+console.log("✅ Wrote src/config.ts");

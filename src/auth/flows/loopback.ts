@@ -10,7 +10,7 @@ import * as http from "http";
 import * as path from "path";
 import { OAuth2Client } from "google-auth-library";
 import vscode from "vscode";
-import { CONFIG } from "../../colab-config";
+import { CONFIG } from "../../config";
 import { LoopbackHandler, LoopbackServer } from "../../common/loopback-server";
 import { CodeManager } from "../code-manager";
 import {

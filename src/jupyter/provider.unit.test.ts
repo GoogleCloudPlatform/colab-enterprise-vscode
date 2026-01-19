@@ -16,7 +16,7 @@ import { expect } from "chai";
 import sinon from "sinon";
 import { SinonStubbedInstance } from "sinon";
 import vscode from "vscode"
-import { WORKBENCH_COMMAND } from "../colab/commands/constants";
+import { WORKBENCH_COMMAND } from "../workbench/constants";
 import {
   newVsCodeStub,
   VsCodeStub,
