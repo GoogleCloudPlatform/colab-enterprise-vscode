@@ -29,9 +29,9 @@ jobs:
     name: Generate Config
     runs-on: ubuntu-latest
     env:
-      COLAB_EXTENSION_ENVIRONMENT: ${{ vars.COLAB_EXTENSION_ENVIRONMENT }}
-      COLAB_EXTENSION_CLIENT_ID: ${{ secrets.COLAB_EXTENSION_CLIENT_ID }}
-      COLAB_EXTENSION_CLIENT_NOT_SO_SECRET: ${{ secrets.COLAB_EXTENSION_CLIENT_NOT_SO_SECRET }}
+      COLAB_EXTENSION_ENVIRONMENT: "production"
+      COLAB_EXTENSION_CLIENT_ID: "client-id"
+      COLAB_EXTENSION_CLIENT_NOT_SO_SECRET: "client-not-so-secret"
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ env.NODE_VERSION }}
