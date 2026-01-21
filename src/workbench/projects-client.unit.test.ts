@@ -57,7 +57,6 @@ describe("ProjectsClient", () => {
     sinon.restore();
   });
 
-
   describe("getProjects", () => {
     beforeEach(() => {
       // Inject the stub into the client instance since it creates its own
@@ -88,7 +87,7 @@ describe("ProjectsClient", () => {
       });
 
       expect(searchProjectsStub.searchProjects.calledOnce).to.be.true;
-      const requestArgs = searchProjectsStub.searchProjects.firstCall.args[0]
+      const requestArgs = searchProjectsStub.searchProjects.firstCall.args[0];
       expect(requestArgs.query).to.contain("test-query");
       expect(requestArgs.query).to.contain("state:ACTIVE");
     });
