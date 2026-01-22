@@ -44,7 +44,7 @@ export interface WorkbenchJupyterServer extends JupyterServer {
  * - Refreshing server state and connections on demand.
  */
 export class WorkbenchInstanceManager implements Disposable {
-  private projectId: string | undefined;
+  private projectId?: string;
 
   /**
    * Creates a new instance of WorkbenchInstanceManager.
@@ -90,7 +90,7 @@ export class WorkbenchInstanceManager implements Disposable {
   }
 
   /**
-   * Returns the cached list of Workbench Jupyter servers.
+   * Returns the list of active only Workbench Jupyter servers.
    *
    * @returns An array of WorkbenchJupyterServer objects.
    */

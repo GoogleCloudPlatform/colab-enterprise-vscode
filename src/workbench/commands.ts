@@ -50,26 +50,13 @@ export async function selectProjectCommand(
             clearTimeout(searchTimeout);
           }
           searchTimeout = setTimeout(() => {
-            void (async () => {
-              const qp = quickPick as vscode.QuickPick<vscode.QuickPickItem>;
-              qp.busy = true;
-              try {
-                const projects = await projectsClient.getProjects(value);
-                qp.items = projects.map((p: GCPProject) => ({
-                  label: p.name,
-                  detail: p.id,
-                  description: p.id !== p.name ? p.id : undefined,
-                }));
-              } catch (error) {
-                console.error("Failed to fetch projects:", error);
-              } finally {
-                qp.busy = false;
-              }
-            })().catch((err: unknown) => {
-              console.error("Unhanded promise rejection in timeout:", err);
-            });
+            const qp = quickPick as vscode.QuickPick<vscode.QuickPickItem>;
+            void updateProjectList(projectsClient, qp, value).catch(
+              (err: unknown) => {
+                console.error("Unhandled promise rejection in timeout:", err);
+              },
+            );
           }, SEARCH_DEBOUNCE_MS);
-
         },
       });
 
@@ -97,5 +84,25 @@ export async function selectProjectCommand(
       );
     }
     return;
+  }
+}
+
+async function updateProjectList(
+  projectsClient: ProjectsClient,
+  quickPick: vscode.QuickPick<vscode.QuickPickItem>,
+  value: string,
+): Promise<void> {
+  quickPick.busy = true;
+  try {
+    const projects = await projectsClient.getProjects(value);
+    quickPick.items = projects.map((p) => ({
+      label: p.name,
+      detail: p.id,
+      description: p.id !== p.name ? p.id : undefined,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch projects:", error);
+  } finally {
+    quickPick.busy = false;
   }
 }
