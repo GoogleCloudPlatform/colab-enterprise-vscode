@@ -6,7 +6,6 @@
 
 import vscode from "vscode";
 
-
 /**
  * A fake implementation to back the `vscode.authentication` API.
  *
