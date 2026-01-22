@@ -37,6 +37,15 @@ describe("WorkbenchInstanceManager", () => {
     proxyUri: PROXY_URI,
   };
 
+  const MOCK_SERVER = {
+    id: INSTANCE_ID,
+    name: "test-instance",
+    projectId: PROJECT_ID,
+    label: `test-instance (${PROJECT_ID})`,
+    proxyUri: PROXY_URI,
+    connectionInformation: undefined,
+  };
+
   beforeEach(() => {
     vsCodeStub = newVsCodeStub();
     notebooksClientStub = sinon.createStubInstance(NotebooksClient);
@@ -54,26 +63,33 @@ describe("WorkbenchInstanceManager", () => {
     manager.dispose();
   });
 
-  describe("loadWorkbenchServers", () => {
-    it("should fetch and convert servers correctly", async () => {
-      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
+  describe("getWorkbenchServers", () => {
+    it("should return empty list if no projectId is set", async () => {
+      const servers = await manager.getWorkbenchServers();
+      expect(servers).to.have.lengthOf(0);
+    });
 
-      const servers = await manager.loadWorkbenchServers(PROJECT_ID);
+    it("should fetch and convert servers correctly when projectId is set", async () => {
+      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
+      manager.setProjectId(PROJECT_ID);
+
+      const servers = await manager.getWorkbenchServers();
 
       expect(servers).to.have.lengthOf(1);
       const server = servers[0];
       expect(server.id).to.equal(INSTANCE_ID);
       expect(server.name).to.equal("test-instance");
       expect(server.projectId).to.equal(PROJECT_ID);
-      expect(server.state).to.equal(State.ACTIVE);
       expect(server.proxyUri).to.equal(PROXY_URI);
       expect(server.label).to.equal(`test-instance (test-project)`);
+      sinon.assert.calledWith(notebooksClientStub.listInstances, PROJECT_ID);
     });
 
     it("should handle empty instance list", async () => {
       notebooksClientStub.listInstances.resolves([]);
+      manager.setProjectId(PROJECT_ID);
 
-      const servers = await manager.loadWorkbenchServers(PROJECT_ID);
+      const servers = await manager.getWorkbenchServers();
 
       expect(servers).to.have.lengthOf(0);
     });
@@ -82,118 +98,26 @@ describe("WorkbenchInstanceManager", () => {
       notebooksClientStub.listInstances.resolves([{
         // Empty instance
       }]);
+      manager.setProjectId(PROJECT_ID);
 
-      const servers = await manager.loadWorkbenchServers(PROJECT_ID);
+      const servers = await manager.getWorkbenchServers();
 
       expect(servers).to.have.lengthOf(1);
       const server = servers[0];
       expect(server.id).to.equal("UNKNOWN_ID");
       expect(server.name).to.equal("UNKNOWN_NAME");
-      expect(server.state).to.equal(State.STATE_UNSPECIFIED);
       expect(server.proxyUri).to.equal("");
     });
-
-    it("should use stored projectId if none provided", async () => {
-      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-      manager.setProjectId(PROJECT_ID);
-
-      const servers = await manager.loadWorkbenchServers();
-
-      expect(servers).to.have.lengthOf(1);
-      expect(servers[0].projectId).to.equal(PROJECT_ID);
-    });
-
-    it("should return empty if no projectId provided or stored", async () => {
-      const servers = await manager.loadWorkbenchServers();
-      expect(servers).to.have.lengthOf(0);
-    });
-
-    it("should fire onDidChangeServers event after loading", async () => {
-      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-      const eventSpy = sinon.spy();
-      manager.onDidChangeServers(eventSpy);
-
-      await manager.loadWorkbenchServers(PROJECT_ID);
-
-      sinon.assert.calledOnce(eventSpy);
-    });
-  });
-
-  describe("getWorkbenchServers", () => {
-    it("should return cached servers (default all)", async () => {
-      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-      await manager.loadWorkbenchServers(PROJECT_ID);
-
-      const servers = manager.getWorkbenchServers();
-
-      expect(servers).to.have.lengthOf(1);
-      expect(servers[0].id).to.equal(INSTANCE_ID);
-      expect(servers[0].connectionInformation).to.be.undefined;
-    });
-
-    it("should return only active servers when filter is 'active'", async () => {
-      const activeInstance = { ...MOCK_INSTANCE, id: 'active', state: State.ACTIVE };
-      const stoppedInstance = { ...MOCK_INSTANCE, id: 'stopped', state: State.STOPPED };
-      notebooksClientStub.listInstances.resolves([
-        activeInstance,
-        stoppedInstance,
-      ]);
-      await manager.loadWorkbenchServers(PROJECT_ID);
-
-      const servers = manager.getWorkbenchServers('active');
-
-      expect(servers).to.have.lengthOf(1);
-      expect(servers[0].id).to.equal('active');
-    });
-
-    it("should return only inactive servers when filter is 'inactive'", async () => {
-      const activeInstance = { ...MOCK_INSTANCE, id: 'active', state: State.ACTIVE };
-      const stoppedInstance = { ...MOCK_INSTANCE, id: 'stopped', state: State.STOPPED };
-      notebooksClientStub.listInstances.resolves([
-        activeInstance,
-        stoppedInstance,
-      ]);
-      await manager.loadWorkbenchServers(PROJECT_ID);
-
-      const servers = manager.getWorkbenchServers('inactive');
-
-      expect(servers).to.have.lengthOf(1);
-      expect(servers[0].id).to.equal('stopped');
-    });
-
-    it("should return all servers when filter is 'all'", async () => {
-      const activeInstance = { ...MOCK_INSTANCE, id: 'active', state: State.ACTIVE };
-      const stoppedInstance = { ...MOCK_INSTANCE, id: 'stopped', state: State.STOPPED };
-      notebooksClientStub.listInstances.resolves([
-        activeInstance,
-        stoppedInstance,
-      ]);
-      await manager.loadWorkbenchServers(PROJECT_ID);
-
-      const servers = manager.getWorkbenchServers('all');
-
-      expect(servers).to.have.lengthOf(2);
-    });
-
-    it(
-      "should return correctly even if load was called with specific project ID distinct from stored",
-      async () => {
-        // logic: loadWorkbenchServers updates cache regardless of stored
-        // projectId
-        notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-        await manager.loadWorkbenchServers('other-project');
-        const servers = manager.getWorkbenchServers();
-        expect(servers).to.have.lengthOf(1);
-        expect(servers[0].projectId).to.equal('other-project');
-      });
   });
 
   describe("refreshConnection", () => {
-    it("should refresh connection and enrich server with token", async () => {
-      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
+    it("should enrich server with token", async () => {
       getAccessTokenStub.resolves(ACCESS_TOKEN);
 
-      const server = await manager.refreshConnection(INSTANCE_ID, PROJECT_ID);
+      // clone MOCK_SERVER to avoid modifying constant
+      const serverInput = { ...MOCK_SERVER };
+
+      const server = await manager.refreshConnection(serverInput);
 
       expect(server.id).to.equal(INSTANCE_ID);
       expect(server.connectionInformation).to.exist;
@@ -201,33 +125,6 @@ describe("WorkbenchInstanceManager", () => {
       expect(server.connectionInformation?.headers[AUTHORIZATION_HEADER.key]).to.equal(`Bearer ${ACCESS_TOKEN}`);
       expect(server.connectionInformation?.headers['X-XSRFToken']).to.equal('XSRF');
 
-      sinon.assert.calledWith(notebooksClientStub.listInstances, PROJECT_ID);
-      sinon.assert.calledOnce(getAccessTokenStub);
-    });
-
-    it("should throw error if server is not found after reload", async () => {
-      notebooksClientStub.listInstances.resolves([]);
-      getAccessTokenStub.resolves(ACCESS_TOKEN);
-
-      try {
-        await manager.refreshConnection(INSTANCE_ID, PROJECT_ID);
-        assert.fail("Should have thrown error");
-      } catch (e: unknown) {
-        if (e instanceof Error) {
-          expect(e.message).to.contain(`Server with ID ${INSTANCE_ID} no longer exists`);
-        } else {
-          throw e;
-        }
-      }
-    });
-
-    it("should make parallel calls to listInstances and getAccessToken", async () => {
-      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-      getAccessTokenStub.resolves(ACCESS_TOKEN);
-
-      await manager.refreshConnection(INSTANCE_ID, PROJECT_ID);
-
-      sinon.assert.calledOnce(notebooksClientStub.listInstances);
       sinon.assert.calledOnce(getAccessTokenStub);
     });
   });
@@ -236,11 +133,11 @@ describe("WorkbenchInstanceManager", () => {
     it("should clear the project id", async () => {
       notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
       manager.setProjectId(PROJECT_ID);
-      expect(await manager.loadWorkbenchServers()).to.have.lengthOf(1);
+      expect(await manager.getWorkbenchServers()).to.have.lengthOf(1);
 
       manager.dispose();
 
-      expect(manager.getWorkbenchServers()).to.have.lengthOf(0);
+      expect(await manager.getWorkbenchServers()).to.have.lengthOf(0);
     });
   });
 });

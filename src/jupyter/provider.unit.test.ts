@@ -58,8 +58,6 @@ describe("WorkbenchJupyterServerProvider", () => {
     },
   };
 
-
-
   beforeEach(() => {
     vsCodeStub = newVsCodeStub();
     cancellationToken = new vsCodeStub.CancellationTokenSource().token;
@@ -86,9 +84,6 @@ describe("WorkbenchJupyterServerProvider", () => {
 
     projectsClientStub = sinon.createStubInstance(ProjectsClient);
     instanceManagerStub = sinon.createStubInstance(WorkbenchInstanceManager);
-    // Stub the event property
-    (instanceManagerStub as unknown as { onDidChangeServers: sinon.SinonStub })
-      .onDidChangeServers = sinon.stub().returns({ dispose: sinon.stub() });
 
     serverProvider = new WorkbenchJupyterServerProvider(
       vsCodeStub.asVsCode(),
@@ -122,89 +117,26 @@ describe("WorkbenchJupyterServerProvider", () => {
       serverProvider.dispose();
       sinon.assert.calledOnce(serverCollectionDisposeStub);
     });
-
-    it('subscribes to instance manager changes', () => {
-      sinon.assert.calledOnce(
-        (instanceManagerStub as unknown as {
-          onDidChangeServers: sinon.SinonStub;
-        }).onDidChangeServers
-      );
-    });
-
-    it('fires server change emitter when instance manager fires', () => {
-      // Get the callback passed to onDidChangeServers
-      const callback = (
-        (instanceManagerStub as unknown as {
-          onDidChangeServers: sinon.SinonStub;
-        }).onDidChangeServers
-      ).firstCall.args[0] as () => void;
-
-      const fireSpy = sinon.spy(
-        (serverProvider as unknown as { serverChangeEmitter: vscode.EventEmitter<void> })
-          .serverChangeEmitter,
-        "fire"
-      );
-
-      callback();
-
-      sinon.assert.calledOnce(fireSpy);
-    });
   });
 
   describe("provideJupyterServers", () => {
-    it("returns active servers from multiple projects", () => {
+    it("returns servers from instance manager", async () => {
       const expectedServers: WorkbenchJupyterServer[] = [
         { ...MOCK_SERVER, id: "server1", state: State.ACTIVE },
         { ...MOCK_SERVER, id: "server2", state: State.ACTIVE }
       ];
-      instanceManagerStub.getWorkbenchServers.withArgs('active').returns(expectedServers);
+      instanceManagerStub.getWorkbenchServers.resolves(expectedServers);
 
-      const result = serverProvider.provideJupyterServers(
+      const result = await serverProvider.provideJupyterServers(
         cancellationToken
       );
 
       expect(result).to.deep.equal(expectedServers);
     });
 
-    it("filters out inactive servers", () => {
-      const allServers: WorkbenchJupyterServer[] = [
-        { ...MOCK_SERVER, id: "s1", state: State.ACTIVE } as WorkbenchJupyterServer,
-        { ...MOCK_SERVER, id: "s2", state: State.STOPPED } as WorkbenchJupyterServer,
-        { ...MOCK_SERVER, id: "s3", state: State.PROVISIONING } as WorkbenchJupyterServer
-      ];
-      // When asked for active, it should return only active in the real world,
-      // but here we mock it returning just the active one effectively?
-      // Actually provider.ts calls 'active', so we should stub 'active' to
-      // return [s1]. But the test logic verified "filters out inactive
-      // servers" which implied provider did filtering? Now provider calls
-      // getWorkbenchServers('active'), so provider technically doesn't filter
-      // anymore, it just returns what manager returns. So this test should
-      // verification that provider calls with 'active'.
-      instanceManagerStub.getWorkbenchServers.withArgs('active').returns([allServers[0]]);
-
-      const result = serverProvider.provideJupyterServers(
-        cancellationToken
-      );
-
-      expect(result).to.have.lengthOf(1);
-      expect(result[0].id).to.equal("s1");
-    });
-
-    it("handles errors for individual projects gracefully", () => {
-      // This test is no longer relevant as provideJupyterServers doesn't fetch
-      // currently, but keeping it simple if we want to add fetching later.
-      // For now, testing it returns empty if manager returns empty.
-      instanceManagerStub.getWorkbenchServers.returns([]);
-      const result = serverProvider.provideJupyterServers(
-        cancellationToken
-      );
-      expect(result).to.deep.equal([]);
-    });
-
-    it("handles global errors gracefully", () => {
-      // Again, delegating to manager which is synchronous getter essentially
-      instanceManagerStub.getWorkbenchServers.returns([]);
-      const result = serverProvider.provideJupyterServers(
+    it("handles empty lists", async () => {
+      instanceManagerStub.getWorkbenchServers.resolves([]);
+      const result = await serverProvider.provideJupyterServers(
         cancellationToken
       );
       expect(result).to.deep.equal([]);
@@ -213,84 +145,34 @@ describe("WorkbenchJupyterServerProvider", () => {
 
   describe("resolveJupyterServer", () => {
     it("delegates to instance manager", async () => {
-      const server = { id: "s1", projectId: "p1" } as unknown as JupyterServer;
-      const expected = {
-        id: "s1",
+      // Create a plain object that mimics WorkbenchJupyterServer for the argument
+      // The implementation expects WorkbenchJupyterServer structure
+      const serverArg: WorkbenchJupyterServer = {
+        id: "s1", 
+        projectId: "p1",
+        name: "s1",
+        label: "s1",
+        proxyUri: "",
+      };
+
+      const expected: WorkbenchJupyterServer = {
+        ...serverArg,
         state: State.ACTIVE,
-        connectionInformation: {},
-        projectId: "p1"
-      } as WorkbenchJupyterServer;
-      instanceManagerStub.refreshConnection.withArgs("s1", "p1").resolves(expected);
+        connectionInformation: {
+          baseUrl: {} as any,
+          headers: {} as any
+        }
+      };
+
+      instanceManagerStub.refreshConnection.resolves(expected);
 
       const result = await serverProvider.resolveJupyterServer(
-        server as WorkbenchJupyterServer,
+        serverArg,
         cancellationToken
       );
 
       expect(result).to.equal(expected);
-      sinon.assert.notCalled(vsCodeStub.window.showInformationMessage);
-    });
-
-    it("throws if server is not active", async () => {
-      const server = { id: "s1", projectId: "p1" } as unknown as JupyterServer;
-      const inactiveServer = {
-        id: "s1",
-        label: "s1",
-        name: "s1",
-        state: State.STOPPED,
-        projectId: "p1",
-        proxyUri: ""
-      } as WorkbenchJupyterServer;
-
-      instanceManagerStub.refreshConnection.withArgs("s1", "p1").resolves(inactiveServer);
-      (vsCodeStub.window.showErrorMessage as sinon.SinonStub).resolves("Open Console");
-
-      await expect(
-        serverProvider.resolveJupyterServer(
-          server as WorkbenchJupyterServer,
-          cancellationToken
-        )
-      ).to.be.rejectedWith(/Server s1 is not active/);
-
-      sinon.assert.calledWith(
-        vsCodeStub.window.showErrorMessage,
-        sinon.match(/not active/),
-        sinon.match("Open Console"),
-      );
-
-      // Allow the floating promise to resolve
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      sinon.assert.calledOnce(vsCodeStub.env.openExternal);
-      sinon.assert.calledWith(
-        vsCodeStub.env.openExternal,
-        sinon.match.has("path", "/vertex-ai/workbench/instances")
-          .and(sinon.match.has("query", "project=p1"))
-      );
-    });
-
-    it("throws if user dismisses error", async () => {
-      const server = { id: "s1", projectId: "p1" } as unknown as JupyterServer;
-      const inactiveServer = {
-        id: "s1",
-        state: State.STOPPED,
-        projectId: "p1"
-      } as WorkbenchJupyterServer;
-
-      instanceManagerStub.refreshConnection.resolves(inactiveServer);
-      vsCodeStub.window.showErrorMessage.resolves(undefined);
-
-      await expect(
-        serverProvider.resolveJupyterServer(
-          server as WorkbenchJupyterServer,
-          cancellationToken
-        )
-      ).to.be.rejectedWith(/Server undefined is not active/);
-
-      // Allow the floating promise to resolve
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      sinon.assert.notCalled(vsCodeStub.env.openExternal);
+      sinon.assert.calledWith(instanceManagerStub.refreshConnection, serverArg);
     });
   });
 
