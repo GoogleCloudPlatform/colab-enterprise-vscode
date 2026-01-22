@@ -7,7 +7,7 @@
 import "../test/helpers/vscode";
 
 import { protos } from "@google-cloud/notebooks";
-import { assert, expect } from "chai";
+import { expect } from "chai";
 import sinon from "sinon";
 import { SinonStubbedInstance } from "sinon";
 import { AUTHORIZATION_HEADER } from "../colab/headers";

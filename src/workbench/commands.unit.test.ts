@@ -1,16 +1,15 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 import { Module } from "module";
-import { expect } from "chai";
 import * as sinon from "sinon";
 import vscode from "vscode"
 import { GoogleAuthProvider } from "../auth/auth-provider";
 import { MultiStepInput } from "../common/multi-step-quickpick";
+import { InputStep } from "../common/multi-step-quickpick";
 import { WorkbenchInstanceManager } from "../jupyter/workbench-instance-manager";
 import { newVsCodeStub } from "../test/helpers/vscode";
 import { ProjectsClient } from "./projects-client";
@@ -77,7 +76,7 @@ describe("selectProjectCommand", () => {
 
     // Mock MultiStepInput.run to simulate setting selectedProject
     multiStepRunStub.callsFake(async (_vs, _inputStep) => {
-      const pickProject = multiStepRunStub.firstCall.args[1];
+      const pickProject = multiStepRunStub.firstCall.args[1] as InputStep;
       const inputStub = {
         showQuickPick: sinon.stub().resolves({ label: "Project", detail: "p-id" })
       };
@@ -85,7 +84,7 @@ describe("selectProjectCommand", () => {
     });
 
     // executingCommand is already stubbed by newVsCodeStub
-    const executeCommandStub = vsCodeStub.commands.executeCommand as sinon.SinonStub;
+    const executeCommandStub = vsCodeStub.commands.executeCommand;
 
     await selectProjectCommand(
       vsCodeStub,

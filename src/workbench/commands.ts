@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -73,11 +73,11 @@ export async function selectProjectCommand(
         },
       });
 
-      return;
+      return undefined;
     };
 
     await MultiStepInput.run(vs, pickProject);
-    if (selectedProject && selectedProject.detail) {
+    if (selectedProject?.detail) {
       instanceManager.setProjectId(selectedProject.detail);
     }
   } catch (error) {

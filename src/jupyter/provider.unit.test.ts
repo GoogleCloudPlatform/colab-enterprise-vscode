@@ -8,7 +8,6 @@ import { protos } from "@google-cloud/notebooks";
 
 import {
   Jupyter,
-  JupyterServer,
   JupyterServerCollection,
   JupyterServerProvider,
 } from "@vscode/jupyter-extension";
@@ -145,10 +144,10 @@ describe("WorkbenchJupyterServerProvider", () => {
 
   describe("resolveJupyterServer", () => {
     it("delegates to instance manager", async () => {
-      // Create a plain object that mimics WorkbenchJupyterServer for the argument
-      // The implementation expects WorkbenchJupyterServer structure
+      // Create a plain object that mimics WorkbenchJupyterServer for the
+      // argument. The implementation expects WorkbenchJupyterServer structure.
       const serverArg: WorkbenchJupyterServer = {
-        id: "s1", 
+        id: "s1",
         projectId: "p1",
         name: "s1",
         label: "s1",
@@ -157,10 +156,13 @@ describe("WorkbenchJupyterServerProvider", () => {
 
       const expected: WorkbenchJupyterServer = {
         ...serverArg,
-        state: State.ACTIVE,
         connectionInformation: {
-          baseUrl: {} as any,
-          headers: {} as any
+          baseUrl: {} as unknown as vscode.Uri,
+          headers: {
+            Cookie: "mock-cookie",
+            "X-XSRFToken": "mock-token",
+            Origin: "mock-origin",
+          }
         }
       };
 
