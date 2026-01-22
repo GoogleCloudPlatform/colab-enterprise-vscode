@@ -52,6 +52,8 @@ describe("selectProjectCommand", () => {
 
     getOrCreateSessionStub = sinon.stub(GoogleAuthProvider, "getOrCreateSession");
     multiStepRunStub = sinon.stub(MultiStepInput, "run");
+
+    resourceManagerStub.getProjects.resolves([]);
   });
 
   afterEach(() => {
@@ -80,7 +82,7 @@ describe("selectProjectCommand", () => {
       const inputStub = {
         showQuickPick: sinon.stub().resolves({ label: "Project", detail: "p-id" })
       };
-      await pickProject(inputStub);
+      await pickProject(inputStub as unknown as MultiStepInput);
     });
 
     // executingCommand is already stubbed by newVsCodeStub

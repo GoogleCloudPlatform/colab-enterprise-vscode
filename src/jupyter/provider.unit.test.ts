@@ -82,6 +82,7 @@ describe("WorkbenchJupyterServerProvider", () => {
     );
 
     projectsClientStub = sinon.createStubInstance(ProjectsClient);
+    projectsClientStub.getProjects.resolves([]);
     instanceManagerStub = sinon.createStubInstance(WorkbenchInstanceManager);
 
     serverProvider = new WorkbenchJupyterServerProvider(

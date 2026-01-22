@@ -105,15 +105,6 @@ export class WorkbenchInstanceManager implements Disposable {
   }
 
   /**
-   * Disposes of the resources held by the manager.
-   *
-   * Clears the internal list of Workbench servers.
-   */
-  dispose() {
-    this.projectId = undefined;
-  }
-
-  /**
    * Creates a WorkbenchJupyterServer object from a raw Workbench instance.
    *
    * @param instance - The Workbench instance data from the API.

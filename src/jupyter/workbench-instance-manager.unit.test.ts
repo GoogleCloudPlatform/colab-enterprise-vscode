@@ -60,7 +60,6 @@ describe("WorkbenchInstanceManager", () => {
 
   afterEach(() => {
     sinon.restore();
-    manager.dispose();
   });
 
   describe("getWorkbenchServers", () => {
@@ -129,15 +128,5 @@ describe("WorkbenchInstanceManager", () => {
     });
   });
 
-  describe("dispose", () => {
-    it("should clear the project id", async () => {
-      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-      manager.setProjectId(PROJECT_ID);
-      expect(await manager.getWorkbenchServers()).to.have.lengthOf(1);
 
-      manager.dispose();
-
-      expect(await manager.getWorkbenchServers()).to.have.lengthOf(0);
-    });
-  });
 });

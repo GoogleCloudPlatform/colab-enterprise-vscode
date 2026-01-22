@@ -77,11 +77,7 @@ export class WorkbenchJupyterServerProvider
     workbenchServer: WorkbenchJupyterServer,
     _token: CancellationToken,
   ): Promise<WorkbenchJupyterServer> {
-    const resolvedServer = await this.instanceManager.refreshConnection(
-      workbenchServer
-    );
-
-    return resolvedServer;
+    return await this.instanceManager.refreshConnection(workbenchServer);
   }
 
 
