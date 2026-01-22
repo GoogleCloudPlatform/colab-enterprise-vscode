@@ -6,7 +6,7 @@
 
 import { Module } from "module";
 import * as sinon from "sinon";
-import vscode from "vscode"
+import vscode from "vscode";
 import { GoogleAuthProvider } from "../auth/auth-provider";
 import { MultiStepInput } from "../common/multi-step-quickpick";
 import { InputStep } from "../common/multi-step-quickpick";
@@ -50,7 +50,10 @@ describe("selectProjectCommand", () => {
     resourceManagerStub = sinon.createStubInstance(ProjectsClient);
     instanceManagerStub = sinon.createStubInstance(WorkbenchInstanceManager);
 
-    getOrCreateSessionStub = sinon.stub(GoogleAuthProvider, "getOrCreateSession");
+    getOrCreateSessionStub = sinon.stub(
+      GoogleAuthProvider,
+      "getOrCreateSession",
+    );
     multiStepRunStub = sinon.stub(MultiStepInput, "run");
 
     resourceManagerStub.getProjects.resolves([]);
@@ -80,7 +83,9 @@ describe("selectProjectCommand", () => {
     multiStepRunStub.callsFake(async (_vs, _inputStep) => {
       const pickProject = multiStepRunStub.firstCall.args[1] as InputStep;
       const inputStub = {
-        showQuickPick: sinon.stub().resolves({ label: "Project", detail: "p-id" })
+        showQuickPick: sinon
+          .stub()
+          .resolves({ label: "Project", detail: "p-id" }),
       };
       await pickProject(inputStub as unknown as MultiStepInput);
     });

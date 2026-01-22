@@ -52,7 +52,6 @@ describe("WorkbenchInstanceManager", () => {
     notebooksClientStub = sinon.createStubInstance(NotebooksClient);
     getAccessTokenStub = sinon.stub();
 
-
     manager = new WorkbenchInstanceManager(
       vsCodeStub.asVsCode(),
       notebooksClientStub,
@@ -96,9 +95,11 @@ describe("WorkbenchInstanceManager", () => {
     });
 
     it("should handle instances with missing fields (defaults)", async () => {
-      notebooksClientStub.listInstances.resolves([{
-        // Empty instance
-      }]);
+      notebooksClientStub.listInstances.resolves([
+        {
+          // Empty instance
+        },
+      ]);
       manager.setProjectId(PROJECT_ID);
 
       const servers = await manager.getWorkbenchServers();
@@ -122,13 +123,17 @@ describe("WorkbenchInstanceManager", () => {
 
       expect(server.id).to.equal(INSTANCE_ID);
       expect(server.connectionInformation).to.exist;
-      expect(server.connectionInformation?.baseUrl.toString()).to.equal(`https://${PROXY_URI.toLowerCase()}/`);
-      expect(server.connectionInformation?.headers[AUTHORIZATION_HEADER.key]).to.equal(`Bearer ${ACCESS_TOKEN}`);
-      expect(server.connectionInformation?.headers['X-XSRFToken']).to.equal('XSRF');
+      expect(server.connectionInformation?.baseUrl.toString()).to.equal(
+        `https://${PROXY_URI.toLowerCase()}/`,
+      );
+      expect(
+        server.connectionInformation?.headers[AUTHORIZATION_HEADER.key],
+      ).to.equal(`Bearer ${ACCESS_TOKEN}`);
+      expect(server.connectionInformation?.headers["X-XSRFToken"]).to.equal(
+        "XSRF",
+      );
 
       sinon.assert.calledOnce(getAccessTokenStub);
     });
   });
-
-
 });

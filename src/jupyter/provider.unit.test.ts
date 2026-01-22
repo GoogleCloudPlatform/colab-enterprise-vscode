@@ -16,13 +16,13 @@ import sinon from "sinon";
 import { SinonStubbedInstance } from "sinon";
 import vscode from "vscode";
 import { WORKBENCH_COMMAND } from "../colab/commands/constants";
-import {
-  newVsCodeStub,
-  VsCodeStub,
-} from "../test/helpers/vscode";
+import { newVsCodeStub, VsCodeStub } from "../test/helpers/vscode";
 import { ProjectsClient } from "../workbench/projects-client";
 import { WorkbenchJupyterServerProvider } from "./provider";
-import { WorkbenchInstanceManager, WorkbenchJupyterServer } from "./workbench-instance-manager";
+import {
+  WorkbenchInstanceManager,
+  WorkbenchJupyterServer,
+} from "./workbench-instance-manager";
 
 import State = protos.google.cloud.notebooks.v2.State;
 
@@ -94,7 +94,7 @@ describe("WorkbenchJupyterServerProvider", () => {
 
     vsCodeStub.window.withProgress.callsFake(async (_options, task) => {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      return task({ report: () => { } }, cancellationToken);
+      return task({ report: () => {} }, cancellationToken);
     });
   });
 
@@ -113,7 +113,7 @@ describe("WorkbenchJupyterServerProvider", () => {
       );
     });
 
-    it('disposes the server collection', () => {
+    it("disposes the server collection", () => {
       serverProvider.dispose();
       sinon.assert.calledOnce(serverCollectionDisposeStub);
     });
@@ -123,22 +123,20 @@ describe("WorkbenchJupyterServerProvider", () => {
     it("returns servers from instance manager", async () => {
       const expectedServers: WorkbenchJupyterServer[] = [
         { ...MOCK_SERVER, id: "server1", state: State.ACTIVE },
-        { ...MOCK_SERVER, id: "server2", state: State.ACTIVE }
+        { ...MOCK_SERVER, id: "server2", state: State.ACTIVE },
       ];
       instanceManagerStub.getWorkbenchServers.resolves(expectedServers);
 
-      const result = await serverProvider.provideJupyterServers(
-        cancellationToken
-      );
+      const result =
+        await serverProvider.provideJupyterServers(cancellationToken);
 
       expect(result).to.deep.equal(expectedServers);
     });
 
     it("handles empty lists", async () => {
       instanceManagerStub.getWorkbenchServers.resolves([]);
-      const result = await serverProvider.provideJupyterServers(
-        cancellationToken
-      );
+      const result =
+        await serverProvider.provideJupyterServers(cancellationToken);
       expect(result).to.deep.equal([]);
     });
   });
@@ -163,15 +161,15 @@ describe("WorkbenchJupyterServerProvider", () => {
             Cookie: "mock-cookie",
             "X-XSRFToken": "mock-token",
             Origin: "mock-origin",
-          }
-        }
+          },
+        },
       };
 
       instanceManagerStub.refreshConnection.resolves(expected);
 
       const result = await serverProvider.resolveJupyterServer(
         serverArg,
-        cancellationToken
+        cancellationToken,
       );
 
       expect(result).to.equal(expected);
@@ -183,7 +181,7 @@ describe("WorkbenchJupyterServerProvider", () => {
     it("returns WORKBENCH_COMMAND", () => {
       const commands = serverProvider.provideCommands(
         undefined,
-        cancellationToken
+        cancellationToken,
       );
       expect(commands).to.have.lengthOf(1);
       expect(commands[0]).to.deep.equal(WORKBENCH_COMMAND);
@@ -200,7 +198,7 @@ describe("WorkbenchJupyterServerProvider", () => {
 
       const result = serverProvider.handleCommand(
         WORKBENCH_COMMAND,
-        cancellationToken
+        cancellationToken,
       );
 
       expect(result).to.be.instanceOf(Promise);

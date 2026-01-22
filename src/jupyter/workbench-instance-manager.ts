@@ -58,7 +58,7 @@ export class WorkbenchInstanceManager implements Disposable {
     private readonly vs: typeof vscode,
     private readonly notebooksClient: NotebooksClient,
     private readonly getAccessToken: () => Promise<string>,
-  ) { }
+  ) {}
 
   /**
    * Sets the current GCP project ID.
@@ -68,8 +68,6 @@ export class WorkbenchInstanceManager implements Disposable {
   setProjectId(projectId: string) {
     this.projectId = projectId;
   }
-
-
 
   /**
    * Refreshes the connection information for a server.
@@ -83,7 +81,9 @@ export class WorkbenchInstanceManager implements Disposable {
    * @returns The server with updated connection information.
    * @throws If the server with the given ID no longer exists in the project.
    */
-  async refreshConnection(workbenchServer: WorkbenchJupyterServer): Promise<WorkbenchJupyterServer> {
+  async refreshConnection(
+    workbenchServer: WorkbenchJupyterServer,
+  ): Promise<WorkbenchJupyterServer> {
     const accessToken = await this.getAccessToken();
     return this.enrichServerWithConnectionInfo(workbenchServer, accessToken);
   }
@@ -117,7 +117,7 @@ export class WorkbenchInstanceManager implements Disposable {
   ): WorkbenchJupyterServer {
     const proxyUri = instance.proxyUri ?? "";
     const id = instance.id ?? UNKNOWN_ID;
-    const name = instance.name?.split('/').pop() ?? UNKNOWN_NAME;
+    const name = instance.name?.split("/").pop() ?? UNKNOWN_NAME;
 
     return {
       id,

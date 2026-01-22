@@ -13,15 +13,14 @@ import {
   JupyterServerCommand,
 } from "@vscode/jupyter-extension";
 import type { CancellationToken, ProviderResult } from "vscode";
-import vscode from "vscode"
+import vscode from "vscode";
 import { WORKBENCH_COMMAND } from "../colab/commands/constants";
 import { selectProjectCommand } from "../workbench/commands";
 import { ProjectsClient } from "../workbench/projects-client";
 import {
   WorkbenchInstanceManager,
-  WorkbenchJupyterServer
+  WorkbenchJupyterServer,
 } from "./workbench-instance-manager";
-
 
 /**
  * Workbench Jupyter server provider.
@@ -31,11 +30,11 @@ import {
  */
 export class WorkbenchJupyterServerProvider
   implements
-  JupyterServerProvider,
-  JupyterServerCommandProvider,
-  vscode.Disposable {
-  readonly onDidChangeServers:
-    vscode.Event<void>;
+    JupyterServerProvider,
+    JupyterServerCommandProvider,
+    vscode.Disposable
+{
+  readonly onDidChangeServers: vscode.Event<void>;
 
   private readonly serverCollection: JupyterServerCollection;
   private readonly serverChangeEmitter: vscode.EventEmitter<void>;
@@ -80,15 +79,14 @@ export class WorkbenchJupyterServerProvider
     return await this.instanceManager.refreshConnection(workbenchServer);
   }
 
-
   /**
- * Returns a list of commands which are displayed in a section below
- * resolved servers.
- *
- * This gets invoked every time the value (what the user has typed into the
- * quick pick) changes. But we just return a static list which will be
- * filtered down by the quick pick automatically.
- */
+   * Returns a list of commands which are displayed in a section below
+   * resolved servers.
+   *
+   * This gets invoked every time the value (what the user has typed into the
+   * quick pick) changes. But we just return a static list which will be
+   * filtered down by the quick pick automatically.
+   */
   provideCommands(
     _value: string | undefined,
     _token: CancellationToken,

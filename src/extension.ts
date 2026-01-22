@@ -11,8 +11,6 @@ import { getOAuth2Flows } from "./auth/flows/flows";
 import { login } from "./auth/login";
 import { AuthStorage } from "./auth/storage";
 import { ColabClient } from "./colab/client";
-import {
-} from "./colab/commands/constants";
 import { ConsumptionNotifier } from "./colab/consumption/notifier";
 import { ConsumptionPoller } from "./colab/consumption/poller";
 import { ServerKeepAliveController } from "./colab/keep-alive";
@@ -127,7 +125,6 @@ function watchConsumption(colab: ColabClient): {
 
   return { toggle: poller, disposables };
 }
-
 
 /**
  * Returns a Disposable that calls dispose on all items in the array which are

@@ -72,7 +72,7 @@ export async function selectProjectCommand(
     // Actually MultiStepInput swallows cancel and returns normally.
     // So if cancelled, selectedServer stays undefined.
     // If error occurs, we show message.
-    if (error instanceof Error && error.message === 'cancel') {
+    if (error instanceof Error && error.message === "cancel") {
       return;
     }
 
