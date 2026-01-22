@@ -59,8 +59,7 @@ export class WorkbenchInstanceManager implements Disposable {
     private readonly vs: typeof vscode,
     private readonly notebooksClient: NotebooksClient,
     private readonly getAccessToken: () => Promise<string>,
-  ) {
-  }
+  ) {}
 
   /**
    * Loads Workbench instances for a specific project.
@@ -72,10 +71,9 @@ export class WorkbenchInstanceManager implements Disposable {
    */
   async loadWorkbenchServers(projectId: string) {
     const instances = await this.notebooksClient.listInstances(projectId);
-    this.workbenchServers = instances
-      .map((instance) =>
-        this.createWorkbenchJupyterServer(instance, projectId),
-      );
+    this.workbenchServers = instances.map((instance) =>
+      this.createWorkbenchJupyterServer(instance, projectId),
+    );
   }
 
   /**
@@ -90,15 +88,20 @@ export class WorkbenchInstanceManager implements Disposable {
    * @returns The server with updated connection information.
    * @throws If the server with the given ID no longer exists in the project.
    */
-  async refreshConnection(id: string, projectId: string): Promise<WorkbenchJupyterServer> {
+  async refreshConnection(
+    id: string,
+    projectId: string,
+  ): Promise<WorkbenchJupyterServer> {
     const [accessToken] = await Promise.all([
       this.getAccessToken(),
       this.loadWorkbenchServers(projectId),
     ]);
-    const server = this.workbenchServers.find(s => s.id === id);
+    const server = this.workbenchServers.find((s) => s.id === id);
 
     if (!server) {
-      throw new Error(`Server with ID ${id} no longer exists in the project ${projectId}`);
+      throw new Error(
+        `Server with ID ${id} no longer exists in the project ${projectId}`,
+      );
     }
 
     return this.enrichServerWithConnectionInfo(server, accessToken);
@@ -136,7 +139,7 @@ export class WorkbenchInstanceManager implements Disposable {
   ): WorkbenchJupyterServer {
     const proxyUri = instance.proxyUri ?? "";
     const id = instance.id ?? UNKNOWN_ID;
-    const name = instance.name?.split('/').pop() ?? UNKNOWN_NAME;
+    const name = instance.name?.split("/").pop() ?? UNKNOWN_NAME;
     const state = instance.state?.toString() ?? UNKNOWN_STATE;
 
     return {
@@ -178,7 +181,7 @@ export class WorkbenchInstanceManager implements Disposable {
       connectionInformation: {
         baseUrl,
         headers,
-      }
+      },
     };
   }
 }

@@ -24,7 +24,8 @@ describe("WorkbenchInstanceManager", () => {
 
   const PROJECT_ID = "test-project";
   const INSTANCE_ID = "test-instance-id";
-  const INSTANCE_NAME = "projects/test-project/locations/us-central1-a/instances/test-instance";
+  const INSTANCE_NAME =
+    "projects/test-project/locations/us-central1-a/instances/test-instance";
   const PROXY_URI = "test-proxy-uri";
   const ACCESS_TOKEN = "test-access-token";
 
@@ -39,11 +40,11 @@ describe("WorkbenchInstanceManager", () => {
     vsCodeStub = newVsCodeStub();
     notebooksClientStub = sinon.createStubInstance(NotebooksClient);
     getAccessTokenStub = sinon.stub();
-    
+
     manager = new WorkbenchInstanceManager(
       vsCodeStub.asVsCode(),
       notebooksClientStub,
-      getAccessTokenStub
+      getAccessTokenStub,
     );
   });
 
@@ -66,7 +67,9 @@ describe("WorkbenchInstanceManager", () => {
       expect(server.projectId).to.equal(PROJECT_ID);
       expect(server.state).to.equal(State.ACTIVE.toString());
       expect(server.proxyUri).to.equal(PROXY_URI);
-      expect(server.label).to.equal(`test-instance (test-project) [${State.ACTIVE.toString()}]`);
+      expect(server.label).to.equal(
+        `test-instance (test-project) [${State.ACTIVE.toString()}]`,
+      );
     });
 
     it("should handle empty instance list", async () => {
@@ -79,9 +82,11 @@ describe("WorkbenchInstanceManager", () => {
     });
 
     it("should handle instances with missing fields (defaults)", async () => {
-      notebooksClientStub.listInstances.resolves([{
-        // Empty instance
-      }]);
+      notebooksClientStub.listInstances.resolves([
+        {
+          // Empty instance
+        },
+      ]);
 
       await manager.loadWorkbenchServers(PROJECT_ID);
 
@@ -99,15 +104,21 @@ describe("WorkbenchInstanceManager", () => {
     it("should refresh connection and enrich server with token", async () => {
       notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
       getAccessTokenStub.resolves(ACCESS_TOKEN);
-      
+
       const server = await manager.refreshConnection(INSTANCE_ID, PROJECT_ID);
 
       expect(server.id).to.equal(INSTANCE_ID);
       expect(server.connectionInformation).to.exist;
-      expect(server.connectionInformation?.baseUrl.toString()).to.equal(`https://${PROXY_URI.toLowerCase()}/`);
-      expect(server.connectionInformation?.headers[AUTHORIZATION_HEADER.key]).to.equal(`Bearer ${ACCESS_TOKEN}`);
-      expect(server.connectionInformation?.headers['X-XSRFToken']).to.equal('XSRF');
-      
+      expect(server.connectionInformation?.baseUrl.toString()).to.equal(
+        `https://${PROXY_URI.toLowerCase()}/`,
+      );
+      expect(
+        server.connectionInformation?.headers[AUTHORIZATION_HEADER.key],
+      ).to.equal(`Bearer ${ACCESS_TOKEN}`);
+      expect(server.connectionInformation?.headers["X-XSRFToken"]).to.equal(
+        "XSRF",
+      );
+
       sinon.assert.calledWith(notebooksClientStub.listInstances, PROJECT_ID);
       sinon.assert.calledOnce(getAccessTokenStub);
     });
@@ -121,21 +132,23 @@ describe("WorkbenchInstanceManager", () => {
         assert.fail("Should have thrown error");
       } catch (e: unknown) {
         if (e instanceof Error) {
-            expect(e.message).to.contain(`Server with ID ${INSTANCE_ID} no longer exists`);
+          expect(e.message).to.contain(
+            `Server with ID ${INSTANCE_ID} no longer exists`,
+          );
         } else {
-            throw e;
+          throw e;
         }
       }
     });
 
     it("should make parallel calls to listInstances and getAccessToken", async () => {
-        notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-        getAccessTokenStub.resolves(ACCESS_TOKEN);
+      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
+      getAccessTokenStub.resolves(ACCESS_TOKEN);
 
-        await manager.refreshConnection(INSTANCE_ID, PROJECT_ID);
+      await manager.refreshConnection(INSTANCE_ID, PROJECT_ID);
 
-        sinon.assert.calledOnce(notebooksClientStub.listInstances);
-        sinon.assert.calledOnce(getAccessTokenStub);
+      sinon.assert.calledOnce(notebooksClientStub.listInstances);
+      sinon.assert.calledOnce(getAccessTokenStub);
     });
   });
 
@@ -143,7 +156,7 @@ describe("WorkbenchInstanceManager", () => {
     it("should return the list of servers", async () => {
       notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
       await manager.loadWorkbenchServers(PROJECT_ID);
-      
+
       expect(manager.getWorkbenchServers()).to.have.lengthOf(1);
     });
   });

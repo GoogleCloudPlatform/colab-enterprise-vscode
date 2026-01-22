@@ -4,16 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { v3 } from '@google-cloud/resource-manager';
-import { OAuth2Client } from 'google-auth-library'
-import { WORKBENCH_CLIENT_AGENT_HEADER } from './headers';
-
+import { v3 } from "@google-cloud/resource-manager";
+import { OAuth2Client } from "google-auth-library";
+import { WORKBENCH_CLIENT_AGENT_HEADER } from "./headers";
 
 /**
  * The number of projects to retrieve per page.
  */
 const PROJECTS_PER_PAGE = 50;
-
 
 /**
  * Represents a Google Cloud Platform project.
@@ -25,29 +23,25 @@ export interface GCPProject {
   name: string;
 }
 
-
 /**
  * Client for interacting with Google Cloud Resource Manager.
  */
 export class ProjectsClient {
-
   private projectClient: v3.ProjectsClient;
 
   /**
    * @param authClient - An OAuth2Client instance used for authentication with
    * Google Cloud services.
    */
-  constructor(
-    authClient: OAuth2Client,
-  ) {
+  constructor(authClient: OAuth2Client) {
     this.projectClient = new v3.ProjectsClient({
       authClient: authClient,
       otherArgs: {
         headers: {
           [WORKBENCH_CLIENT_AGENT_HEADER.key]:
             WORKBENCH_CLIENT_AGENT_HEADER.value,
-        }
-      }
+        },
+      },
     });
   }
 
@@ -65,7 +59,7 @@ export class ProjectsClient {
     };
 
     const [projectsList] = await this.projectClient.searchProjects(request, {
-      autoPaginate: false
+      autoPaginate: false,
     });
 
     return projectsList

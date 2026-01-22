@@ -12,34 +12,35 @@ import { NotebooksClient } from "./notebooks-client";
 
 const DEFAULT_INSTANCES_RESPONSE: protos.google.cloud.notebooks.v2.IInstance[] =
   [
-  {
-    name: "projects/mock-project-id/locations/mock-location/instances/mock-instance-1",
-    gceSetup: {
-      machineType: "https://www.googleapis.com/compute/v1/projects/mock-project-id/zones/mock-zone/machineTypes/mock-machine-type",
-      metadata: {
-        "proxy-url": "mock-proxy-url-1",
+    {
+      name: "projects/mock-project-id/locations/mock-location/instances/mock-instance-1",
+      gceSetup: {
+        machineType:
+          "https://www.googleapis.com/compute/v1/projects/mock-project-id/zones/mock-zone/machineTypes/mock-machine-type",
+        metadata: {
+          "proxy-url": "mock-proxy-url-1",
+        },
       },
+      proxyUri: "mock-proxy-url-1",
+      state: "STOPPED",
+      createTime: { seconds: 1758143138, nanos: 454383910 },
+      updateTime: { seconds: 1763919346, nanos: 100834445 },
     },
-    proxyUri: "mock-proxy-url-1",
-    state: "STOPPED",
-    createTime: { seconds: 1758143138, nanos: 454383910 },
-    updateTime: { seconds: 1763919346, nanos: 100834445 },
-  },
-  {
-    name: "projects/mock-project-id/locations/mock-location/instances/mock-instance-2",
-    gceSetup: {
-      machineType: "https://www.googleapis.com/compute/v1/projects/mock-project-id/zones/mock-zone/machineTypes/mock-machine-type",
-      metadata: {
-        "proxy-url": "mock-proxy-url-2",
+    {
+      name: "projects/mock-project-id/locations/mock-location/instances/mock-instance-2",
+      gceSetup: {
+        machineType:
+          "https://www.googleapis.com/compute/v1/projects/mock-project-id/zones/mock-zone/machineTypes/mock-machine-type",
+        metadata: {
+          "proxy-url": "mock-proxy-url-2",
+        },
       },
+      proxyUri: "mock-proxy-url-2",
+      state: "STOPPED",
+      createTime: { seconds: 1758831235, nanos: 470129454 },
+      updateTime: { seconds: 1763909167, nanos: 403311244 },
     },
-    proxyUri: "mock-proxy-url-2",
-    state: "STOPPED",
-    createTime: { seconds: 1758831235, nanos: 470129454 },
-    updateTime: { seconds: 1763909167, nanos: 403311244 },
-  },
-];
-
+  ];
 
 describe("NotebooksClient", () => {
   let client: NotebooksClient;

@@ -17,8 +17,7 @@ import { AuthStorage, RefreshableAuthenticationSession } from "./storage";
 export const REQUIRED_SCOPES = [
   "profile",
   "email",
-  "https://www.googleapis.com/auth/cloud-platform"
-
+  "https://www.googleapis.com/auth/cloud-platform",
 ] as const;
 const PROVIDER_ID = "google-cloud-platform";
 const PROVIDER_LABEL = "Google Cloud Platform";
@@ -34,7 +33,8 @@ const REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes
  * their expiry.
  */
 export class GoogleAuthProvider
-  implements vscode.AuthenticationProvider, vscode.Disposable {
+  implements vscode.AuthenticationProvider, vscode.Disposable
+{
   readonly onDidChangeSessions: vscode.Event<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>;
   private isInitialized = false;
   private readonly authProvider: vscode.Disposable;

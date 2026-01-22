@@ -38,9 +38,10 @@ import { AssignmentChangeEvent, AssignmentManager } from "./assignments";
  */
 export class ColabJupyterServerProvider
   implements
-  JupyterServerProvider,
-  JupyterServerCommandProvider,
-  vscode.Disposable {
+    JupyterServerProvider,
+    JupyterServerCommandProvider,
+    vscode.Disposable
+{
   readonly onDidChangeServers: vscode.Event<void>;
 
   private readonly serverCollection: JupyterServerCollection;
