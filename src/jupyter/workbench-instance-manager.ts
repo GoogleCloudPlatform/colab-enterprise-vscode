@@ -58,8 +58,7 @@ export class WorkbenchInstanceManager implements Disposable {
     private readonly vs: typeof vscode,
     private readonly notebooksClient: NotebooksClient,
     private readonly getAccessToken: () => Promise<string>,
-  ) {
-  }
+  ) { }
 
   /**
    * Sets the current GCP project ID.
@@ -158,7 +157,7 @@ export class WorkbenchInstanceManager implements Disposable {
       connectionInformation: {
         baseUrl,
         headers,
-      }
+      },
     };
   }
 }

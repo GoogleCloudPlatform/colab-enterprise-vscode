@@ -40,10 +40,7 @@ export async function activate(context: vscode.ExtensionContext) {
     CONFIG.ClientId,
     CONFIG.ClientNotSoSecret,
   );
-  const authFlows = getOAuth2Flows(
-    vscode,
-    authClient,
-  );
+  const authFlows = getOAuth2Flows(vscode, authClient);
   const authProvider = new GoogleAuthProvider(
     vscode,
     new AuthStorage(context.secrets),

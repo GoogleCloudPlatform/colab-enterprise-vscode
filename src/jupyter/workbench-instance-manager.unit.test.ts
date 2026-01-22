@@ -26,7 +26,8 @@ describe("WorkbenchInstanceManager", () => {
 
   const PROJECT_ID = "test-project";
   const INSTANCE_ID = "test-instance-id";
-  const INSTANCE_NAME = "projects/test-project/locations/us-central1-a/instances/test-instance";
+  const INSTANCE_NAME =
+    "projects/test-project/locations/us-central1-a/instances/test-instance";
   const PROXY_URI = "test-proxy-uri";
   const ACCESS_TOKEN = "test-access-token";
 
@@ -51,10 +52,11 @@ describe("WorkbenchInstanceManager", () => {
     notebooksClientStub = sinon.createStubInstance(NotebooksClient);
     getAccessTokenStub = sinon.stub();
 
+
     manager = new WorkbenchInstanceManager(
       vsCodeStub.asVsCode(),
       notebooksClientStub,
-      getAccessTokenStub
+      getAccessTokenStub,
     );
   });
 
