@@ -22,7 +22,6 @@ import {
   WorkbenchJupyterServer,
 } from "./workbench-instance-manager";
 
-
 describe("WorkbenchJupyterServerProvider", () => {
   let vsCodeStub: VsCodeStub;
   let cancellationToken: vscode.CancellationToken;
