@@ -85,7 +85,7 @@ export async function selectProjectCommand(
       `Failed to start Workbench flow: ${errMessage}`,
     );
   }
-  return undefined;
+  return;
 }
 
 async function updateProjectList(
