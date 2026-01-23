@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { protos } from "@google-cloud/notebooks";
-
 import {
   Jupyter,
   JupyterServerCollection,
@@ -24,7 +22,6 @@ import {
   WorkbenchJupyterServer,
 } from "./workbench-instance-manager";
 
-import State = protos.google.cloud.notebooks.v2.State;
 
 describe("WorkbenchJupyterServerProvider", () => {
   let vsCodeStub: VsCodeStub;
@@ -44,7 +41,6 @@ describe("WorkbenchJupyterServerProvider", () => {
     label: "Server 1",
     name: "server-1",
     projectId: "project-1",
-    state: State.ACTIVE,
     proxyUri: "http://server-1.com",
     connectionInformation: {
       baseUrl: undefined as unknown as vscode.Uri,
@@ -122,8 +118,8 @@ describe("WorkbenchJupyterServerProvider", () => {
   describe("provideJupyterServers", () => {
     it("returns servers from instance manager", async () => {
       const expectedServers: WorkbenchJupyterServer[] = [
-        { ...MOCK_SERVER, id: "server1", state: State.ACTIVE },
-        { ...MOCK_SERVER, id: "server2", state: State.ACTIVE },
+        { ...MOCK_SERVER, id: "server1" },
+        { ...MOCK_SERVER, id: "server2" },
       ];
       instanceManagerStub.getWorkbenchServers.resolves(expectedServers);
 

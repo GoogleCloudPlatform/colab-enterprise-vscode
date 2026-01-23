@@ -91,7 +91,8 @@ describe("selectProjectCommand", () => {
     });
 
     // executingCommand is already stubbed by newVsCodeStub
-    const executeCommandStub = vsCodeStub.commands.executeCommand;
+    const executeCommandStub = vsCodeStub.commands
+      .executeCommand as unknown as sinon.SinonStub;
 
     await selectProjectCommand(
       vsCodeStub,

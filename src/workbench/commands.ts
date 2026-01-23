@@ -29,13 +29,13 @@ export async function selectProjectCommand(
       // Initial load
       let initialItems: vscode.QuickPickItem[] = [];
       try {
-        const projects = await projectsClient.getProjects("");
+        const projects = await projectsClient.getProjects();
         initialItems = projects.map((p: GCPProject) => ({
           label: p.name,
           detail: p.id,
           description: p.id !== p.name ? p.id : undefined,
         }));
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Failed to fetch initial projects:", error);
       }
 
@@ -67,7 +67,7 @@ export async function selectProjectCommand(
     if (selectedProject?.detail) {
       instanceManager.setProjectId(selectedProject.detail);
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // If the user cancelled, MultiStepInput throws InputFlowAction.cancel
     // Actually MultiStepInput swallows cancel and returns normally.
     // So if cancelled, selectedServer stays undefined.
@@ -78,13 +78,14 @@ export async function selectProjectCommand(
 
     // We should probably catch other errors
     const errMessage = error instanceof Error ? error.message : String(error);
-    if (errMessage !== "cancel") {
-      void vs.window.showErrorMessage(
-        `Failed to start Workbench flow: ${errMessage}`,
-      );
+    if (errMessage === "cancel") {
+      return;
     }
-    return;
+    void vs.window.showErrorMessage(
+      `Failed to start Workbench flow: ${errMessage}`,
+    );
   }
+  return undefined;
 }
 
 async function updateProjectList(
@@ -100,7 +101,7 @@ async function updateProjectList(
       detail: p.id,
       description: p.id !== p.name ? p.id : undefined,
     }));
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Failed to fetch projects:", error);
   } finally {
     quickPick.busy = false;

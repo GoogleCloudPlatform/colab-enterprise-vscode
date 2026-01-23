@@ -6,7 +6,7 @@
 
 import { protos } from "@google-cloud/notebooks";
 import { JupyterServer } from "@vscode/jupyter-extension";
-import vscode, { Disposable } from "vscode";
+import vscode from "vscode";
 import { AUTHORIZATION_HEADER } from "../colab/headers";
 import { NotebooksClient } from "../workbench/notebooks-client";
 
@@ -43,7 +43,7 @@ export interface WorkbenchJupyterServer extends JupyterServer {
  *   Tokens) for these servers.
  * - Refreshing server state and connections on demand.
  */
-export class WorkbenchInstanceManager implements Disposable {
+export class WorkbenchInstanceManager {
   private projectId?: string;
 
   /**
@@ -94,12 +94,14 @@ export class WorkbenchInstanceManager implements Disposable {
    * @returns An array of WorkbenchJupyterServer objects.
    */
   async getWorkbenchServers(): Promise<WorkbenchJupyterServer[]> {
-    if (!this.projectId) {
+    const { projectId } = this;
+    if (!projectId) {
       return [];
     }
-    const instances = await this.notebooksClient.listInstances(this.projectId);
+
+    const instances = await this.notebooksClient.listInstances(projectId);
     return instances.map((instance) =>
-      this.createWorkbenchJupyterServer(instance, this.projectId),
+      this.createWorkbenchJupyterServer(instance, projectId),
     );
   }
 
