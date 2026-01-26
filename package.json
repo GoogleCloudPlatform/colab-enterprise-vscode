@@ -156,7 +156,7 @@
   "dependencies": {
     "@google-cloud/notebooks": "^4.2.1",
     "@google-cloud/resource-manager": "^6.2.1",
-    "glob": "^11.0.0",
+    "glob": "^11.1.0",
     "google-auth-library": "^10.0.0",
     "node-fetch": "^2.6.7",
     "semver": "^7.7.3",
