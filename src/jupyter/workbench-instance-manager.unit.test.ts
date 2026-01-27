@@ -110,6 +110,49 @@ describe("WorkbenchInstanceManager", () => {
       expect(server.name).to.equal("UNKNOWN_NAME");
       expect(server.proxyUri).to.equal("");
     });
+
+    it("should cache servers after initial fetch", async () => {
+      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
+      manager.setProjectId(PROJECT_ID);
+
+      // First call fetches from API
+      await manager.getWorkbenchServers();
+      sinon.assert.calledOnce(notebooksClientStub.listInstances);
+
+      // Second call should return cached
+      const servers = await manager.getWorkbenchServers();
+      sinon.assert.calledOnce(notebooksClientStub.listInstances); // Still called once
+      expect(servers).to.have.lengthOf(1);
+    });
+
+    it("should refresh cache when setShouldRefresh is called", async () => {
+      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
+      manager.setProjectId(PROJECT_ID);
+
+      // First call
+      await manager.getWorkbenchServers();
+
+      // Force refresh
+      manager.setShouldRefresh(true);
+
+      // Second call should fetch again
+      await manager.getWorkbenchServers();
+      sinon.assert.calledTwice(notebooksClientStub.listInstances);
+    });
+
+    it("should refresh cache when project ID changes", async () => {
+      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
+      manager.setProjectId(PROJECT_ID);
+      await manager.getWorkbenchServers();
+
+      // Change project ID
+      const newProjectId = "new-project";
+      manager.setProjectId(newProjectId);
+
+      await manager.getWorkbenchServers();
+      sinon.assert.calledTwice(notebooksClientStub.listInstances);
+      sinon.assert.calledWith(notebooksClientStub.listInstances, newProjectId);
+    });
   });
 
   describe("refreshConnection", () => {

@@ -180,6 +180,7 @@ describe("WorkbenchJupyterServerProvider", () => {
       );
       expect(commands).to.have.lengthOf(1);
       expect(commands[0]).to.deep.equal(WORKBENCH_COMMAND);
+      sinon.assert.calledWith(instanceManagerStub.setShouldRefresh, true);
     });
   });
 
