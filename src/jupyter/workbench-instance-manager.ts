@@ -45,6 +45,17 @@ export interface WorkbenchJupyterServer extends JupyterServer {
  */
 export class WorkbenchInstanceManager {
   private projectId?: string;
+  private shouldRefresh = false;
+  private cachedServers: WorkbenchJupyterServer[] = [];
+
+  /**
+   * Sets the flag indicating whether the server list should be refreshed.
+   *
+   * @param shouldRefresh - True to mark for refresh, false otherwise.
+   */
+  setShouldRefresh(shouldRefresh: boolean) {
+    this.shouldRefresh = shouldRefresh;
+  }
 
   /**
    * Creates a new instance of WorkbenchInstanceManager.
@@ -63,10 +74,14 @@ export class WorkbenchInstanceManager {
   /**
    * Sets the current GCP project ID.
    *
+   * This invalidates the cached server list, causing it to be refreshed from
+   * the API on the next call to `getWorkbenchServers`.
+   *
    * @param projectId - The ID of the GCP project.
    */
   setProjectId(projectId: string) {
     this.projectId = projectId;
+    this.shouldRefresh = true;
   }
 
   /**
@@ -99,10 +114,16 @@ export class WorkbenchInstanceManager {
       return [];
     }
 
+    if (!this.shouldRefresh) {
+      return this.cachedServers;
+    }
+
     const instances = await this.notebooksClient.listInstances(projectId);
-    return instances.map((instance) =>
+    this.cachedServers = instances.map((instance) =>
       this.createWorkbenchJupyterServer(instance, projectId),
     );
+    this.shouldRefresh = false;
+    return this.cachedServers;
   }
 
   /**

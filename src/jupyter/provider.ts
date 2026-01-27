@@ -91,6 +91,7 @@ export class WorkbenchJupyterServerProvider
     _value: string | undefined,
     _token: CancellationToken,
   ): JupyterServerCommand[] {
+    this.instanceManager.setShouldRefresh(true);
     return [WORKBENCH_COMMAND];
   }
 
