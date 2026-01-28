@@ -57,6 +57,17 @@ describe("WorkbenchInstanceManager", () => {
       notebooksClientStub,
       getAccessTokenStub,
     );
+
+    vsCodeStub.window.withProgress.callsFake(async (_options, task) => {
+      return task(
+        {
+          report: () => {
+            /* empty */
+          },
+        },
+        new vsCodeStub.CancellationTokenSource().token,
+      );
+    });
   });
 
   afterEach(() => {
