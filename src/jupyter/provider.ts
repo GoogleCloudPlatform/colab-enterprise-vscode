@@ -89,7 +89,8 @@ export class WorkbenchJupyterServerProvider
    *
    * It also sets a flag to refresh the server list on the next call to
    * `getWorkbenchServers`. This is needed to ensure that the server list is
-   * refreshed when the user interacts with the command palette.
+   * refreshed when the user interacts with the command palette. That is also
+   * why the method needs to stay synchronous.
    */
   provideCommands(
     _value: string | undefined,
