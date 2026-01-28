@@ -86,12 +86,16 @@ export class WorkbenchJupyterServerProvider
    * This gets invoked every time the value (what the user has typed into the
    * quick pick) changes. But we just return a static list which will be
    * filtered down by the quick pick automatically.
+   *
+   * It also sets a flag to refresh the server list on the next call to
+   * `getWorkbenchServers`. This is needed to ensure that the server list is
+   * refreshed when the user interacts with the command palette.
    */
   provideCommands(
     _value: string | undefined,
     _token: CancellationToken,
   ): JupyterServerCommand[] {
-    this.instanceManager.setShouldRefresh(true);
+    this.instanceManager.setShouldRefresh();
     return [WORKBENCH_COMMAND];
   }
 

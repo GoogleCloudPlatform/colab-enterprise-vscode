@@ -57,6 +57,17 @@ describe("WorkbenchInstanceManager", () => {
       notebooksClientStub,
       getAccessTokenStub,
     );
+
+    vsCodeStub.window.withProgress.callsFake(async (_options, task) => {
+      return task(
+        {
+          report: () => {
+            /* empty */
+          },
+        },
+        new vsCodeStub.CancellationTokenSource().token,
+      );
+    });
   });
 
   afterEach(() => {
@@ -72,6 +83,7 @@ describe("WorkbenchInstanceManager", () => {
     it("should fetch and convert servers correctly when projectId is set", async () => {
       notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
       manager.setProjectId(PROJECT_ID);
+      manager.setShouldRefresh();
 
       const servers = await manager.getWorkbenchServers();
 
@@ -83,15 +95,19 @@ describe("WorkbenchInstanceManager", () => {
       expect(server.proxyUri).to.equal(PROXY_URI);
       expect(server.label).to.equal(`test-instance (test-project)`);
       sinon.assert.calledWith(notebooksClientStub.listInstances, PROJECT_ID);
+      sinon.assert.calledOnce(vsCodeStub.window.withProgress);
+      sinon.assert.notCalled(vsCodeStub.window.showInformationMessage);
     });
 
     it("should handle empty instance list", async () => {
       notebooksClientStub.listInstances.resolves([]);
       manager.setProjectId(PROJECT_ID);
+      manager.setShouldRefresh();
 
       const servers = await manager.getWorkbenchServers();
 
       expect(servers).to.have.lengthOf(0);
+      sinon.assert.calledOnce(vsCodeStub.window.showInformationMessage);
     });
 
     it("should handle instances with missing fields (defaults)", async () => {
@@ -101,6 +117,7 @@ describe("WorkbenchInstanceManager", () => {
         },
       ]);
       manager.setProjectId(PROJECT_ID);
+      manager.setShouldRefresh();
 
       const servers = await manager.getWorkbenchServers();
 
@@ -114,6 +131,7 @@ describe("WorkbenchInstanceManager", () => {
     it("should cache servers after initial fetch", async () => {
       notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
       manager.setProjectId(PROJECT_ID);
+      manager.setShouldRefresh();
 
       // First call fetches from API
       await manager.getWorkbenchServers();
@@ -128,30 +146,17 @@ describe("WorkbenchInstanceManager", () => {
     it("should refresh cache when setShouldRefresh is called", async () => {
       notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
       manager.setProjectId(PROJECT_ID);
+      manager.setShouldRefresh();
 
       // First call
       await manager.getWorkbenchServers();
 
       // Force refresh
-      manager.setShouldRefresh(true);
+      manager.setShouldRefresh();
 
       // Second call should fetch again
       await manager.getWorkbenchServers();
       sinon.assert.calledTwice(notebooksClientStub.listInstances);
-    });
-
-    it("should refresh cache when project ID changes", async () => {
-      notebooksClientStub.listInstances.resolves([MOCK_INSTANCE]);
-      manager.setProjectId(PROJECT_ID);
-      await manager.getWorkbenchServers();
-
-      // Change project ID
-      const newProjectId = "new-project";
-      manager.setProjectId(newProjectId);
-
-      await manager.getWorkbenchServers();
-      sinon.assert.calledTwice(notebooksClientStub.listInstances);
-      sinon.assert.calledWith(notebooksClientStub.listInstances, newProjectId);
     });
   });
 

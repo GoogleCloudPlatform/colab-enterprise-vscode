@@ -49,12 +49,17 @@ export class WorkbenchInstanceManager {
   private cachedServers: WorkbenchJupyterServer[] = [];
 
   /**
-   * Sets the flag indicating whether the server list should be refreshed.
+   * Sets the flag indicating whether the server list should be refreshed
+   * from the API on the next call to `getWorkbenchServers`.
    *
-   * @param shouldRefresh - True to mark for refresh, false otherwise.
+   * The flag is needed to prevent sending API calls to the Notebooks API
+   * every time the Jupyter extension calls `provideJupyterServers`, which
+   * happens even during cell execution. We only want to refresh the server
+   * list when the user explicitly requests it by interacting with the
+   * command palette.
    */
-  setShouldRefresh(shouldRefresh: boolean) {
-    this.shouldRefresh = shouldRefresh;
+  setShouldRefresh() {
+    this.shouldRefresh = true;
   }
 
   /**
@@ -74,14 +79,10 @@ export class WorkbenchInstanceManager {
   /**
    * Sets the current GCP project ID.
    *
-   * This invalidates the cached server list, causing it to be refreshed from
-   * the API on the next call to `getWorkbenchServers`.
-   *
    * @param projectId - The ID of the GCP project.
    */
   setProjectId(projectId: string) {
     this.projectId = projectId;
-    this.shouldRefresh = true;
   }
 
   /**
@@ -118,11 +119,25 @@ export class WorkbenchInstanceManager {
       return this.cachedServers;
     }
 
-    const instances = await this.notebooksClient.listInstances(projectId);
+    const instances = await this.vs.window.withProgress(
+      {
+        location: this.vs.ProgressLocation.Notification,
+        title: "Fetching Workbench instances...",
+        cancellable: false,
+      },
+      () => this.notebooksClient.listInstances(projectId),
+    );
     this.cachedServers = instances.map((instance) =>
       this.createWorkbenchJupyterServer(instance, projectId),
     );
     this.shouldRefresh = false;
+
+    if (this.cachedServers.length === 0) {
+      this.vs.window.showInformationMessage(
+        `No Workbench instances found in project: ${projectId}.`,
+      );
+    }
+
     return this.cachedServers;
   }
 
