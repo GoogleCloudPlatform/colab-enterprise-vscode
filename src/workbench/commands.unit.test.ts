@@ -102,6 +102,7 @@ describe("selectProjectCommand", () => {
 
     sinon.assert.calledOnce(multiStepRunStub);
     sinon.assert.calledWith(instanceManagerStub.setProjectId, "p-id");
+    sinon.assert.calledOnce(instanceManagerStub.setShouldRefresh);
     sinon.assert.notCalled(executeCommandStub);
   });
 });

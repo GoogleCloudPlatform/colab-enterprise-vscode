@@ -12,8 +12,9 @@ import {
   JupyterServerCommandProvider,
   JupyterServerCommand,
 } from "@vscode/jupyter-extension";
-import type { CancellationToken, ProviderResult } from "vscode";
+import type { CancellationToken } from "vscode";
 import vscode from "vscode";
+import { GoogleAuthProvider } from "../auth/auth-provider";
 import { WORKBENCH_COMMAND } from "../colab/commands/constants";
 import { selectProjectCommand } from "../workbench/commands";
 import { ProjectsClient } from "../workbench/projects-client";
@@ -86,22 +87,31 @@ export class WorkbenchJupyterServerProvider
    * This gets invoked every time the value (what the user has typed into the
    * quick pick) changes. But we just return a static list which will be
    * filtered down by the quick pick automatically.
+   *
+   * It also sets a flag to refresh the server list on the next call to
+   * `getWorkbenchServers`. This is needed to ensure that the server list is
+   * refreshed when the user interacts with the command palette. That is also
+   * why the method needs to stay synchronous.
    */
   provideCommands(
     _value: string | undefined,
     _token: CancellationToken,
   ): JupyterServerCommand[] {
+    this.instanceManager.setShouldRefresh();
     return [WORKBENCH_COMMAND];
   }
 
   /**
    * Resolves the selected command.
    */
-  handleCommand(
+  async handleCommand(
     command: JupyterServerCommand,
     _token: CancellationToken,
-  ): ProviderResult<JupyterServer> {
+  ): Promise<JupyterServer | undefined> {
     if (command.label === WORKBENCH_COMMAND.label) {
+      // this is needed to open login popup if user doesn't have active session
+      // i.e. first login
+      await GoogleAuthProvider.getOrCreateSession(this.vs);
       return selectProjectCommand(
         this.vs,
         this.projectsClient,

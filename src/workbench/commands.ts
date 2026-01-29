@@ -66,6 +66,7 @@ export async function selectProjectCommand(
     await MultiStepInput.run(vs, pickProject);
     if (selectedProject?.detail) {
       instanceManager.setProjectId(selectedProject.detail);
+      instanceManager.setShouldRefresh();
     }
   } catch (error: unknown) {
     // If the user cancelled, MultiStepInput throws InputFlowAction.cancel
