@@ -8,6 +8,7 @@ import { v3 } from "@google-cloud/resource-manager";
 import { expect } from "chai";
 import { OAuth2Client } from "google-auth-library";
 import * as sinon from "sinon";
+import vscode from "vscode";
 import { ProjectsClient } from "./projects-client";
 
 const DEFAULT_PROJECTS_RESPONSE = [
@@ -65,6 +66,7 @@ describe("ProjectsClient", () => {
         value: searchProjectsStub,
         writable: true,
       });
+      (vscode.window.showErrorMessage as sinon.SinonStub).resetHistory();
     });
 
     it("should return a list of projects", async () => {
@@ -98,6 +100,12 @@ describe("ProjectsClient", () => {
 
       const projects = await client.getProjects("test-query");
       expect(projects).to.deep.equal([]);
+      expect(
+        (vscode.window.showErrorMessage as sinon.SinonStub).calledWith(
+          sinon.match.string,
+          { modal: true },
+        ),
+      ).to.be.true;
     });
   });
 });

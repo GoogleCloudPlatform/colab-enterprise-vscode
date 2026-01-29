@@ -13,11 +13,16 @@ chai.use(chaiAsPromised);
 
 // Patch require to return a stub for vscode
 const originalRequire = Module.prototype.require;
+let vscodeStub: ReturnType<typeof newVsCodeStub>["asVsCode"] | undefined;
+
 // @ts-ignore
 Module.prototype.require = function (id: string) {
   if (id === "vscode") {
-    // @ts-ignore
-    return newVsCodeStub().asVsCode();
+    if (!vscodeStub) {
+      // @ts-ignore
+      vscodeStub = newVsCodeStub().asVsCode();
+    }
+    return vscodeStub;
   }
   // @ts-ignore
   return originalRequire.call(this, id);
