@@ -7,7 +7,8 @@
 import vscode from "vscode";
 
 /**
- * Executes an asynchronous operation and handles any errors by showing a modal error message.
+ * Executes an asynchronous operation and handles any errors by showing
+ * a modal error message.
  *
  * @param operation - The asynchronous operation to execute.
  * @param defaultValue - The value to return if the operation fails.
@@ -21,8 +22,9 @@ export async function withError<T>(
 ): Promise<T> {
   try {
     return await operation();
-  } catch (error) {
-    vscode.window.showErrorMessage(`${errorMessage}: ${error}`, {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    vscode.window.showErrorMessage(`${errorMessage}: ${message}`, {
       modal: true,
     });
     return defaultValue;

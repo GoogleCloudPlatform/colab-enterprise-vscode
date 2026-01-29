@@ -6,8 +6,8 @@
 
 import { v3 } from "@google-cloud/resource-manager";
 import { OAuth2Client } from "google-auth-library";
-import { WORKBENCH_CLIENT_AGENT_HEADER } from "./headers";
 import { withError } from "../utils/errors";
+import { WORKBENCH_CLIENT_AGENT_HEADER } from "./headers";
 
 /**
  * The number of projects to retrieve per page.
