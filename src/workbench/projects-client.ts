@@ -7,6 +7,7 @@
 import { v3 } from "@google-cloud/resource-manager";
 import { OAuth2Client } from "google-auth-library";
 import { WORKBENCH_CLIENT_AGENT_HEADER } from "./headers";
+import { withError } from "../utils/errors";
 
 /**
  * The number of projects to retrieve per page.
@@ -58,15 +59,24 @@ export class ProjectsClient {
       query: `(id:"*${escapedQuery}*" OR name:"*${escapedQuery}*") AND state:ACTIVE`,
     };
 
-    const [projectsList] = await this.projectClient.searchProjects(request, {
-      autoPaginate: false,
-    });
+    return withError(
+      async () => {
+        const [projectsList] = await this.projectClient.searchProjects(
+          request,
+          {
+            autoPaginate: false,
+          },
+        );
 
-    return projectsList
-      .filter((project) => project.projectId)
-      .map((project) => ({
-        id: project.projectId ?? "",
-        name: project.displayName ?? project.projectId ?? "",
-      }));
+        return projectsList
+          .filter((project) => project.projectId)
+          .map((project) => ({
+            id: project.projectId ?? "",
+            name: project.displayName ?? project.projectId ?? "",
+          }));
+      },
+      [],
+      "Failed to list GCP projects",
+    );
   }
 }

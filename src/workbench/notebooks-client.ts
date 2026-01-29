@@ -6,7 +6,8 @@
 
 import { v2, protos } from "@google-cloud/notebooks";
 import { OAuth2Client } from "google-auth-library";
-import * as vscode from "vscode";
+
+import { withError } from "../utils/errors";
 import { WORKBENCH_CLIENT_AGENT_HEADER } from "./headers";
 
 /**
@@ -44,17 +45,15 @@ export class NotebooksClient {
       filter: 'state="ACTIVE"',
     };
 
-    try {
-      const [instances] =
-        await this.notebookServiceClient.listInstances(request);
+    return withError(
+      async () => {
+        const [instances] =
+          await this.notebookServiceClient.listInstances(request);
 
-      return instances;
-    } catch (error) {
-      vscode.window.showErrorMessage(
-        `Failed to list Workbench instances: ${error}`,
-        { modal: true },
-      );
-      return [];
-    }
+        return instances;
+      },
+      [],
+      "Failed to list Workbench instances",
+    );
   }
 }
