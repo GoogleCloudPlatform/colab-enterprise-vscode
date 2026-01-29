@@ -13,6 +13,7 @@ import { expect } from "chai";
 import sinon from "sinon";
 import { SinonStubbedInstance } from "sinon";
 import vscode from "vscode";
+import { GoogleAuthProvider } from "../auth/auth-provider";
 import { WORKBENCH_COMMAND } from "../colab/commands/constants";
 import { newVsCodeStub, VsCodeStub } from "../test/helpers/vscode";
 import { ProjectsClient } from "../workbench/projects-client";
@@ -186,11 +187,16 @@ describe("WorkbenchJupyterServerProvider", () => {
 
   describe("handleCommand", () => {
     it("handles WORKBENCH_COMMAND without error", async () => {
-      // Mock auth to return undefined so we don't need real auth
-      const sessionStub = sinon.stub();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      (vsCodeStub as any).authentication = { getSession: sessionStub };
-      sessionStub.resolves(undefined);
+      const getOrCreateSessionStub = sinon.stub(
+        GoogleAuthProvider,
+        "getOrCreateSession",
+      );
+      getOrCreateSessionStub.resolves({
+        id: "id",
+        accessToken: "token",
+        account: { id: "user", label: "User" },
+        scopes: [],
+      });
 
       const result = serverProvider.handleCommand(
         WORKBENCH_COMMAND,
@@ -202,11 +208,33 @@ describe("WorkbenchJupyterServerProvider", () => {
       expect(value).to.be.undefined;
     });
 
-    it("throws error for unknown commands", () => {
+    it("throws error for unknown commands", async () => {
       const command = { id: "other", label: "Other" };
-      expect(() =>
-        serverProvider.handleCommand(command, cancellationToken),
-      ).to.throw(/Unknown command/);
+      try {
+        await serverProvider.handleCommand(command, cancellationToken);
+        expect.fail("Should have thrown");
+      } catch (err: unknown) {
+        expect((err as Error).message).to.match(/Unknown command/);
+      }
+    });
+
+    it("ensures GoogleAuthProvider.getOrCreateSession is called", async () => {
+      const getOrCreateSessionStub = sinon.stub(
+        GoogleAuthProvider,
+        "getOrCreateSession",
+      );
+      getOrCreateSessionStub.resolves({
+        id: "id",
+        accessToken: "token",
+        account: { id: "user", label: "User" },
+        scopes: [],
+      });
+
+      await serverProvider.handleCommand(WORKBENCH_COMMAND, cancellationToken);
+      sinon.assert.calledOnceWithExactly(
+        getOrCreateSessionStub,
+        vsCodeStub.asVsCode(),
+      );
     });
   });
 });
