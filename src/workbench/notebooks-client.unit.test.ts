@@ -84,7 +84,8 @@ describe("NotebooksClient", () => {
       const error = new Error("List failed");
       listInstancesStub.listInstances.rejects(error);
 
-      await expect(client.listInstances(projectId)).to.be.rejectedWith(error);
+      const instances = await client.listInstances(projectId);
+      expect(instances).to.deep.equal([]);
     });
   });
 });

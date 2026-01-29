@@ -96,7 +96,8 @@ describe("ProjectsClient", () => {
       const error = new Error("Search failed");
       searchProjectsStub.searchProjects.rejects(error);
 
-      await expect(client.getProjects("test-query")).to.be.rejectedWith(error);
+      const projects = await client.getProjects("test-query");
+      expect(projects).to.deep.equal([]);
     });
   });
 });
