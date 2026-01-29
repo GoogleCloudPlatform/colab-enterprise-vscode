@@ -31,9 +31,10 @@ import {
  */
 export class WorkbenchJupyterServerProvider
   implements
-  JupyterServerProvider,
-  JupyterServerCommandProvider,
-  vscode.Disposable {
+    JupyterServerProvider,
+    JupyterServerCommandProvider,
+    vscode.Disposable
+{
   readonly onDidChangeServers: vscode.Event<void>;
 
   private readonly serverCollection: JupyterServerCollection;
