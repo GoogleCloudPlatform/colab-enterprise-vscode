@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -14,17 +14,16 @@ import {
   JupyterServerCommandProvider,
   JupyterServerCommand,
 } from "@vscode/jupyter-extension";
-import type { CancellationToken, ProviderResult } from "vscode";
-import vscode from "vscode"
+import type { CancellationToken } from "vscode";
+import vscode from "vscode";
+import { GoogleAuthProvider } from "../auth/auth-provider";
+import { WORKBENCH_COMMAND } from "../colab/commands/constants";
 import { selectProjectCommand } from "../workbench/commands";
-import { WORKBENCH_COMMAND } from "../workbench/constants";
 import { ProjectsClient } from "../workbench/projects-client";
 import {
   WorkbenchInstanceManager,
-  WorkbenchJupyterServer
+  WorkbenchJupyterServer,
 } from "./workbench-instance-manager";
-
-import State = protos.google.cloud.notebooks.v2.State;
 
 /**
  * Workbench Jupyter server provider.
@@ -34,11 +33,11 @@ import State = protos.google.cloud.notebooks.v2.State;
  */
 export class WorkbenchJupyterServerProvider
   implements
-  JupyterServerProvider,
-  JupyterServerCommandProvider,
-  vscode.Disposable {
-  readonly onDidChangeServers:
-    vscode.Event<void>;
+    JupyterServerProvider,
+    JupyterServerCommandProvider,
+    vscode.Disposable
+{
+  readonly onDidChangeServers: vscode.Event<void>;
 
   private readonly serverCollection: JupyterServerCollection;
   private readonly serverChangeEmitter: vscode.EventEmitter<void>;
@@ -58,10 +57,6 @@ export class WorkbenchJupyterServerProvider
       this,
     );
     this.serverCollection.commandProvider = this;
-
-    this.instanceManager.onDidChangeServers(() => {
-      this.serverChangeEmitter.fire();
-    });
   }
 
   dispose() {
@@ -75,7 +70,7 @@ export class WorkbenchJupyterServerProvider
   async provideJupyterServers(
     _token: CancellationToken,
   ): Promise<JupyterServer[]> {
-    return this.instanceManager.getWorkbenchServers('active');
+    return await this.instanceManager.getWorkbenchServers();
   }
 
   /**
@@ -85,69 +80,42 @@ export class WorkbenchJupyterServerProvider
     workbenchServer: WorkbenchJupyterServer,
     _token: CancellationToken,
   ): Promise<WorkbenchJupyterServer> {
-    const resolvedServer = await this.instanceManager.refreshConnection(
-      workbenchServer.id,
-      workbenchServer.projectId
-    );
-
-    if (resolvedServer.state !== State.ACTIVE) {
-      const message =
-        `Server ${String(resolvedServer.name)} is not active (State: ${String(resolvedServer.state)}). 
-        Please start it from the Google Cloud Console.`;
-      const consoleUrl =
-        `https://console.cloud.google.com/vertex-ai/workbench/instances?project=${workbenchServer.projectId}`;
-
-      void this.vs.window
-        .showErrorMessage(message, "Open Console")
-        .then(selection => {
-          if (selection === "Open Console") {
-            void this.vs.env.openExternal(this.vs.Uri.parse(consoleUrl));
-          }
-        });
-    }
-
-    return resolvedServer;
+    return await this.instanceManager.refreshConnection(workbenchServer);
   }
 
 
   /**
- * Returns a list of commands which are displayed in a section below
- * resolved servers.
- *
- * This gets invoked every time the value (what the user has typed into the
- * quick pick) changes. But we just return a static list which will be
- * filtered down by the quick pick automatically.
- */
+   * Returns a list of commands which are displayed in a section below
+   * resolved servers.
+   *
+   * This gets invoked every time the value (what the user has typed into the
+   * quick pick) changes. But we just return a static list which will be
+   * filtered down by the quick pick automatically.
+   *
+   * It also sets a flag to refresh the server list on the next call to
+   * `getWorkbenchServers`. This is needed to ensure that the server list is
+   * refreshed when the user interacts with the command palette. That is also
+   * why the method needs to stay synchronous.
+   */
   provideCommands(
     _value: string | undefined,
     _token: CancellationToken,
   ): JupyterServerCommand[] {
-    this.vs.window.withProgress(
-      {
-        location: this.vs.ProgressLocation.Notification,
-        title: "Fetching Workbench servers...",
-      },
-      async () => {
-        try {
-          await this.instanceManager.loadWorkbenchServers();
-          this.serverChangeEmitter.fire();
-        } catch (error) {
-          console.error("Failed to refresh workbench servers:", error);
-        }
-      },
-    );
-
+    this.instanceManager.setShouldRefresh();
     return [WORKBENCH_COMMAND];
   }
 
   /**
    * Resolves the selected command.
    */
-  handleCommand(
+  async handleCommand(
     command: JupyterServerCommand,
     _token: CancellationToken,
-  ): ProviderResult<JupyterServer> {
+  ): Promise<JupyterServer | undefined> {
     if (command.label === WORKBENCH_COMMAND.label) {
+      // this is needed to open login popup if user doesn't have active session
+      // i.e. first login
+      await GoogleAuthProvider.getOrCreateSession(this.vs);
       return selectProjectCommand(
         this.vs,
         this.projectsClient,

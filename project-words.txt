@@ -27,3 +27,5 @@ veryhighmem
 vscode
 vulnz
 xssi
+nanos
+protos

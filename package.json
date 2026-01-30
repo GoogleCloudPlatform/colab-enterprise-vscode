@@ -103,7 +103,7 @@
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "pretest": "npm run build && npm run lint",
+    "pretest": "npm run build && npm run lint && npm run format:check && npm run typecheck",
     "test:unit": "npm run build:tests && mocha --enable-source-maps --require ./out/test/test/unit-test-setup.js './out/test/**/*.unit.test.js'",
     "test:integration": "npm run build && node ./out/test/test/integration-test-runner.js",
     "test:integration:headless": "xvfb-run -s '-screen 0 1024x768x24' npm run test:integration",
@@ -156,7 +156,7 @@
   "dependencies": {
     "@google-cloud/notebooks": "^4.2.1",
     "@google-cloud/resource-manager": "^6.2.1",
-    "glob": "^11.0.0",
+    "glob": "^11.1.0",
     "google-auth-library": "^10.0.0",
     "node-fetch": "^2.6.7",
     "semver": "^7.7.3",

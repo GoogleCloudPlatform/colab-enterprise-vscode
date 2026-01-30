@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -59,6 +59,13 @@ export function buildQuickPickStub(
         dispose: sinon.stub(),
       },
     },
+    onDidHideDisposeStub: {
+      dispose: sinon.stub(),
+    },
+    onDidAcceptDisposeStub: {
+      dispose: sinon.stub(),
+    },
+  },
 ): QuickPickStub & { nextShow: () => Promise<void> } {
   const showStub: sinon.SinonStub<[], void> = sinon.stub();
   const onDidAccept = sinon
@@ -98,9 +105,9 @@ export function buildQuickPickStub(
   };
 
   // Magic yield to simulate acceptance on selection for tests
-  (stub.onDidChangeSelection as any).yield = (items: QuickPickItem[]) => {
+  stub.onDidChangeSelection.yield = (items: QuickPickItem[]) => {
     stub.selectedItems = items;
-    stub.onDidAccept.yield();
+    return stub.onDidAccept.yield();
   };
 
   return stub;

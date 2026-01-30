@@ -1,12 +1,13 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { protos } from "@google-cloud/notebooks";
 import { JupyterServer } from "@vscode/jupyter-extension";
-import vscode, { Disposable } from "vscode";
+import vscode from "vscode";
+import { AUTHORIZATION_HEADER } from "../colab/headers";
 import { NotebooksClient } from "../workbench/notebooks-client";
 
 import State = protos.google.cloud.notebooks.v2.State;
@@ -20,8 +21,6 @@ const UNKNOWN_NAME = "UNKNOWN_NAME";
 export interface WorkbenchJupyterServer extends JupyterServer {
   name: string;
   projectId: string;
-  /** The state of the instance (e.g., "ACTIVE", "STOPPED"). */
-  state: State;
   /** The proxy URI for connecting to the Jupyter server. */
   proxyUri: string;
   connectionInformation?: {
@@ -47,9 +46,24 @@ export interface WorkbenchJupyterServer extends JupyterServer {
  *   Tokens) for these servers.
  * - Refreshing server state and connections on demand.
  */
-export class WorkbenchInstanceManager implements Disposable {
-  private projectId: string | undefined;
-  private workbenchServers: WorkbenchJupyterServer[] = [];
+export class WorkbenchInstanceManager {
+  private projectId?: string;
+  private shouldRefresh = false;
+  private cachedServers: WorkbenchJupyterServer[] = [];
+
+  /**
+   * Sets the flag indicating whether the server list should be refreshed
+   * from the API on the next call to `getWorkbenchServers`.
+   *
+   * The flag is needed to prevent sending API calls to the Notebooks API
+   * every time the Jupyter extension calls `provideJupyterServers`, which
+   * happens even during cell execution. We only want to refresh the server
+   * list when the user explicitly requests it by interacting with the
+   * command palette.
+   */
+  setShouldRefresh() {
+    this.shouldRefresh = true;
+  }
 
   /**
    * Creates a new instance of WorkbenchInstanceManager.
@@ -63,10 +77,7 @@ export class WorkbenchInstanceManager implements Disposable {
     private readonly vs: typeof vscode,
     private readonly notebooksClient: NotebooksClient,
     private readonly getAccessToken: () => Promise<string>,
-  ) {
-    this.serverChangeEmitter = new this.vs.EventEmitter<void>();
-    this.onDidChangeServers = this.serverChangeEmitter.event;
-  }
+  ) {}
 
   readonly onDidChangeServers: vscode.Event<void>;
   private readonly serverChangeEmitter: vscode.EventEmitter<void>;
@@ -95,96 +106,48 @@ export class WorkbenchInstanceManager implements Disposable {
    * @returns The server with updated connection information.
    * @throws If the server with the given ID no longer exists in the project.
    */
-  async refreshConnection(id: string, projectId: string): Promise<WorkbenchJupyterServer> {
-    const [accessToken, servers] = await Promise.all([
-      this.getAccessToken(),
-      this.loadWorkbenchServers(projectId),
-    ]);
-    const server = servers.find(s => s.id === id);
-
-    if (!server) {
-      throw new Error(`Server with ID ${id} no longer exists in the project ${projectId}`);
-    }
-
-    return this.enrichServerWithConnectionInfo(server, accessToken);
+  async refreshConnection(
+    workbenchServer: WorkbenchJupyterServer,
+  ): Promise<WorkbenchJupyterServer> {
+    const accessToken = await this.getAccessToken();
+    return this.enrichServerWithConnectionInfo(workbenchServer, accessToken);
   }
 
   /**
-   * Returns the cached list of Workbench Jupyter servers.
+   * Returns the list of active only Workbench Jupyter servers.
    *
    * @returns An array of WorkbenchJupyterServer objects.
    */
-  async getWorkbenchServers(
-    filter: 'active' | 'inactive' | 'all' = 'all',
-    shouldEnrich: boolean = true,
-  ): Promise<WorkbenchJupyterServer[]> {
-    let servers = this.workbenchServers;
-
-    if (filter === 'active') {
-      servers = servers.filter(
-        (s) => s.state === State.ACTIVE,
-      );
-    } else if (filter === 'inactive') {
-      servers = servers.filter(
-        (s) => s.state !== State.ACTIVE,
-      );
+  async getWorkbenchServers(): Promise<WorkbenchJupyterServer[]> {
+    const { projectId } = this;
+    if (!projectId) {
+      return [];
     }
 
-    if (!shouldEnrich) {
-      return servers;
+    if (!this.shouldRefresh) {
+      return this.cachedServers;
     }
 
-    const token = await this.getAccessToken();
-
-    return servers.map(server =>
-      this.enrichServerWithConnectionInfo(server, token),
+    const instances = await this.vs.window.withProgress(
+      {
+        location: this.vs.ProgressLocation.Notification,
+        title: "Fetching Workbench instances...",
+        cancellable: false,
+      },
+      () => this.notebooksClient.listInstances(projectId),
     );
-  }
+    this.cachedServers = instances.map((instance) =>
+      this.createWorkbenchJupyterServer(instance, projectId),
+    );
+    this.shouldRefresh = false;
 
-  /**
-   * Fetches the list of Workbench Jupyter servers from the API and updates the
-   * cache.
-   *
-   * @param projectId - Optional project ID to fetch for. Defaults to current
-   * project ID.
-   * @returns An array of WorkbenchJupyterServer objects.
-   */
-  async loadWorkbenchServers(
-    projectId?: string,
-  ): Promise<WorkbenchJupyterServer[]> {
-    const targetProject = projectId ?? this.projectId;
-    if (!targetProject) {
-      this.workbenchServers = [];
-      return [];
+    if (this.cachedServers.length === 0) {
+      this.vs.window.showInformationMessage(
+        `No Workbench instances found in project: ${projectId}.`,
+      );
     }
 
-    try {
-      const instances = await this.notebooksClient.listInstances(targetProject);
-      this.workbenchServers = instances.map((instance) =>
-        this.createWorkbenchJupyterServer(instance, targetProject),
-      );
-      this.serverChangeEmitter.fire();
-      return this.workbenchServers;
-    } catch (error) {
-      console.error(
-        `Failed to fetch workbench servers for project ${targetProject}:`,
-        error,
-      );
-      this.workbenchServers = [];
-      this.serverChangeEmitter.fire();
-      return [];
-    }
-  }
-
-  /**
-   * Disposes of the resources held by the manager.
-   *
-   * Clears the internal list of Workbench servers.
-   */
-  dispose() {
-    this.projectId = undefined;
-    this.workbenchServers = [];
-    this.serverChangeEmitter.dispose();
+    return this.cachedServers;
   }
 
   /**
@@ -201,24 +164,12 @@ export class WorkbenchInstanceManager implements Disposable {
   ): WorkbenchJupyterServer {
     const proxyUri = instance.proxyUri ?? "";
     const id = instance.id ?? UNKNOWN_ID;
-    const name = instance.name?.split('/').pop() ?? UNKNOWN_NAME;
-
-    let state: State = State.STATE_UNSPECIFIED;
-    if (typeof instance.state === 'string') {
-      // If state is a string key (e.g. "ACTIVE"), convert to enum
-      const maybeState = State[instance.state];
-      if (typeof maybeState === 'number') {
-        state = maybeState;
-      }
-    } else if (typeof instance.state === 'number') {
-      state = instance.state;
-    }
+    const name = instance.name?.split("/").pop() ?? UNKNOWN_NAME;
 
     return {
       id,
       label: `${name} (${projectId})`,
       name,
-      state,
       projectId,
       proxyUri,
     };
@@ -255,7 +206,7 @@ export class WorkbenchInstanceManager implements Disposable {
       connectionInformation: {
         baseUrl,
         headers,
-      }
+      },
     };
   }
 }

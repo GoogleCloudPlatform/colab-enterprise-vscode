@@ -1,17 +1,15 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import "../test/helpers/vscode";
-
 import { Module } from "module";
-import { expect } from "chai";
 import * as sinon from "sinon";
-import vscode from "vscode"
+import vscode from "vscode";
 import { GoogleAuthProvider } from "../auth/auth-provider";
 import { MultiStepInput } from "../common/multi-step-quickpick";
+import { InputStep } from "../common/multi-step-quickpick";
 import { WorkbenchInstanceManager } from "../jupyter/workbench-instance-manager";
 import { newVsCodeStub } from "../test/helpers/vscode";
 import { ProjectsClient } from "./projects-client";
@@ -52,28 +50,20 @@ describe("selectProjectCommand", () => {
     resourceManagerStub = sinon.createStubInstance(ProjectsClient);
     instanceManagerStub = sinon.createStubInstance(WorkbenchInstanceManager);
 
-    getOrCreateSessionStub = sinon.stub(GoogleAuthProvider, "getOrCreateSession");
+    getOrCreateSessionStub = sinon.stub(
+      GoogleAuthProvider,
+      "getOrCreateSession",
+    );
     multiStepRunStub = sinon.stub(MultiStepInput, "run");
+
+    resourceManagerStub.getProjects.resolves([]);
   });
 
   afterEach(() => {
     sinon.restore();
   });
 
-  it("does nothing if authentication fails", async () => {
-    getOrCreateSessionStub.resolves(undefined as unknown);
-
-    const result = await selectProjectCommand(
-      vsCodeStub,
-      resourceManagerStub,
-      instanceManagerStub,
-    );
-    expect(result).to.be.undefined;
-    sinon.assert.notCalled(multiStepRunStub);
-  });
-
-  it("initiates project selection if authentication succeeds", async () => {
-    getOrCreateSessionStub.resolves({ accessToken: "token" });
+  it("initiates project selection", async () => {
     multiStepRunStub.resolves();
 
     await selectProjectCommand(
@@ -83,22 +73,36 @@ describe("selectProjectCommand", () => {
     );
 
     sinon.assert.calledOnce(multiStepRunStub);
-    // The first argument is the vscode stub, second is the pickProject step
     sinon.assert.calledWith(multiStepRunStub, vsCodeStub, sinon.match.func);
   });
 
-  it("returns the selected server if MultiStepInput completes and sets selectedServer", async () => {
+  it("sets project ID when project is chosen", async () => {
     getOrCreateSessionStub.resolves({ accessToken: "token" });
 
-    multiStepRunStub.callsFake(async () => {
-    // We bypass the actual flow control since the module is mocked
+    // Mock MultiStepInput.run to simulate setting selectedProject
+    multiStepRunStub.callsFake(async (_vs, _inputStep) => {
+      const pickProject = multiStepRunStub.firstCall.args[1] as InputStep;
+      const inputStub = {
+        showQuickPick: sinon
+          .stub()
+          .resolves({ label: "Project", detail: "p-id" }),
+      };
+      await pickProject(inputStub as unknown as MultiStepInput);
     });
+
+    // executingCommand is already stubbed by newVsCodeStub
+    const executeCommandStub = vsCodeStub.commands
+      .executeCommand as unknown as sinon.SinonStub;
 
     await selectProjectCommand(
       vsCodeStub,
       resourceManagerStub,
       instanceManagerStub,
     );
+
     sinon.assert.calledOnce(multiStepRunStub);
+    sinon.assert.calledWith(instanceManagerStub.setProjectId, "p-id");
+    sinon.assert.calledOnce(instanceManagerStub.setShouldRefresh);
+    sinon.assert.notCalled(executeCommandStub);
   });
 });
