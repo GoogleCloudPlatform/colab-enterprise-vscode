@@ -46,14 +46,14 @@ export class NotebooksClient {
     };
 
     return withError(
-      async () => {
+      /* operation */ async () => {
         const [instances] =
           await this.notebookServiceClient.listInstances(request);
 
         return instances;
       },
-      [],
-      "Failed to list Workbench instances",
+      /* defaultValue */[],
+      /* errorMessage */ "Failed to list Workbench instances",
     );
   }
 }

@@ -60,7 +60,7 @@ export class ProjectsClient {
     };
 
     return withError(
-      async () => {
+      /* operation */ async () => {
         const [projectsList] = await this.projectClient.searchProjects(
           request,
           {
@@ -75,8 +75,8 @@ export class ProjectsClient {
             name: project.displayName ?? project.projectId ?? "",
           }));
       },
-      [],
-      "Failed to list GCP projects",
+      /* defaultValue */[],
+      /* errorMessage */ "Failed to list GCP projects",
     );
   }
 }
