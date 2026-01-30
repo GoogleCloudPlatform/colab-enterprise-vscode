@@ -7,10 +7,9 @@
 import { protos } from "@google-cloud/notebooks";
 import { JupyterServer } from "@vscode/jupyter-extension";
 import vscode from "vscode";
-import { AUTHORIZATION_HEADER } from "../colab/headers";
+
 import { NotebooksClient } from "../workbench/notebooks-client";
 
-import State = protos.google.cloud.notebooks.v2.State;
 import IInstance = protos.google.cloud.notebooks.v2.IInstance;
 
 const AUTHORIZATION_HEADER_KEY = "Authorization";
@@ -80,8 +79,6 @@ export class WorkbenchInstanceManager {
   ) {}
 
   readonly onDidChangeServers: vscode.Event<void>;
-  private readonly serverChangeEmitter: vscode.EventEmitter<void>;
-
 
   /**
    * Sets the current GCP project ID.
@@ -91,8 +88,6 @@ export class WorkbenchInstanceManager {
   setProjectId(projectId: string) {
     this.projectId = projectId;
   }
-
-
 
   /**
    * Refreshes the connection information for a server.
@@ -198,8 +193,6 @@ export class WorkbenchInstanceManager {
       "X-XSRFToken": "XSRF",
       Origin: baseUrlString,
     };
-
-
 
     return {
       ...server,

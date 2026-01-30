@@ -3,4 +3,4 @@
 *.vsix
 node_modules/
 out/
-src/colab-config.ts
+src/config.ts:15

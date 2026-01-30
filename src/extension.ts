@@ -10,12 +10,12 @@ import { GoogleAuthProvider } from "./auth/auth-provider";
 import { getOAuth2Flows } from "./auth/flows/flows";
 import { login } from "./auth/login";
 import { AuthStorage } from "./auth/storage";
-import { CONFIG } from "./colab-config";
+import { CONFIG } from "./config";
 import { getJupyterApi } from "./jupyter/jupyter-extension";
 import { WorkbenchJupyterServerProvider } from "./jupyter/provider";
+import { WorkbenchInstanceManager } from "./jupyter/workbench-instance-manager";
 import { NotebooksClient } from "./workbench/notebooks-client";
 import { ProjectsClient } from "./workbench/projects-client";
-import { WorkbenchInstanceManager } from "./jupyter/workbench-instance-manager";
 
 /**
  * Called when the extension is activated.
@@ -25,8 +25,8 @@ import { WorkbenchInstanceManager } from "./jupyter/workbench-instance-manager";
 export async function activate(context: vscode.ExtensionContext) {
   const jupyter = await getJupyterApi(vscode);
   const authClient = new OAuth2Client(
-    CONFIG.ClientId,
-    CONFIG.ClientNotSoSecret,
+    (CONFIG as { ClientId: string }).ClientId,
+    (CONFIG as { ClientNotSoSecret: string }).ClientNotSoSecret,
   );
   const authFlows = getOAuth2Flows(vscode, authClient);
   const authProvider = new GoogleAuthProvider(
@@ -57,7 +57,6 @@ export async function activate(context: vscode.ExtensionContext) {
     workbenchServerProvider,
   );
 }
-
 
 /**
  * Returns a Disposable that calls dispose on all items in the array which are

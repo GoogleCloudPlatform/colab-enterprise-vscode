@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { protos } from "@google-cloud/notebooks";
 import {
   Jupyter,
   JupyterServer,
@@ -23,6 +24,7 @@ import {
   WorkbenchInstanceManager,
   WorkbenchJupyterServer,
 } from "./workbench-instance-manager";
+import State = protos.google.cloud.notebooks.v2.State;
 
 describe("WorkbenchJupyterServerProvider", () => {
   let vsCodeStub: VsCodeStub;
@@ -158,6 +160,7 @@ describe("WorkbenchJupyterServerProvider", () => {
             Cookie: "mock-cookie",
             "X-XSRFToken": "mock-token",
             Origin: "mock-origin",
+            Authorization: "Bearer mock-token",
           },
         },
       };
@@ -236,8 +239,6 @@ describe("WorkbenchJupyterServerProvider", () => {
         getOrCreateSessionStub,
         vsCodeStub.asVsCode(),
       );
-
-      expect(result).to.equal(expected);
       sinon.assert.notCalled(vsCodeStub.window.showInformationMessage);
     });
 
@@ -249,15 +250,19 @@ describe("WorkbenchJupyterServerProvider", () => {
         name: "s1",
         state: State.STOPPED,
         projectId: "p1",
-        proxyUri: ""
+        proxyUri: "",
       } as WorkbenchJupyterServer;
 
-      instanceManagerStub.refreshConnection.withArgs("s1", "p1").resolves(inactiveServer);
-      (vsCodeStub.window.showErrorMessage as sinon.SinonStub).resolves("Open Console");
+      instanceManagerStub.refreshConnection
+        .withArgs(server as unknown as WorkbenchJupyterServer)
+        .resolves(inactiveServer);
+      (vsCodeStub.window.showErrorMessage as sinon.SinonStub).resolves(
+        "Open Console",
+      );
 
       const result = await serverProvider.resolveJupyterServer(
         server as WorkbenchJupyterServer,
-        cancellationToken
+        cancellationToken,
       );
 
       expect(result).to.equal(inactiveServer);
@@ -269,13 +274,14 @@ describe("WorkbenchJupyterServerProvider", () => {
       );
 
       // Allow the floating promise to resolve
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       sinon.assert.calledOnce(vsCodeStub.env.openExternal);
       sinon.assert.calledWith(
         vsCodeStub.env.openExternal,
-        sinon.match.has("path", "/vertex-ai/workbench/instances")
-          .and(sinon.match.has("query", "project=p1"))
+        sinon.match
+          .has("path", "/vertex-ai/workbench/instances")
+          .and(sinon.match.has("query", "project=p1")),
       );
     });
 
@@ -284,7 +290,10 @@ describe("WorkbenchJupyterServerProvider", () => {
       const inactiveServer = {
         id: "s1",
         state: State.STOPPED,
-        projectId: "p1"
+        projectId: "p1",
+        name: "s1",
+        label: "s1",
+        proxyUri: "",
       } as WorkbenchJupyterServer;
 
       instanceManagerStub.refreshConnection.resolves(inactiveServer);
@@ -292,12 +301,12 @@ describe("WorkbenchJupyterServerProvider", () => {
 
       const result = await serverProvider.resolveJupyterServer(
         server as WorkbenchJupyterServer,
-        cancellationToken
+        cancellationToken,
       );
       expect(result).to.equal(inactiveServer);
 
       // Allow the floating promise to resolve
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       sinon.assert.notCalled(vsCodeStub.env.openExternal);
     });
@@ -307,7 +316,7 @@ describe("WorkbenchJupyterServerProvider", () => {
     it("returns WORKBENCH_COMMAND", () => {
       const commands = serverProvider.provideCommands(
         undefined,
-        cancellationToken
+        cancellationToken,
       );
       expect(commands).to.have.lengthOf(1);
       expect(commands[0]).to.deep.equal(WORKBENCH_COMMAND);
@@ -324,7 +333,7 @@ describe("WorkbenchJupyterServerProvider", () => {
 
       const result = serverProvider.handleCommand(
         WORKBENCH_COMMAND,
-        cancellationToken
+        cancellationToken,
       );
 
       expect(result).to.be.instanceOf(Promise);

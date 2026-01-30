@@ -10,6 +10,7 @@ import { protos } from "@google-cloud/notebooks";
 import { expect } from "chai";
 import sinon from "sinon";
 import { SinonStubbedInstance } from "sinon";
+import { AUTHORIZATION_HEADER } from "../colab/headers";
 import { newVsCodeStub, VsCodeStub } from "../test/helpers/vscode";
 import { NotebooksClient } from "../workbench/notebooks-client";
 import { WorkbenchInstanceManager } from "./workbench-instance-manager";
@@ -173,8 +174,9 @@ describe("WorkbenchInstanceManager", () => {
       expect(server.connectionInformation?.baseUrl.toString()).to.equal(
         `https://${PROXY_URI.toLowerCase()}/`,
       );
+      const headers = server.connectionInformation?.headers;
       expect(
-        server.connectionInformation?.headers[AUTHORIZATION_HEADER.key],
+        headers?.[AUTHORIZATION_HEADER.key as keyof typeof headers],
       ).to.equal(`Bearer ${ACCESS_TOKEN}`);
       expect(server.connectionInformation?.headers["X-XSRFToken"]).to.equal(
         "XSRF",

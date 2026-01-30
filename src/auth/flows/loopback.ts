@@ -10,8 +10,8 @@ import * as http from "http";
 import * as path from "path";
 import { OAuth2Client } from "google-auth-library";
 import vscode from "vscode";
-import { CONFIG } from "../../config";
 import { LoopbackHandler, LoopbackServer } from "../../common/loopback-server";
+import { CONFIG } from "../../config";
 import { CodeManager } from "../code-manager";
 import {
   DEFAULT_AUTH_URL_OPTS,

@@ -88,7 +88,7 @@ export interface InputBoxOptions extends QuickInputOptions {
  * A chainable multi-step runner for quick-inputs.
  */
 export class MultiStepInput {
-  private constructor(readonly vs: typeof vscode) { }
+  private constructor(readonly vs: typeof vscode) {}
 
   private readonly steps: InputStep[] = [];
   private current?: QuickInput;

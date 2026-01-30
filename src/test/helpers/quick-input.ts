@@ -49,15 +49,8 @@ export function buildQuickPickStub(
     onDidHideDisposeStub: sinon.SinonStubbedInstance<Disposable>;
     onDidAcceptDisposeStub: sinon.SinonStubbedInstance<Disposable>;
   } = {
-      onDidTriggerButtonDisposeStub: {
-        dispose: sinon.stub(),
-      },
-      onDidHideDisposeStub: {
-        dispose: sinon.stub(),
-      },
-      onDidAcceptDisposeStub: {
-        dispose: sinon.stub(),
-      },
+    onDidTriggerButtonDisposeStub: {
+      dispose: sinon.stub(),
     },
     onDidHideDisposeStub: {
       dispose: sinon.stub(),
@@ -144,19 +137,19 @@ export function buildInputBoxStub(
     onDidAcceptDisposeStub: sinon.SinonStubbedInstance<Disposable>;
     onDidChangeValueDisposeStub: sinon.SinonStubbedInstance<Disposable>;
   } = {
-      onDidTriggerButtonDisposeStub: {
-        dispose: sinon.stub(),
-      },
-      onDidHideDisposeStub: {
-        dispose: sinon.stub(),
-      },
-      onDidAcceptDisposeStub: {
-        dispose: sinon.stub(),
-      },
-      onDidChangeValueDisposeStub: {
-        dispose: sinon.stub(),
-      },
+    onDidTriggerButtonDisposeStub: {
+      dispose: sinon.stub(),
     },
+    onDidHideDisposeStub: {
+      dispose: sinon.stub(),
+    },
+    onDidAcceptDisposeStub: {
+      dispose: sinon.stub(),
+    },
+    onDidChangeValueDisposeStub: {
+      dispose: sinon.stub(),
+    },
+  },
 ): InputBoxStub & { nextShow: () => Promise<void> } {
   const showStub: sinon.SinonStub<[], void> = sinon.stub();
   return {
