@@ -91,8 +91,7 @@ describe("NotebooksClient", () => {
       expect(instances).to.deep.equal([]);
       expect(
         (vscode.window.showErrorMessage as sinon.SinonStub).calledWith(
-          sinon.match.string,
-          { modal: true },
+          sinon.match.string
         ),
       ).to.be.true;
     });

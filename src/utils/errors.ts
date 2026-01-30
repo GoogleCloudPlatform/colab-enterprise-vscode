@@ -24,9 +24,7 @@ export async function withError<T>(
     return await operation();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    vscode.window.showErrorMessage(`${errorMessage}: ${message}`, {
-      modal: true,
-    });
+    vscode.window.showErrorMessage(`${errorMessage}: ${message}`);
     return defaultValue;
   }
 }

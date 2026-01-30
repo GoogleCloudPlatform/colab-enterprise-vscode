@@ -103,7 +103,6 @@ describe("ProjectsClient", () => {
       expect(
         (vscode.window.showErrorMessage as sinon.SinonStub).calledWith(
           sinon.match.string,
-          { modal: true },
         ),
       ).to.be.true;
     });
