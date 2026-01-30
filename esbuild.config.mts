@@ -141,7 +141,10 @@ function testSetupOptions(
     ...baseOptions,
     entryPoints: [entrypoint],
     outfile: path.join("out/test", outfile),
-    bundle: true, 
+    // Bundle local dependencies into the output.
+    // Local VSCode imports fail at runtime if not compiled individually.
+    // Inlining it ensures the setup file is self-contained.
+    bundle: true,
     plugins: [buildReporter(name), nodeExternalsPlugin()],
   };
 }
