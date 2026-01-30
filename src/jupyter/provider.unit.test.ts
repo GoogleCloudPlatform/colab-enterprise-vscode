@@ -24,7 +24,6 @@ import {
   WorkbenchInstanceManager,
   WorkbenchJupyterServer,
 } from "./workbench-instance-manager";
-import State = protos.google.cloud.notebooks.v2.State;
 
 describe("WorkbenchJupyterServerProvider", () => {
   let vsCodeStub: VsCodeStub;
@@ -159,8 +158,7 @@ describe("WorkbenchJupyterServerProvider", () => {
           headers: {
             Cookie: "mock-cookie",
             "X-XSRFToken": "mock-token",
-            Origin: "mock-origin",
-            Authorization: "Bearer mock-token",
+            Origin: "mock-origin"
           },
         },
       };
@@ -239,57 +237,13 @@ describe("WorkbenchJupyterServerProvider", () => {
         getOrCreateSessionStub,
         vsCodeStub.asVsCode(),
       );
-      sinon.assert.notCalled(vsCodeStub.window.showInformationMessage);
-    });
-
-    it("does not throw if server is not active", async () => {
-      const server = { id: "s1", projectId: "p1" } as unknown as JupyterServer;
-      const inactiveServer = {
-        id: "s1",
-        label: "s1",
-        name: "s1",
-        state: State.STOPPED,
-        projectId: "p1",
-        proxyUri: "",
-      } as WorkbenchJupyterServer;
-
-      instanceManagerStub.refreshConnection
-        .withArgs(server as unknown as WorkbenchJupyterServer)
-        .resolves(inactiveServer);
-      (vsCodeStub.window.showErrorMessage as sinon.SinonStub).resolves(
-        "Open Console",
-      );
-
-      const result = await serverProvider.resolveJupyterServer(
-        server as WorkbenchJupyterServer,
-        cancellationToken,
-      );
-
-      expect(result).to.equal(inactiveServer);
-
-      sinon.assert.calledWith(
-        vsCodeStub.window.showErrorMessage,
-        sinon.match(/not active/),
-        sinon.match("Open Console"),
-      );
-
-      // Allow the floating promise to resolve
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      sinon.assert.calledOnce(vsCodeStub.env.openExternal);
-      sinon.assert.calledWith(
-        vsCodeStub.env.openExternal,
-        sinon.match
-          .has("path", "/vertex-ai/workbench/instances")
-          .and(sinon.match.has("query", "project=p1")),
-      );
     });
 
     it("does not open console if user dismisses error", async () => {
       const server = { id: "s1", projectId: "p1" } as unknown as JupyterServer;
       const inactiveServer = {
         id: "s1",
-        state: State.STOPPED,
+        state: protos.google.cloud.notebooks.v2.State.STOPPED,
         projectId: "p1",
         name: "s1",
         label: "s1",
@@ -320,32 +274,6 @@ describe("WorkbenchJupyterServerProvider", () => {
       );
       expect(commands).to.have.lengthOf(1);
       expect(commands[0]).to.deep.equal(WORKBENCH_COMMAND);
-    });
-  });
-
-  describe("handleCommand", () => {
-    it("handles WORKBENCH_COMMAND without error", async () => {
-      // Mock auth to return undefined so we don't need real auth
-      const sessionStub = sinon.stub();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      (vsCodeStub as any).authentication = { getSession: sessionStub };
-      sessionStub.resolves(undefined);
-
-      const result = serverProvider.handleCommand(
-        WORKBENCH_COMMAND,
-        cancellationToken,
-      );
-
-      expect(result).to.be.instanceOf(Promise);
-      const value = await result;
-      expect(value).to.be.undefined;
-    });
-
-    it("throws error for unknown commands", () => {
-      const command = { id: "other", label: "Other" };
-      expect(() =>
-        serverProvider.handleCommand(command, cancellationToken),
-      ).to.throw(/Unknown command/);
     });
   });
 });

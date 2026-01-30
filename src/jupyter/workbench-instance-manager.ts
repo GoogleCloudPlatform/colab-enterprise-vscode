@@ -7,13 +7,10 @@
 import { protos } from "@google-cloud/notebooks";
 import { JupyterServer } from "@vscode/jupyter-extension";
 import vscode from "vscode";
-
+import { AUTHORIZATION_HEADER } from "../colab/headers";
 import { NotebooksClient } from "../workbench/notebooks-client";
 
 import IInstance = protos.google.cloud.notebooks.v2.IInstance;
-
-const AUTHORIZATION_HEADER_KEY = "Authorization";
-
 const UNKNOWN_ID = "UNKNOWN_ID";
 const UNKNOWN_NAME = "UNKNOWN_NAME";
 
@@ -25,7 +22,7 @@ export interface WorkbenchJupyterServer extends JupyterServer {
   connectionInformation?: {
     baseUrl: vscode.Uri;
     headers: {
-      [AUTHORIZATION_HEADER_KEY]: string;
+      [AUTHORIZATION_HEADER.key]: string;
       Cookie: string;
       "X-XSRFToken": string;
       Origin: string;
@@ -77,8 +74,6 @@ export class WorkbenchInstanceManager {
     private readonly notebooksClient: NotebooksClient,
     private readonly getAccessToken: () => Promise<string>,
   ) {}
-
-  readonly onDidChangeServers: vscode.Event<void>;
 
   /**
    * Sets the current GCP project ID.
@@ -188,7 +183,7 @@ export class WorkbenchInstanceManager {
     const baseUrl = this.vs.Uri.parse(baseUrlString);
 
     const headers = {
-      [AUTHORIZATION_HEADER_KEY]: `Bearer ${accessToken}`,
+      [AUTHORIZATION_HEADER.key]: `Bearer ${accessToken}`,
       Cookie: "_xsrf=XSRF",
       "X-XSRFToken": "XSRF",
       Origin: baseUrlString,

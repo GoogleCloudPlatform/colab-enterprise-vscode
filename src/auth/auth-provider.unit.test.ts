@@ -10,17 +10,14 @@ import fetch, { RequestInfo, RequestInit, Response } from "node-fetch";
 import { SinonStub, SinonStubbedInstance, SinonFakeTimers } from "sinon";
 import * as sinon from "sinon";
 import vscode from "vscode";
-const AUTHORIZATION_HEADER = { key: "Authorization" };
-const CONTENT_TYPE_JSON_HEADER = {
-  key: "Content-Type",
-  value: "application/json",
-};
+import { AUTHORIZATION_HEADER, CONTENT_TYPE_JSON_HEADER } from "../colab/headers";
 import { Toggleable } from "../common/toggleable";
 import { PROVIDER_ID } from "../config/constants";
 import { newVsCodeStub, VsCodeStub } from "../test/helpers/vscode";
 import { GoogleAuthProvider, REQUIRED_SCOPES } from "./auth-provider";
 import { Credentials } from "./login";
 import { AuthStorage, RefreshableAuthenticationSession } from "./storage";
+
 
 const CLIENT_ID = "testClientId";
 const SCOPES = Array.from(REQUIRED_SCOPES);

@@ -174,9 +174,9 @@ describe("WorkbenchInstanceManager", () => {
       expect(server.connectionInformation?.baseUrl.toString()).to.equal(
         `https://${PROXY_URI.toLowerCase()}/`,
       );
-      const headers = server.connectionInformation?.headers;
+
       expect(
-        headers?.[AUTHORIZATION_HEADER.key as keyof typeof headers],
+        server.connectionInformation?.headers[AUTHORIZATION_HEADER.key],
       ).to.equal(`Bearer ${ACCESS_TOKEN}`);
       expect(server.connectionInformation?.headers["X-XSRFToken"]).to.equal(
         "XSRF",
