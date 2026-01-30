@@ -141,8 +141,7 @@ function testSetupOptions(
     ...baseOptions,
     entryPoints: [entrypoint],
     outfile: path.join("out/test", outfile),
-    bundle: false, // Do not bundle, just transpile for test setup files.
-    external: undefined, // 'external' cannot be used when 'bundle' is false.
+    bundle: true, 
     plugins: [buildReporter(name), nodeExternalsPlugin()],
   };
 }
