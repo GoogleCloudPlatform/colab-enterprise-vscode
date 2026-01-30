@@ -35,7 +35,7 @@ describe("Colab Extension", function () {
     assert.equal(
       CONFIG.Environment,
       "production",
-      'Unexpected extension environment. Run `npm run generate:config` with COLAB_EXTENSION_ENVIRONMENT="production".',
+      'Unexpected extension environment. Run `npm run generate:config`',
     );
     // Wait for VS Code UI to settle before running tests.
     workbench = new Workbench();
