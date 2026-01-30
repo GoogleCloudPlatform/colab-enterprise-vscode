@@ -52,7 +52,7 @@ export class NotebooksClient {
 
         return instances;
       },
-      /* defaultValue */[],
+      /* defaultValue */ [],
       /* errorMessage */ "Failed to list Workbench instances",
     );
   }

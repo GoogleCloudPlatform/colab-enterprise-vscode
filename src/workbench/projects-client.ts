@@ -75,7 +75,7 @@ export class ProjectsClient {
             name: project.displayName ?? project.projectId ?? "",
           }));
       },
-      /* defaultValue */[],
+      /* defaultValue */ [],
       /* errorMessage */ "Failed to list GCP projects",
     );
   }
