@@ -174,7 +174,6 @@ describe("WorkbenchInstanceManager", () => {
       expect(server.connectionInformation?.baseUrl.toString()).to.equal(
         `https://${PROXY_URI.toLowerCase()}/`,
       );
-
       expect(
         server.connectionInformation?.headers[AUTHORIZATION_HEADER.key],
       ).to.equal(`Bearer ${ACCESS_TOKEN}`);
