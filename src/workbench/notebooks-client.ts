@@ -7,7 +7,6 @@
 import { v2, protos } from "@google-cloud/notebooks";
 import { OAuth2Client } from "google-auth-library";
 
-import { withError } from "../utils/errors";
 import { WORKBENCH_CLIENT_AGENT_HEADER } from "./headers";
 
 /**
@@ -45,15 +44,8 @@ export class NotebooksClient {
       filter: 'state="ACTIVE"',
     };
 
-    return withError(
-      /* operation */ async () => {
-        const [instances] =
-          await this.notebookServiceClient.listInstances(request);
+    const [instances] = await this.notebookServiceClient.listInstances(request);
 
-        return instances;
-      },
-      /* defaultValue */ [],
-      /* errorMessage */ "Failed to list Workbench instances",
-    );
+    return instances;
   }
 }

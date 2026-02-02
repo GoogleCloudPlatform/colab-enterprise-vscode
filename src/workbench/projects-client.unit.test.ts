@@ -98,13 +98,10 @@ describe("ProjectsClient", () => {
       const error = new Error("Search failed");
       searchProjectsStub.searchProjects.rejects(error);
 
-      const projects = await client.getProjects("test-query");
-      expect(projects).to.deep.equal([]);
-      expect(
-        (vscode.window.showErrorMessage as sinon.SinonStub).calledWith(
-          sinon.match.string,
-        ),
-      ).to.be.true;
+      await expect(client.getProjects("test-query")).to.be.rejectedWith(
+        "Search failed",
+      );
+      sinon.assert.notCalled(vscode.window.showErrorMessage as sinon.SinonStub);
     });
   });
 });

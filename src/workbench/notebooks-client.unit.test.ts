@@ -87,13 +87,10 @@ describe("NotebooksClient", () => {
       const error = new Error("List failed");
       listInstancesStub.listInstances.rejects(error);
 
-      const instances = await client.listInstances(projectId);
-      expect(instances).to.deep.equal([]);
-      expect(
-        (vscode.window.showErrorMessage as sinon.SinonStub).calledWith(
-          sinon.match.string,
-        ),
-      ).to.be.true;
+      await expect(client.listInstances(projectId)).to.be.rejectedWith(
+        "List failed",
+      );
+      sinon.assert.notCalled(vscode.window.showErrorMessage as sinon.SinonStub);
     });
   });
 });
