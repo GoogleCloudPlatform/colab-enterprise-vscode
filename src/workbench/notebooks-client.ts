@@ -6,7 +6,6 @@
 
 import { v2, protos } from "@google-cloud/notebooks";
 import { OAuth2Client } from "google-auth-library";
-
 import { WORKBENCH_CLIENT_AGENT_HEADER } from "./headers";
 
 /**
