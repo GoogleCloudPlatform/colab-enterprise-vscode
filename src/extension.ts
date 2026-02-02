@@ -24,10 +24,7 @@ import { ProjectsClient } from "./workbench/projects-client";
  */
 export async function activate(context: vscode.ExtensionContext) {
   const jupyter = await getJupyterApi(vscode);
-  const authClient = new OAuth2Client(
-    (CONFIG as { ClientId: string }).ClientId,
-    (CONFIG as { ClientNotSoSecret: string }).ClientNotSoSecret,
-  );
+  const authClient = new OAuth2Client(CONFIG.ClientId, CONFIG.ClientNotSoSecret);
   const authFlows = getOAuth2Flows(vscode, authClient);
   const authProvider = new GoogleAuthProvider(
     vscode,
