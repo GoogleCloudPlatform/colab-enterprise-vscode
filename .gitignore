@@ -3,4 +3,4 @@
 *.vsix
 node_modules/
 out/
-src/config.ts:15
+src/config.ts

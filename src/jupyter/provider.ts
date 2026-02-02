@@ -59,7 +59,6 @@ export class WorkbenchJupyterServerProvider
 
   dispose() {
     this.serverCollection.dispose();
-    this.serverChangeEmitter.dispose();
   }
 
   /**

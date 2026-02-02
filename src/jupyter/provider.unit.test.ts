@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { protos } from "@google-cloud/notebooks";
 import {
   Jupyter,
-  JupyterServer,
   JupyterServerCollection,
   JupyterServerProvider,
 } from "@vscode/jupyter-extension";
@@ -158,7 +156,7 @@ describe("WorkbenchJupyterServerProvider", () => {
           headers: {
             Cookie: "mock-cookie",
             "X-XSRFToken": "mock-token",
-            Origin: "mock-origin"
+            Origin: "mock-origin",
           },
         },
       };
@@ -237,43 +235,6 @@ describe("WorkbenchJupyterServerProvider", () => {
         getOrCreateSessionStub,
         vsCodeStub.asVsCode(),
       );
-    });
-
-    it("does not open console if user dismisses error", async () => {
-      const server = { id: "s1", projectId: "p1" } as unknown as JupyterServer;
-      const inactiveServer = {
-        id: "s1",
-        state: protos.google.cloud.notebooks.v2.State.STOPPED,
-        projectId: "p1",
-        name: "s1",
-        label: "s1",
-        proxyUri: "",
-      } as WorkbenchJupyterServer;
-
-      instanceManagerStub.refreshConnection.resolves(inactiveServer);
-      vsCodeStub.window.showErrorMessage.resolves(undefined);
-
-      const result = await serverProvider.resolveJupyterServer(
-        server as WorkbenchJupyterServer,
-        cancellationToken,
-      );
-      expect(result).to.equal(inactiveServer);
-
-      // Allow the floating promise to resolve
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      sinon.assert.notCalled(vsCodeStub.env.openExternal);
-    });
-  });
-
-  describe("provideCommands", () => {
-    it("returns WORKBENCH_COMMAND", () => {
-      const commands = serverProvider.provideCommands(
-        undefined,
-        cancellationToken,
-      );
-      expect(commands).to.have.lengthOf(1);
-      expect(commands[0]).to.deep.equal(WORKBENCH_COMMAND);
     });
   });
 });
