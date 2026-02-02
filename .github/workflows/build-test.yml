@@ -44,7 +44,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: generated-config
-          path: src/colab-config.ts
+          path: src/config.ts
           if-no-files-found: error
 
   lint:
