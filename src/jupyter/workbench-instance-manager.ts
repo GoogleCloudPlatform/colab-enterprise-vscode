@@ -128,9 +128,9 @@ export class WorkbenchInstanceManager {
       },
       () =>
         withError(
-          /* operation */ () => this.notebooksClient.listInstances(projectId),
-          /* defaultValue */ [],
-          /* errorMessage */ "Failed to list Workbench instances",
+          /* operation= */() => this.notebooksClient.listInstances(projectId),
+          /* defaultValue= */[],
+          /* errorMessage= */ "Failed to list Workbench instances",
         ),
     );
     this.cachedServers = instances.map((instance) =>
