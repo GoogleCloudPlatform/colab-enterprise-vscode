@@ -11,7 +11,6 @@ import * as path from "path";
 import { OAuth2Client } from "google-auth-library";
 import vscode from "vscode";
 import { LoopbackHandler, LoopbackServer } from "../../common/loopback-server";
-import { CONFIG } from "../../config";
 import { CodeManager } from "../code-manager";
 import {
   DEFAULT_AUTH_URL_OPTS,
@@ -148,7 +147,7 @@ class Handler implements LoopbackHandler {
       this.vs.Uri.parse("vscode://google.colab/auth-success"),
     );
     const successState = encodeURIComponent(authSuccessUri.toString());
-    const redirectUri = `${CONFIG.ColabApiDomain}/vscode/auth-success?state=${successState}`;
+    const redirectUri = `https://cloud.google.com/vertex-ai-notebooks?state=${successState}`;
     // Since we need to handle the request asynchronously, it's technically
     // possible that the response has already been closed by time we get here.
     // This is not foreseen to ever happen, under normal network conditions. In
