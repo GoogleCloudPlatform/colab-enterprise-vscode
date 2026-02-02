@@ -8,6 +8,7 @@ import { JupyterServer } from "@vscode/jupyter-extension";
 import type vscode from "vscode";
 import { InputStep, MultiStepInput } from "../common/multi-step-quickpick";
 import { WorkbenchInstanceManager } from "../jupyter/workbench-instance-manager";
+import { withError } from "../utils/errors";
 import { GCPProject, ProjectsClient } from "./projects-client";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -29,7 +30,11 @@ export async function selectProjectCommand(
       // Initial load
       let initialItems: vscode.QuickPickItem[] = [];
       try {
-        const projects = await projectsClient.getProjects();
+        const projects = await withError(
+          /* operation= */() => projectsClient.getProjects(),
+          /* defaultValue= */[],
+          /* errorMessage= */ "Failed to fetch initial projects",
+        );
         initialItems = projects.map((p: GCPProject) => ({
           label: p.name,
           detail: p.id,
@@ -96,7 +101,11 @@ async function updateProjectList(
 ): Promise<void> {
   quickPick.busy = true;
   try {
-    const projects = await projectsClient.getProjects(value);
+    const projects = await withError(
+      /* operation= */() => projectsClient.getProjects(value),
+      /* defaultValue= */[],
+      /* errorMessage= */ "Failed to fetch projects",
+    );
     quickPick.items = projects.map((p) => ({
       label: p.name,
       detail: p.id,

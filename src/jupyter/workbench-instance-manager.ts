@@ -8,6 +8,7 @@ import { protos } from "@google-cloud/notebooks";
 import { JupyterServer } from "@vscode/jupyter-extension";
 import vscode from "vscode";
 import { AUTHORIZATION_HEADER } from "../colab/headers";
+import { withError } from "../utils/errors";
 import { NotebooksClient } from "../workbench/notebooks-client";
 
 import IInstance = protos.google.cloud.notebooks.v2.IInstance;
@@ -125,7 +126,12 @@ export class WorkbenchInstanceManager {
         title: "Fetching Workbench instances...",
         cancellable: false,
       },
-      () => this.notebooksClient.listInstances(projectId),
+      () =>
+        withError(
+          /* operation= */() => this.notebooksClient.listInstances(projectId),
+          /* defaultValue= */[],
+          /* errorMessage= */ "Failed to list Workbench instances",
+        ),
     );
     this.cachedServers = instances.map((instance) =>
       this.createWorkbenchJupyterServer(instance, projectId),
