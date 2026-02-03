@@ -9,8 +9,8 @@ import fetch from "node-fetch";
 import { v4 as uuid } from "uuid";
 import vscode, { AuthenticationSession, Disposable } from "vscode";
 import { z } from "zod";
-import { AUTHORIZATION_HEADER } from "../workbench/headers";
 import { Toggleable } from "../common/toggleable";
+import { AUTHORIZATION_HEADER } from "../workbench/headers";
 import { Credentials } from "./login";
 import { AuthStorage, RefreshableAuthenticationSession } from "./storage";
 

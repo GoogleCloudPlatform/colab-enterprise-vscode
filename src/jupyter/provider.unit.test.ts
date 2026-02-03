@@ -14,8 +14,8 @@ import sinon from "sinon";
 import { SinonStubbedInstance } from "sinon";
 import vscode from "vscode";
 import { GoogleAuthProvider } from "../auth/auth-provider";
-import { WORKBENCH_COMMAND } from "../workbench/constants";
 import { newVsCodeStub, VsCodeStub } from "../test/helpers/vscode";
+import { WORKBENCH_COMMAND } from "../workbench/constants";
 import { ProjectsClient } from "../workbench/projects-client";
 import { WorkbenchJupyterServerProvider } from "./provider";
 import {

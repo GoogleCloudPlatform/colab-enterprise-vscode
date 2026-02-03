@@ -15,8 +15,8 @@ import {
 import type { CancellationToken } from "vscode";
 import vscode from "vscode";
 import { GoogleAuthProvider } from "../auth/auth-provider";
-import { WORKBENCH_COMMAND } from "../workbench/constants";
 import { selectProjectCommand } from "../workbench/commands";
+import { WORKBENCH_COMMAND } from "../workbench/constants";
 import { ProjectsClient } from "../workbench/projects-client";
 import {
   WorkbenchInstanceManager,

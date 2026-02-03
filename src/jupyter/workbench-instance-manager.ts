@@ -7,8 +7,8 @@
 import { protos } from "@google-cloud/notebooks";
 import { JupyterServer } from "@vscode/jupyter-extension";
 import vscode from "vscode";
-import { AUTHORIZATION_HEADER } from "../workbench/headers";
 import { withError } from "../utils/errors";
+import { AUTHORIZATION_HEADER } from "../workbench/headers";
 import { NotebooksClient } from "../workbench/notebooks-client";
 
 import IInstance = protos.google.cloud.notebooks.v2.IInstance;
