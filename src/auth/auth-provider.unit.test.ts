@@ -13,7 +13,7 @@ import vscode from "vscode";
 import {
   AUTHORIZATION_HEADER,
   CONTENT_TYPE_JSON_HEADER,
-} from "../colab/headers";
+} from "../workbench/headers";
 import { Toggleable } from "../common/toggleable";
 import { PROVIDER_ID } from "../config/constants";
 import { newVsCodeStub, VsCodeStub } from "../test/helpers/vscode";

@@ -7,7 +7,7 @@
 import { protos } from "@google-cloud/notebooks";
 import { JupyterServer } from "@vscode/jupyter-extension";
 import vscode from "vscode";
-import { AUTHORIZATION_HEADER } from "../colab/headers";
+import { AUTHORIZATION_HEADER } from "../workbench/headers";
 import { withError } from "../utils/errors";
 import { NotebooksClient } from "../workbench/notebooks-client";
 

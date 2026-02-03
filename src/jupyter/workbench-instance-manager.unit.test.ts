@@ -10,7 +10,7 @@ import { protos } from "@google-cloud/notebooks";
 import { expect } from "chai";
 import sinon from "sinon";
 import { SinonStubbedInstance } from "sinon";
-import { AUTHORIZATION_HEADER } from "../colab/headers";
+import { AUTHORIZATION_HEADER } from "../workbench/headers";
 import { newVsCodeStub, VsCodeStub } from "../test/helpers/vscode";
 import { NotebooksClient } from "../workbench/notebooks-client";
 import { WorkbenchInstanceManager } from "./workbench-instance-manager";
