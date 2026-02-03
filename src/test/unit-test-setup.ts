@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import Module from "module";
-import * as chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { newVsCodeStub } from "./helpers/vscode";
+import Module from 'module';
+import * as chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { newVsCodeStub } from './helpers/vscode';
 
 chai.use(chaiAsPromised);
 
@@ -21,7 +21,7 @@ const originalRequire = Module.prototype.require;
 const vscodeStub = newVsCodeStub().asVsCode();
 
 Module.prototype.require = function (this: unknown, id: string) {
-  if (id === "vscode") {
+  if (id === 'vscode') {
     return vscodeStub;
   }
   // For others, we MUST return the original require result.

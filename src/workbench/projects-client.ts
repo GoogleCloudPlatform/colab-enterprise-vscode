@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { v3 } from "@google-cloud/resource-manager";
-import { OAuth2Client } from "google-auth-library";
-import { WORKBENCH_CLIENT_AGENT_HEADER } from "./headers";
+import { v3 } from '@google-cloud/resource-manager';
+import { OAuth2Client } from 'google-auth-library';
+import { WORKBENCH_CLIENT_AGENT_HEADER } from './headers';
 
 /**
  * The number of projects to retrieve per page.
@@ -51,7 +51,7 @@ export class ProjectsClient {
    * @param query - Optional query string to filter projects by ID or name.
    * @returns A promise resolving to a list of GCP projects.
    */
-  async getProjects(query = ""): Promise<GCPProject[]> {
+  async getProjects(query = ''): Promise<GCPProject[]> {
     const escapedQuery = query.replace(/"/g, '\\"');
     const request = {
       pageSize: PROJECTS_PER_PAGE,
@@ -65,8 +65,8 @@ export class ProjectsClient {
     return projectsList
       .filter((project) => project.projectId)
       .map((project) => ({
-        id: project.projectId ?? "",
-        name: project.displayName ?? project.projectId ?? "",
+        id: project.projectId ?? '',
+        name: project.displayName ?? project.projectId ?? '',
       }));
   }
 }

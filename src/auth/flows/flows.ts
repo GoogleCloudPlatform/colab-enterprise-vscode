@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import path from "path";
-import { CodeChallengeMethod, GenerateAuthUrlOpts } from "google-auth-library";
-import { OAuth2Client } from "google-auth-library";
-import vscode from "vscode";
-import { LocalServerFlow } from "./loopback";
+import path from 'path';
+import { CodeChallengeMethod, GenerateAuthUrlOpts } from 'google-auth-library';
+import { OAuth2Client } from 'google-auth-library';
+import vscode from 'vscode';
+import { LocalServerFlow } from './loopback';
 
 /**
  * Options for triggering an OAuth2 flow.
@@ -42,9 +42,9 @@ export interface OAuth2Flow {
 }
 
 export const DEFAULT_AUTH_URL_OPTS: GenerateAuthUrlOpts = {
-  access_type: "offline",
-  response_type: "code",
-  prompt: "consent",
+  access_type: 'offline',
+  response_type: 'code',
+  prompt: 'consent',
   code_challenge_method: CodeChallengeMethod.S256,
 };
 
@@ -59,7 +59,7 @@ export function getOAuth2Flows(
   const flows: OAuth2Flow[] = [];
   if (vs.env.uiKind === vs.UIKind.Desktop) {
     flows.push(
-      new LocalServerFlow(vs, path.join(__dirname, "auth/media"), oAuth2Client),
+      new LocalServerFlow(vs, path.join(__dirname, 'auth/media'), oAuth2Client),
     );
   }
   return flows;

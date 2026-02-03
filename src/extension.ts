@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { OAuth2Client } from "google-auth-library";
-import vscode, { Disposable } from "vscode";
-import { GoogleAuthProvider } from "./auth/auth-provider";
-import { getOAuth2Flows } from "./auth/flows/flows";
-import { login } from "./auth/login";
-import { AuthStorage } from "./auth/storage";
-import { CONFIG } from "./config";
-import { getJupyterApi } from "./jupyter/jupyter-extension";
-import { WorkbenchJupyterServerProvider } from "./jupyter/provider";
-import { WorkbenchInstanceManager } from "./jupyter/workbench-instance-manager";
-import { NotebooksClient } from "./workbench/notebooks-client";
-import { ProjectsClient } from "./workbench/projects-client";
+import { OAuth2Client } from 'google-auth-library';
+import vscode, { Disposable } from 'vscode';
+import { GoogleAuthProvider } from './auth/auth-provider';
+import { getOAuth2Flows } from './auth/flows/flows';
+import { login } from './auth/login';
+import { AuthStorage } from './auth/storage';
+import { CONFIG } from './config';
+import { getJupyterApi } from './jupyter/jupyter-extension';
+import { WorkbenchJupyterServerProvider } from './jupyter/provider';
+import { WorkbenchInstanceManager } from './jupyter/workbench-instance-manager';
+import { NotebooksClient } from './workbench/notebooks-client';
+import { ProjectsClient } from './workbench/projects-client';
 
 /**
  * Called when the extension is activated.

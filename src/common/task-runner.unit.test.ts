@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import sinon, { SinonFakeTimers } from "sinon";
+import sinon, { SinonFakeTimers } from 'sinon';
 import {
   Config,
   OverrunPolicy,
   SequentialTaskRunner,
   StartMode,
-} from "./task-runner";
+} from './task-runner';
 
 const INTERVAL_TIMEOUT_MS = 1000;
 const TASK_TIMEOUT_MS = 100;
 const ABORTING_TASK = async (signal?: AbortSignal): Promise<void> =>
   new Promise((_, reject) => {
-    signal?.addEventListener("abort", () => {
-      reject(new Error("Aborted"));
+    signal?.addEventListener('abort', () => {
+      reject(new Error('Aborted'));
     });
   });
 
@@ -32,7 +32,7 @@ function buildRunner(
   return new SequentialTaskRunner(config, task, overrun);
 }
 
-describe("SequentialTaskRunner", () => {
+describe('SequentialTaskRunner', () => {
   let clock: SinonFakeTimers;
   let task: sinon.SinonStub<[signal: AbortSignal], Promise<void>>;
 
@@ -42,7 +42,7 @@ describe("SequentialTaskRunner", () => {
 
   beforeEach(() => {
     clock = sinon.useFakeTimers({
-      toFake: ["setInterval", "clearInterval", "setTimeout"],
+      toFake: ['setInterval', 'clearInterval', 'setTimeout'],
     });
     task = sinon.stub();
   });
@@ -51,7 +51,7 @@ describe("SequentialTaskRunner", () => {
     clock.restore();
   });
 
-  describe("lifecycle", () => {
+  describe('lifecycle', () => {
     let runner: SequentialTaskRunner;
 
     beforeEach(() => {
@@ -62,13 +62,13 @@ describe("SequentialTaskRunner", () => {
       runner.dispose();
     });
 
-    it("never runs if not started", async () => {
+    it('never runs if not started', async () => {
       await tickPast(INTERVAL_TIMEOUT_MS);
 
       sinon.assert.notCalled(task);
     });
 
-    it("stops the task when disposed", async () => {
+    it('stops the task when disposed', async () => {
       runner.start();
       runner.dispose();
 
@@ -77,11 +77,11 @@ describe("SequentialTaskRunner", () => {
       sinon.assert.notCalled(task);
     });
 
-    it("aborts in flight tasks when disposed", async () => {
+    it('aborts in flight tasks when disposed', async () => {
       runner.start();
       const onDidAbort: sinon.SinonStub<[Event], void> = sinon.stub();
       task.onFirstCall().callsFake(async (signal) => {
-        signal.addEventListener("abort", onDidAbort);
+        signal.addEventListener('abort', onDidAbort);
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         return new Promise(() => {});
       });
@@ -94,7 +94,7 @@ describe("SequentialTaskRunner", () => {
     });
   });
 
-  it("runs the task each interval if started", async () => {
+  it('runs the task each interval if started', async () => {
     const runner = buildRunner(task, OverrunPolicy.AllowToComplete);
     runner.start();
 
@@ -106,7 +106,7 @@ describe("SequentialTaskRunner", () => {
     runner.dispose();
   });
 
-  it("does not run the task if stopped", async () => {
+  it('does not run the task if stopped', async () => {
     const runner = buildRunner(task, OverrunPolicy.AllowToComplete);
     runner.start();
     await tickPast(INTERVAL_TIMEOUT_MS);
@@ -120,7 +120,7 @@ describe("SequentialTaskRunner", () => {
     runner.dispose();
   });
 
-  it("resumes running the task each interval after stopping", async () => {
+  it('resumes running the task each interval after stopping', async () => {
     const runner = buildRunner(task, OverrunPolicy.AllowToComplete);
     runner.start();
     await tickPast(INTERVAL_TIMEOUT_MS);
@@ -136,7 +136,7 @@ describe("SequentialTaskRunner", () => {
     runner.dispose();
   });
 
-  it("runs immediately when specified", async () => {
+  it('runs immediately when specified', async () => {
     const runner = buildRunner(task, OverrunPolicy.AllowToComplete, {
       intervalTimeoutMs: INTERVAL_TIMEOUT_MS,
       taskTimeoutMs: TASK_TIMEOUT_MS,
@@ -150,7 +150,7 @@ describe("SequentialTaskRunner", () => {
     runner.dispose();
   });
 
-  it("ignores double starts", async () => {
+  it('ignores double starts', async () => {
     const runner = buildRunner(task, OverrunPolicy.AllowToComplete, {
       intervalTimeoutMs: INTERVAL_TIMEOUT_MS,
       taskTimeoutMs: TASK_TIMEOUT_MS,
@@ -165,7 +165,7 @@ describe("SequentialTaskRunner", () => {
     runner.dispose();
   });
 
-  it("allows in flight overrun tasks to run when configured", async () => {
+  it('allows in flight overrun tasks to run when configured', async () => {
     task.onFirstCall().callsFake(ABORTING_TASK);
     const runner = buildRunner(task, OverrunPolicy.AllowToComplete, {
       intervalTimeoutMs: INTERVAL_TIMEOUT_MS,
@@ -180,7 +180,7 @@ describe("SequentialTaskRunner", () => {
     runner.dispose();
   });
 
-  it("abandons in flight overrun tasks and runs again when configured", async () => {
+  it('abandons in flight overrun tasks and runs again when configured', async () => {
     task.onFirstCall().callsFake(ABORTING_TASK);
     const runner = buildRunner(task, OverrunPolicy.AbandonAndRun, {
       intervalTimeoutMs: INTERVAL_TIMEOUT_MS,
@@ -195,10 +195,10 @@ describe("SequentialTaskRunner", () => {
     runner.dispose();
   });
 
-  it("aborts timed out tasks", async () => {
+  it('aborts timed out tasks', async () => {
     const onDidAbort: sinon.SinonStub<[Event], void> = sinon.stub();
     task.callsFake(async (signal) => {
-      signal.addEventListener("abort", onDidAbort);
+      signal.addEventListener('abort', onDidAbort);
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       return new Promise(() => {});
     });

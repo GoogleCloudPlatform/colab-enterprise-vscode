@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { v2, protos } from "@google-cloud/notebooks";
-import { OAuth2Client } from "google-auth-library";
-import { WORKBENCH_CLIENT_AGENT_HEADER } from "./headers";
+import { v2, protos } from '@google-cloud/notebooks';
+import { OAuth2Client } from 'google-auth-library';
+import { WORKBENCH_CLIENT_AGENT_HEADER } from './headers';
 
 /**
  * Client for interacting with the Google Cloud Notebooks API.

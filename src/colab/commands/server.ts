@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import vscode from "vscode";
-import { MultiStepInput } from "../../common/multi-step-quickpick";
-import { AssignmentManager } from "../../jupyter/assignments";
-import { ServerStorage } from "../../jupyter/storage";
-import { PROMPT_SERVER_ALIAS, validateServerAlias } from "../server-picker";
-import { REMOVE_SERVER, RENAME_SERVER_ALIAS } from "./constants";
+import vscode from 'vscode';
+import { MultiStepInput } from '../../common/multi-step-quickpick';
+import { AssignmentManager } from '../../jupyter/assignments';
+import { ServerStorage } from '../../jupyter/storage';
+import { PROMPT_SERVER_ALIAS, validateServerAlias } from '../server-picker';
+import { REMOVE_SERVER, RENAME_SERVER_ALIAS } from './constants';
 
 /**
  * Prompt the user to select and rename the local alias used to identify an
@@ -31,7 +31,7 @@ export async function renameServerAlias(
   await MultiStepInput.run(vs, async (input) => {
     const selectedServer = (
       await input.showQuickPick({
-        title: "Select a Server",
+        title: 'Select a Server',
         buttons: withBackButton ? [vs.QuickInputButtons.Back] : undefined,
         items: servers.map((s) => ({ label: s.label, value: s })),
         step: 1,

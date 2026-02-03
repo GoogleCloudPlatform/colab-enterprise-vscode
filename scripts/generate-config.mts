@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
-import dotenv from "dotenv";
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,10 +21,10 @@ const envConfig = {
 
 try {
   if (!envConfig.clientId) {
-    throw new Error("WORKBENCH_EXTENSION_CLIENT_ID is not set");
+    throw new Error('WORKBENCH_EXTENSION_CLIENT_ID is not set');
   }
   if (!envConfig.clientNotSoSecret) {
-    throw new Error("WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET is not set");
+    throw new Error('WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET is not set');
   }
 } catch (err: unknown) {
   console.error(err);
@@ -54,7 +54,7 @@ const output = `${licenseHeader}
 export const CONFIG = ${JSON.stringify(config, null, 2)} as const;
 `;
 
-const configFile = path.join(__dirname, "../src/config.ts");
+const configFile = path.join(__dirname, '../src/config.ts');
 
 await fs.writeFile(configFile, output);
-console.log("✅ Wrote src/config.ts");
+console.log('✅ Wrote src/config.ts');

@@ -4,40 +4,40 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { randomUUID, UUID } from "crypto";
+import { randomUUID, UUID } from 'crypto';
 import fetch, {
   Headers,
   Request,
   RequestInfo,
   RequestInit,
   Response,
-} from "node-fetch";
-import vscode from "vscode";
+} from 'node-fetch';
+import vscode from 'vscode';
 import {
   Accelerator,
   Assignment,
   RuntimeProxyInfo,
   Variant,
   variantToMachineType,
-} from "../colab/api";
+} from '../colab/api';
 import {
   ColabClient,
   DenylistedError,
   InsufficientQuotaError,
   TooManyAssignmentsError,
-} from "../colab/client";
+} from '../colab/client';
 import {
   COLAB_CLIENT_AGENT_HEADER,
   COLAB_RUNTIME_PROXY_TOKEN_HEADER,
-} from "../colab/headers";
+} from '../colab/headers';
 import {
   COLAB_SERVERS,
   ColabAssignedServer,
   ColabJupyterServer,
   ColabServerDescriptor,
   DEFAULT_CPU_SERVER,
-} from "./servers";
-import { ServerStorage } from "./storage";
+} from './servers';
+import { ServerStorage } from './storage';
 
 /**
  * An {@link vscode.Event} which fires when a {@link ColabAssignedServer} is
@@ -292,7 +292,7 @@ export class AssignmentManager implements vscode.Disposable {
     await this.reconcileAssignedServers();
     const server = await this.storage.get(id);
     if (!server) {
-      throw new Error("Server is not assigned.");
+      throw new Error('Server is not assigned.');
     }
     const newConnectionInfo = await this.client.refreshConnection(
       server.endpoint,
@@ -318,8 +318,8 @@ export class AssignmentManager implements vscode.Disposable {
    */
   async setHasAssignedServerContext(): Promise<void> {
     await this.vs.commands.executeCommand(
-      "setContext",
-      "colab.hasAssignedServer",
+      'setContext',
+      'colab.hasAssignedServer',
       await this.hasAssignedServer(),
     );
   }
@@ -356,7 +356,7 @@ export class AssignmentManager implements vscode.Disposable {
   ): Promise<string> {
     const servers = await this.getAssignedServers();
     const a =
-      accelerator && accelerator !== Accelerator.NONE ? ` ${accelerator}` : "";
+      accelerator && accelerator !== Accelerator.NONE ? ` ${accelerator}` : '';
     const v = variantToMachineType(variant);
     const labelBase = `Colab ${v}${a}`;
     const labelRegex = new RegExp(`^${labelBase}(?:\\s\\((\\d+)\\))?$`);
@@ -424,18 +424,18 @@ export class AssignmentManager implements vscode.Disposable {
     // TODO: Account for the number of assignments from the VS Code and Colab
     // UIs in the error message and actions.
     const selectedAction = await this.vs.window.showErrorMessage(
-      "Unable to assign server. You have too many, remove one to continue.",
+      'Unable to assign server. You have too many, remove one to continue.',
       (await this.hasAssignedServer())
         ? AssignmentsExceededActions.REMOVE_SERVER
         : AssignmentsExceededActions.REMOVE_SERVER_COLAB_WEB,
     );
     switch (selectedAction) {
       case AssignmentsExceededActions.REMOVE_SERVER:
-        this.vs.commands.executeCommand("colab.removeServer");
+        this.vs.commands.executeCommand('colab.removeServer');
         return;
       case AssignmentsExceededActions.REMOVE_SERVER_COLAB_WEB:
         this.vs.env.openExternal(
-          this.vs.Uri.parse("https://colab.research.google.com/"),
+          this.vs.Uri.parse('https://colab.research.google.com/'),
         );
         return;
       default:
@@ -452,7 +452,7 @@ export class AssignmentManager implements vscode.Disposable {
     if (selectedAction === LEARN_MORE) {
       this.vs.env.openExternal(
         this.vs.Uri.parse(
-          "https://research.google.com/colaboratory/faq.html#resource-limits",
+          'https://research.google.com/colaboratory/faq.html#resource-limits',
         ),
       );
     }
@@ -466,11 +466,11 @@ export class AssignmentManager implements vscode.Disposable {
 }
 
 enum AssignmentsExceededActions {
-  REMOVE_SERVER = "Remove Server",
-  REMOVE_SERVER_COLAB_WEB = "Remove Server at Colab Web",
+  REMOVE_SERVER = 'Remove Server',
+  REMOVE_SERVER_COLAB_WEB = 'Remove Server at Colab Web',
 }
 
-const LEARN_MORE = "Learn More";
+const LEARN_MORE = 'Learn More';
 
 /**
  * Creates a fetch function that adds the Colab runtime proxy token as a header.
@@ -507,7 +507,7 @@ function colabProxyFetch(
 }
 
 function isRequest(info: RequestInfo): info is Request {
-  return typeof info !== "string" && !("href" in info);
+  return typeof info !== 'string' && !('href' in info);
 }
 
 // TODO: Provide a ⚠️ warning for the servers which are ineligible.

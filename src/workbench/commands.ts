@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { JupyterServer } from "@vscode/jupyter-extension";
-import type vscode from "vscode";
-import { InputStep, MultiStepInput } from "../common/multi-step-quickpick";
-import { WorkbenchInstanceManager } from "../jupyter/workbench-instance-manager";
-import { withError } from "../utils/errors";
-import { GCPProject, ProjectsClient } from "./projects-client";
+import { JupyterServer } from '@vscode/jupyter-extension';
+import type vscode from 'vscode';
+import { InputStep, MultiStepInput } from '../common/multi-step-quickpick';
+import { WorkbenchInstanceManager } from '../jupyter/workbench-instance-manager';
+import { withError } from '../utils/errors';
+import { GCPProject, ProjectsClient } from './projects-client';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -33,7 +33,7 @@ export async function selectProjectCommand(
         const projects = await withError(
           /* operation= */ () => projectsClient.getProjects(),
           /* defaultValue= */ [],
-          /* errorMessage= */ "Failed to fetch initial projects",
+          /* errorMessage= */ 'Failed to fetch initial projects',
         );
         initialItems = projects.map((p: GCPProject) => ({
           label: p.name,
@@ -41,14 +41,14 @@ export async function selectProjectCommand(
           description: p.id !== p.name ? p.id : undefined,
         }));
       } catch (error: unknown) {
-        console.error("Failed to fetch initial projects:", error);
+        console.error('Failed to fetch initial projects:', error);
       }
 
       selectedProject = await input.showQuickPick<vscode.QuickPickItem>({
-        title: "Select a Google Cloud Project",
+        title: 'Select a Google Cloud Project',
         step: 1,
         totalSteps: 2,
-        placeholder: "Select a Google Cloud Project",
+        placeholder: 'Select a Google Cloud Project',
         items: initialItems,
         onDidChangeValue: (value, quickPick) => {
           if (searchTimeout) {
@@ -58,7 +58,7 @@ export async function selectProjectCommand(
             const qp = quickPick as vscode.QuickPick<vscode.QuickPickItem>;
             void updateProjectList(projectsClient, qp, value).catch(
               (err: unknown) => {
-                console.error("Unhandled promise rejection in timeout:", err);
+                console.error('Unhandled promise rejection in timeout:', err);
               },
             );
           }, SEARCH_DEBOUNCE_MS);
@@ -78,13 +78,13 @@ export async function selectProjectCommand(
     // Actually MultiStepInput swallows cancel and returns normally.
     // So if cancelled, selectedServer stays undefined.
     // If error occurs, we show message.
-    if (error instanceof Error && error.message === "cancel") {
+    if (error instanceof Error && error.message === 'cancel') {
       return;
     }
 
     // We should probably catch other errors
     const errMessage = error instanceof Error ? error.message : String(error);
-    if (errMessage === "cancel") {
+    if (errMessage === 'cancel') {
       return;
     }
     void vs.window.showErrorMessage(
@@ -104,7 +104,7 @@ async function updateProjectList(
     const projects = await withError(
       /* operation= */ () => projectsClient.getProjects(value),
       /* defaultValue= */ [],
-      /* errorMessage= */ "Failed to fetch projects",
+      /* errorMessage= */ 'Failed to fetch projects',
     );
     quickPick.items = projects.map((p) => ({
       label: p.name,
@@ -112,7 +112,7 @@ async function updateProjectList(
       description: p.id !== p.name ? p.id : undefined,
     }));
   } catch (error: unknown) {
-    console.error("Failed to fetch projects:", error);
+    console.error('Failed to fetch projects:', error);
   } finally {
     quickPick.busy = false;
   }

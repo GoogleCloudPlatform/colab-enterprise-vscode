@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { UUID } from "crypto";
-import { Disposable } from "vscode";
-import vscode from "vscode";
-import { OverrunPolicy, SequentialTaskRunner } from "../common/task-runner";
-import { Toggleable } from "../common/toggleable";
-import { AssignmentManager } from "../jupyter/assignments";
-import { ColabAssignedServer } from "../jupyter/servers";
-import { Kernel } from "./api";
-import { ColabClient } from "./client";
+import { UUID } from 'crypto';
+import { Disposable } from 'vscode';
+import vscode from 'vscode';
+import { OverrunPolicy, SequentialTaskRunner } from '../common/task-runner';
+import { Toggleable } from '../common/toggleable';
+import { AssignmentManager } from '../jupyter/assignments';
+import { ColabAssignedServer } from '../jupyter/servers';
+import { Kernel } from './api';
+import { ColabClient } from './client';
 
 interface Config {
   /**
@@ -209,7 +209,7 @@ export class ServerKeepAliveController implements Toggleable, Disposable {
 
   private assertNotDisposed(): void {
     if (this.isDisposed) {
-      throw new Error("ServerKeepAliveController is disposed");
+      throw new Error('ServerKeepAliveController is disposed');
     }
   }
 }

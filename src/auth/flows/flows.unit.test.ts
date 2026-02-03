@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { expect } from "chai";
-import { OAuth2Client } from "google-auth-library";
-import sinon from "sinon";
-import vscode from "vscode";
-import { newVsCodeStub, VsCodeStub } from "../../test/helpers/vscode";
-import { getOAuth2Flows, OAuth2Flow } from "./flows";
+import { expect } from 'chai';
+import { OAuth2Client } from 'google-auth-library';
+import sinon from 'sinon';
+import vscode from 'vscode';
+import { newVsCodeStub, VsCodeStub } from '../../test/helpers/vscode';
+import { getOAuth2Flows, OAuth2Flow } from './flows';
 
-describe("getOAuth2Flows", () => {
+describe('getOAuth2Flows', () => {
   let vs: VsCodeStub;
 
   beforeEach(() => {
@@ -30,10 +30,10 @@ describe("getOAuth2Flows", () => {
     );
   }
 
-  it("returns the local server flow when running on desktop", () => {
+  it('returns the local server flow when running on desktop', () => {
     const flows = getOAuth2FlowsFor(vs.UIKind.Desktop);
 
     expect(flows).to.have.lengthOf(1);
-    expect(flows[0].constructor.name).to.equal("LocalServerFlow");
+    expect(flows[0].constructor.name).to.equal('LocalServerFlow');
   });
 });

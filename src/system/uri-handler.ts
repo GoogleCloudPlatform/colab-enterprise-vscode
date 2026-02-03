@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import vscode from "vscode";
+import vscode from 'vscode';
 
 /**
  * A {@link vscode.UriHandler} for handling custom URI events within the

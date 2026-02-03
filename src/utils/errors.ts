@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import vscode from "vscode";
+import vscode from 'vscode';
 
 /**
  * Executes an asynchronous operation and handles any errors by showing

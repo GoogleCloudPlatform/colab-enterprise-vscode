@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { UUID } from "crypto";
+import { UUID } from 'crypto';
 import {
   JupyterServer,
   JupyterServerConnectionInformation,
-} from "@vscode/jupyter-extension";
-import { Accelerator, Variant } from "../colab/api";
+} from '@vscode/jupyter-extension';
+import { Accelerator, Variant } from '../colab/api';
 
 /**
  * Colab's Jupyter server descriptor which includes machine-specific
@@ -44,7 +44,7 @@ export type ColabAssignedServer = ColabJupyterServer & {
 };
 
 export const DEFAULT_CPU_SERVER: ColabServerDescriptor = {
-  label: "Colab CPU",
+  label: 'Colab CPU',
   variant: Variant.DEFAULT,
 };
 
@@ -56,33 +56,33 @@ export const COLAB_SERVERS = new Set<ColabServerDescriptor>([
   DEFAULT_CPU_SERVER,
   // GPUs
   {
-    label: "Colab GPU T4",
+    label: 'Colab GPU T4',
     variant: Variant.GPU,
     accelerator: Accelerator.T4,
   },
   {
-    label: "Colab GPU L4",
+    label: 'Colab GPU L4',
     variant: Variant.GPU,
     accelerator: Accelerator.L4,
   },
   {
-    label: "Colab GPU A100",
+    label: 'Colab GPU A100',
     variant: Variant.GPU,
     accelerator: Accelerator.A100,
   },
   // TPUs
   {
-    label: "Colab TPU v2-8",
+    label: 'Colab TPU v2-8',
     variant: Variant.TPU,
     accelerator: Accelerator.V28,
   },
   {
-    label: "Colab TPU v5e-1",
+    label: 'Colab TPU v5e-1',
     variant: Variant.TPU,
     accelerator: Accelerator.V5E1,
   },
   {
-    label: "Colab TPU v6e-1",
+    label: 'Colab TPU v6e-1',
     variant: Variant.TPU,
     accelerator: Accelerator.V6E1,
   },

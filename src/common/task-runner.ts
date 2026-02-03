@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Disposable } from "vscode";
+import { Disposable } from 'vscode';
 
 export interface Config {
   /**

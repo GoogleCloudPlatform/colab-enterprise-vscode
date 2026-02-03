@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as http from "http";
-import vscode from "vscode";
+import * as http from 'http';
+import vscode from 'vscode';
 
-const FAILED_TO_GET_PORT = new Error("Failed to acquire server port");
+const FAILED_TO_GET_PORT = new Error('Failed to acquire server port');
 
 /**
  * Handles the various events and requests for the loopback server.
@@ -52,15 +52,15 @@ export class LoopbackServer implements vscode.Disposable {
 
   constructor(private readonly handler: LoopbackHandler) {
     this.server = http.createServer();
-    this.server.on("request", (req, res) => {
+    this.server.on('request', (req, res) => {
       handler.handleRequest(req, res);
     });
-    this.server.on("error", (err) => {
+    this.server.on('error', (err) => {
       if (this.handler.handleError) {
         this.handler.handleError(err);
       }
     });
-    this.server.on("close", () => {
+    this.server.on('close', () => {
       if (this.handler.handleClose) {
         this.handler.handleClose();
       }
@@ -76,7 +76,7 @@ export class LoopbackServer implements vscode.Disposable {
     }
     this.server.close((err) => {
       if (err) {
-        console.error("Error closing server:", err);
+        console.error('Error closing server:', err);
       }
     });
   }
@@ -90,18 +90,18 @@ export class LoopbackServer implements vscode.Disposable {
    */
   async start(): Promise<number> {
     if (this.isDisposed) {
-      throw new Error("Local server has already been disposed");
+      throw new Error('Local server has already been disposed');
     }
     if (this.listen) {
       return this.listen;
     }
     this.listen = new Promise<number>((resolve, reject) => {
-      this.server.listen(0, "127.0.0.1", () => {
+      this.server.listen(0, '127.0.0.1', () => {
         const address = this.server.address();
         // A string is only ever returned when listening on a pipe or Unix
         // domain socket, which isn't the case here. Regardless, the check is
         // included to safely handle the address as an AddressInfo type.
-        if (address && typeof address !== "string") {
+        if (address && typeof address !== 'string') {
           resolve(address.port);
         } else {
           reject(FAILED_TO_GET_PORT);

@@ -4,24 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { randomUUID } from "crypto";
-import { expect } from "chai";
-import sinon, { SinonStubbedInstance } from "sinon";
-import { InputBox, QuickPick, QuickPickItem } from "vscode";
-import { AssignmentManager } from "../../jupyter/assignments";
-import { ColabAssignedServer } from "../../jupyter/servers";
-import { ServerStorage } from "../../jupyter/storage";
+import { randomUUID } from 'crypto';
+import { expect } from 'chai';
+import sinon, { SinonStubbedInstance } from 'sinon';
+import { InputBox, QuickPick, QuickPickItem } from 'vscode';
+import { AssignmentManager } from '../../jupyter/assignments';
+import { ColabAssignedServer } from '../../jupyter/servers';
+import { ServerStorage } from '../../jupyter/storage';
 import {
   buildQuickPickStub,
   QuickPickStub,
   InputBoxStub,
   buildInputBoxStub,
-} from "../../test/helpers/quick-input";
-import { newVsCodeStub, VsCodeStub } from "../../test/helpers/vscode";
-import { Variant } from "../api";
-import { removeServer, renameServerAlias } from "./server";
+} from '../../test/helpers/quick-input';
+import { newVsCodeStub, VsCodeStub } from '../../test/helpers/vscode';
+import { Variant } from '../api';
+import { removeServer, renameServerAlias } from './server';
 
-describe("Server Commands", () => {
+describe('Server Commands', () => {
   let vsCodeStub: VsCodeStub;
   let defaultServer: ColabAssignedServer;
   let inputBoxStub: InputBoxStub & {
@@ -45,14 +45,14 @@ describe("Server Commands", () => {
     );
     defaultServer = {
       id: randomUUID(),
-      label: "foo",
+      label: 'foo',
       variant: Variant.DEFAULT,
       accelerator: undefined,
-      endpoint: "m-s-foo",
+      endpoint: 'm-s-foo',
       connectionInformation: {
-        baseUrl: vsCodeStub.Uri.parse("https://example.com"),
-        token: "123",
-        headers: { foo: "bar" },
+        baseUrl: vsCodeStub.Uri.parse('https://example.com'),
+        token: '123',
+        headers: { foo: 'bar' },
       },
       dateAssigned: new Date(),
     };
@@ -62,14 +62,14 @@ describe("Server Commands", () => {
     sinon.restore();
   });
 
-  describe("renameServerAlias", () => {
+  describe('renameServerAlias', () => {
     let serverStorageStub: SinonStubbedInstance<ServerStorage>;
 
     beforeEach(() => {
       serverStorageStub = sinon.createStubInstance(ServerStorage);
     });
 
-    it("does not open the Quick Pick when no servers are assigned", async () => {
+    it('does not open the Quick Pick when no servers are assigned', async () => {
       serverStorageStub.list.resolves([]);
 
       await renameServerAlias(vsCodeStub.asVsCode(), serverStorageStub);
@@ -77,9 +77,9 @@ describe("Server Commands", () => {
       sinon.assert.notCalled(vsCodeStub.window.createQuickPick);
     });
 
-    describe("when servers are assigned", () => {
-      it("lists assigned servers for selection", async () => {
-        const additionalServer = { ...defaultServer, label: "bar" };
+    describe('when servers are assigned', () => {
+      it('lists assigned servers for selection', async () => {
+        const additionalServer = { ...defaultServer, label: 'bar' };
         serverStorageStub.list.resolves([defaultServer, additionalServer]);
 
         void renameServerAlias(vsCodeStub.asVsCode(), serverStorageStub);
@@ -92,8 +92,8 @@ describe("Server Commands", () => {
         ]);
       });
 
-      describe("renaming the selected server", () => {
-        it("validates the input alias", async () => {
+      describe('renaming the selected server', () => {
+        it('validates the input alias', async () => {
           serverStorageStub.list.resolves([defaultServer]);
           void renameServerAlias(vsCodeStub.asVsCode(), serverStorageStub);
           await quickPickStub.nextShow();
@@ -102,18 +102,18 @@ describe("Server Commands", () => {
           ]);
 
           await inputBoxStub.nextShow();
-          inputBoxStub.value = "s".repeat(11);
+          inputBoxStub.value = 's'.repeat(11);
           inputBoxStub.onDidChangeValue.yield(inputBoxStub.value);
           expect(inputBoxStub.validationMessage).equal(
-            "Name must be less than 10 characters.",
+            'Name must be less than 10 characters.',
           );
 
-          inputBoxStub.value = "s".repeat(10);
+          inputBoxStub.value = 's'.repeat(10);
           inputBoxStub.onDidChangeValue.yield(inputBoxStub.value);
-          expect(inputBoxStub.validationMessage).equal("");
+          expect(inputBoxStub.validationMessage).equal('');
         });
 
-        it("updates the server alias", async () => {
+        it('updates the server alias', async () => {
           serverStorageStub.list.resolves([defaultServer]);
           const rename = renameServerAlias(
             vsCodeStub.asVsCode(),
@@ -126,17 +126,17 @@ describe("Server Commands", () => {
           ]);
 
           await inputBoxStub.nextShow();
-          inputBoxStub.value = "new_alias";
+          inputBoxStub.value = 'new_alias';
           inputBoxStub.onDidChangeValue.yield(inputBoxStub.value);
           inputBoxStub.onDidAccept.yield();
 
           await expect(rename).to.eventually.be.fulfilled;
           sinon.assert.calledOnceWithExactly(serverStorageStub.store, [
-            { ...defaultServer, label: "new_alias" },
+            { ...defaultServer, label: 'new_alias' },
           ]);
         });
 
-        it("does not update the server alias when it is unchanged", async () => {
+        it('does not update the server alias when it is unchanged', async () => {
           serverStorageStub.list.resolves([defaultServer]);
           const rename = renameServerAlias(
             vsCodeStub.asVsCode(),
@@ -160,14 +160,14 @@ describe("Server Commands", () => {
     });
   });
 
-  describe("removeServer", () => {
+  describe('removeServer', () => {
     let assignmentManagerStub: SinonStubbedInstance<AssignmentManager>;
 
     beforeEach(() => {
       assignmentManagerStub = sinon.createStubInstance(AssignmentManager);
     });
 
-    it("does not open the Quick Pick when no servers are assigned", async () => {
+    it('does not open the Quick Pick when no servers are assigned', async () => {
       assignmentManagerStub.getAssignedServers.resolves([]);
 
       await removeServer(vsCodeStub.asVsCode(), assignmentManagerStub);
@@ -175,9 +175,9 @@ describe("Server Commands", () => {
       sinon.assert.notCalled(vsCodeStub.window.createQuickPick);
     });
 
-    describe("when servers are assigned", () => {
-      it("lists servers for selection", async () => {
-        const additionalServer = { ...defaultServer, label: "bar" };
+    describe('when servers are assigned', () => {
+      it('lists servers for selection', async () => {
+        const additionalServer = { ...defaultServer, label: 'bar' };
         assignmentManagerStub.getAssignedServers.resolves([
           defaultServer,
           additionalServer,
@@ -192,7 +192,7 @@ describe("Server Commands", () => {
         ]);
       });
 
-      it("unassigns the selected server", async () => {
+      it('unassigns the selected server', async () => {
         assignmentManagerStub.getAssignedServers.resolves([defaultServer]);
 
         const remove = removeServer(
@@ -210,7 +210,7 @@ describe("Server Commands", () => {
         );
       });
 
-      it("notifies the user while removing the server", async () => {
+      it('notifies the user while removing the server', async () => {
         assignmentManagerStub.getAssignedServers.resolves([defaultServer]);
 
         const remove = removeServer(
