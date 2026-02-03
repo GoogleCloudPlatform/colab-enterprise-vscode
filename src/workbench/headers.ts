@@ -32,3 +32,27 @@ export const WORKBENCH_CLIENT_AGENT_HEADER: StaticHeader = {
   key: "X-Workbench-Client-Agent",
   value: "vscode",
 };
+
+/**
+ * The HTTP header for requests that are resolved through the Colab tunnel.
+ */
+export const COLAB_TUNNEL_HEADER: StaticHeader = {
+  key: "X-Colab-Tunnel",
+  value: "Google",
+};
+
+/**
+ * The HTTP header for JSON content type.
+ */
+export const CONTENT_TYPE_JSON_HEADER: StaticHeader = {
+  key: "Content-Type",
+  value: "application/json",
+};
+
+/**
+ * The HTTP header for accepting JSON.
+ */
+export const ACCEPT_JSON_HEADER: StaticHeader = {
+  key: "Accept",
+  value: "application/json",
+};
