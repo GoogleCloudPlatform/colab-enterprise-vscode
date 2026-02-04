@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { JupyterServerCommand } from "@vscode/jupyter-extension";
+import { JupyterServerCommand } from '@vscode/jupyter-extension';
 
 /** Identifying information for a Colab command. */
 export interface Command {
@@ -27,6 +27,6 @@ export interface RegisteredCommand extends Command {
  * server.
  */
 export const WORKBENCH_COMMAND: JupyterServerCommand = {
-  label: "Workbench",
-  description: "Connect to Google Cloud Workbench",
+  label: 'Workbench',
+  description: 'Connect to Google Cloud Workbench',
 };

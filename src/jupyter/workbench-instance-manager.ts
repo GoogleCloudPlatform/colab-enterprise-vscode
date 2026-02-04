@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { protos } from "@google-cloud/notebooks";
-import { JupyterServer } from "@vscode/jupyter-extension";
-import vscode from "vscode";
-import { withError } from "../utils/errors";
-import { AUTHORIZATION_HEADER } from "../workbench/headers";
-import { NotebooksClient } from "../workbench/notebooks-client";
+import { protos } from '@google-cloud/notebooks';
+import { JupyterServer } from '@vscode/jupyter-extension';
+import vscode from 'vscode';
+import { withError } from '../utils/errors';
+import { AUTHORIZATION_HEADER } from '../workbench/headers';
+import { NotebooksClient } from '../workbench/notebooks-client';
 
 import IInstance = protos.google.cloud.notebooks.v2.IInstance;
 
-const UNKNOWN_ID = "UNKNOWN_ID";
-const UNKNOWN_NAME = "UNKNOWN_NAME";
+const UNKNOWN_ID = 'UNKNOWN_ID';
+const UNKNOWN_NAME = 'UNKNOWN_NAME';
 
 export interface WorkbenchJupyterServer extends JupyterServer {
   name: string;
@@ -26,7 +26,7 @@ export interface WorkbenchJupyterServer extends JupyterServer {
     headers: {
       [AUTHORIZATION_HEADER.key]: string;
       Cookie: string;
-      "X-XSRFToken": string;
+      'X-XSRFToken': string;
       Origin: string;
     };
   };
@@ -123,14 +123,14 @@ export class WorkbenchInstanceManager {
     const instances = await this.vs.window.withProgress(
       {
         location: this.vs.ProgressLocation.Notification,
-        title: "Fetching Workbench instances...",
+        title: 'Fetching Workbench instances...',
         cancellable: false,
       },
       () =>
         withError(
           /* operation= */ () => this.notebooksClient.listInstances(projectId),
           /* defaultValue= */ [],
-          /* errorMessage= */ "Failed to list Workbench instances",
+          /* errorMessage= */ 'Failed to list Workbench instances',
         ),
     );
     this.cachedServers = instances.map((instance) =>
@@ -159,9 +159,9 @@ export class WorkbenchInstanceManager {
     instance: IInstance,
     projectId: string,
   ): WorkbenchJupyterServer {
-    const proxyUri = instance.proxyUri ?? "";
+    const proxyUri = instance.proxyUri ?? '';
     const id = instance.id ?? UNKNOWN_ID;
-    const name = instance.name?.split("/").pop() ?? UNKNOWN_NAME;
+    const name = instance.name?.split('/').pop() ?? UNKNOWN_NAME;
 
     return {
       id,
@@ -191,8 +191,8 @@ export class WorkbenchInstanceManager {
 
     const headers = {
       [AUTHORIZATION_HEADER.key]: `Bearer ${accessToken}`,
-      Cookie: "_xsrf=XSRF",
-      "X-XSRFToken": "XSRF",
+      Cookie: '_xsrf=XSRF',
+      'X-XSRFToken': 'XSRF',
       Origin: baseUrlString,
     };
 

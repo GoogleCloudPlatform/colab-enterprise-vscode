@@ -11,17 +11,17 @@ import {
   JupyterServerProvider,
   JupyterServerCommandProvider,
   JupyterServerCommand,
-} from "@vscode/jupyter-extension";
-import type { CancellationToken } from "vscode";
-import vscode from "vscode";
-import { GoogleAuthProvider } from "../auth/auth-provider";
-import { selectProjectCommand } from "../workbench/commands";
-import { WORKBENCH_COMMAND } from "../workbench/constants";
-import { ProjectsClient } from "../workbench/projects-client";
+} from '@vscode/jupyter-extension';
+import type { CancellationToken } from 'vscode';
+import vscode from 'vscode';
+import { GoogleAuthProvider } from '../auth/auth-provider';
+import { selectProjectCommand } from '../workbench/commands';
+import { WORKBENCH_COMMAND } from '../workbench/constants';
+import { ProjectsClient } from '../workbench/projects-client';
 import {
   WorkbenchInstanceManager,
   WorkbenchJupyterServer,
-} from "./workbench-instance-manager";
+} from './workbench-instance-manager';
 
 /**
  * Workbench Jupyter server provider.
@@ -50,8 +50,8 @@ export class WorkbenchJupyterServerProvider
     this.onDidChangeServers = this.serverChangeEmitter.event;
 
     this.serverCollection = jupyter.createJupyterServerCollection(
-      "google-cloud-workbench",
-      "Google Cloud Workbench",
+      'google-cloud-workbench',
+      'Google Cloud Workbench',
       this,
     );
     this.serverCollection.commandProvider = this;
@@ -119,7 +119,7 @@ export class WorkbenchJupyterServerProvider
       );
     }
 
-    console.error("Unknown command:", command);
+    console.error('Unknown command:', command);
     throw new Error(`Unknown command: ${JSON.stringify(command)}`);
   }
 }

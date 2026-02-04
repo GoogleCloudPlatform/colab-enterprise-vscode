@@ -37,13 +37,13 @@ export const WORKBENCH_CLIENT_AGENT_HEADER: StaticHeader = {
  * The HTTP header for JSON content type.
  */
 export const CONTENT_TYPE_JSON_HEADER: StaticHeader = {
-  key: "Content-Type",
-  value: "application/json",
+  key: 'Content-Type',
+  value: 'application/json',
 };
 
 /**
  * The HTTP header for the authorization token.
  */
 export const AUTHORIZATION_HEADER: Header = {
-  key: "Authorization",
+  key: 'Authorization',
 };

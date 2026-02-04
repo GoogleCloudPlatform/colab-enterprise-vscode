@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { OAuth2Client } from "google-auth-library";
-import fetch from "node-fetch";
-import { v4 as uuid } from "uuid";
-import vscode, { AuthenticationSession, Disposable } from "vscode";
-import { z } from "zod";
-import { Toggleable } from "../common/toggleable";
-import { AUTHORIZATION_HEADER } from "../workbench/headers";
-import { Credentials } from "./login";
-import { AuthStorage, RefreshableAuthenticationSession } from "./storage";
+import { OAuth2Client } from 'google-auth-library';
+import fetch from 'node-fetch';
+import { v4 as uuid } from 'uuid';
+import vscode, { AuthenticationSession, Disposable } from 'vscode';
+import { z } from 'zod';
+import { Toggleable } from '../common/toggleable';
+import { AUTHORIZATION_HEADER } from '../workbench/headers';
+import { Credentials } from './login';
+import { AuthStorage, RefreshableAuthenticationSession } from './storage';
 
 export const REQUIRED_SCOPES = [
-  "profile",
-  "email",
-  "https://www.googleapis.com/auth/cloud-platform",
+  'profile',
+  'email',
+  'https://www.googleapis.com/auth/cloud-platform',
 ] as const;
-const PROVIDER_ID = "google-cloud-platform";
-const PROVIDER_LABEL = "Google Cloud Platform";
+const PROVIDER_ID = 'google-cloud-platform';
+const PROVIDER_LABEL = 'Google Cloud Platform';
 const REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -96,7 +96,7 @@ export class GoogleAuthProvider
    */
   dispose() {
     this.authProvider.dispose();
-    this.disposeController.abort(new Error("GoogleAuthProvider was disposed."));
+    this.disposeController.abort(new Error('GoogleAuthProvider was disposed.'));
   }
 
   /**
@@ -117,13 +117,13 @@ export class GoogleAuthProvider
     }
     this.oAuth2Client.setCredentials({
       refresh_token: session.refreshToken,
-      token_type: "Bearer",
-      scope: session.scopes.join(" "),
+      token_type: 'Bearer',
+      scope: session.scopes.join(' '),
     });
     await this.oAuth2Client.refreshAccessToken();
     const accessToken = this.oAuth2Client.credentials.access_token;
     if (!accessToken) {
-      throw new Error("Failed to refresh Google OAuth token.");
+      throw new Error('Failed to refresh Google OAuth token.');
     }
     this.session = {
       id: session.id,
@@ -205,7 +205,7 @@ export class GoogleAuthProvider
       const sortedScopes = scopes.sort();
       if (!matchesRequiredScopes(sortedScopes)) {
         throw new Error(
-          `Only supports the following scopes: ${sortedScopes.join(", ")}`,
+          `Only supports the following scopes: ${sortedScopes.join(', ')}`,
         );
       }
       const tokenInfo = await this.login(sortedScopes);
@@ -242,10 +242,10 @@ export class GoogleAuthProvider
           changed: [],
         });
       }
-      this.vs.window.showInformationMessage("Signed in to Google!");
+      this.vs.window.showInformationMessage('Signed in to Google!');
       return this.session;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "unknown error";
+      const msg = err instanceof Error ? err.message : 'unknown error';
       this.vs.window.showErrorMessage(`Sign in failed: ${msg}`);
       throw err;
     }
@@ -292,7 +292,7 @@ export class GoogleAuthProvider
     await this.oAuth2Client.refreshAccessToken();
     const accessToken = this.oAuth2Client.credentials.access_token;
     if (!accessToken) {
-      throw new Error("Failed to refresh Google OAuth token.");
+      throw new Error('Failed to refresh Google OAuth token.');
     }
     this.session = {
       ...this.session,
@@ -303,7 +303,7 @@ export class GoogleAuthProvider
   private async getUserInfo(
     token: string,
   ): Promise<z.infer<typeof UserInfoSchema>> {
-    const url = "https://www.googleapis.com/oauth2/v2/userinfo";
+    const url = 'https://www.googleapis.com/oauth2/v2/userinfo';
     const response = await fetch(url, {
       headers: {
         [AUTHORIZATION_HEADER.key]: `Bearer ${token}`,
