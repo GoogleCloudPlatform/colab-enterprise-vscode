@@ -1,7 +1,7 @@
 {
   "name": "workbench",
   "publisher": "google",
-  "displayName": "Workbench",
+  "displayName": "Workbench Instances",
   "description": "Connect notebooks to Colab servers.",
   "icon": "icon.png",
   "version": "0.1.0",
