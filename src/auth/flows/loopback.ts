@@ -144,7 +144,7 @@ class Handler implements LoopbackHandler {
 
   async redirectSuccessfulAuth(res: http.ServerResponse): Promise<void> {
     const authSuccessUri = await this.vs.env.asExternalUri(
-      this.vs.Uri.parse('vscode://google.colab/auth-success'),
+      this.vs.Uri.parse('vscode://google.workbench/auth-success'),
     );
     const successState = encodeURIComponent(authSuccessUri.toString());
     const redirectUri = `https://cloud.google.com/vertex-ai-notebooks?state=${successState}`;

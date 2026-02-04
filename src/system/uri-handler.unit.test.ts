@@ -44,7 +44,7 @@ describe('ExtensionUriHandler', () => {
   it('fires a single URI event', () => {
     const onReceivedUriStub: sinon.SinonStub<[Uri], void> = sinon.stub();
     handler.onReceivedUri(onReceivedUriStub);
-    const testUri = TestUri.parse('vscode://google.colab?foo=bar');
+    const testUri = TestUri.parse('vscode://google.workbench?foo=bar');
 
     handler.handleUri(testUri);
 
@@ -54,8 +54,8 @@ describe('ExtensionUriHandler', () => {
   it('fires multiple URI events', () => {
     const onReceivedUriStub: sinon.SinonStub<[Uri], void> = sinon.stub();
     handler.onReceivedUri(onReceivedUriStub);
-    const testUri1 = TestUri.parse('vscode://google.colab?foo=bar');
-    const testUri2 = TestUri.parse('vscode://google.colab?foo=baz');
+    const testUri1 = TestUri.parse('vscode://google.workbench?foo=bar');
+    const testUri2 = TestUri.parse('vscode://google.workbench?foo=baz');
 
     handler.handleUri(testUri1);
     handler.handleUri(testUri2);
