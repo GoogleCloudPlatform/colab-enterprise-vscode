@@ -1,8 +1,8 @@
 {
   "name": "workbench",
   "publisher": "google",
-  "displayName": "Workbench Instances",
-  "description": "Connect notebooks to Colab servers.",
+  "displayName": "Vertex AI Workbench Instances",
+  "description": "Connect notebooks to Vertex AI Workbench Instances",
   "icon": "icon.png",
   "version": "0.1.0",
   "pricing": "Free",
