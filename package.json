@@ -1,7 +1,7 @@
 {
   "name": "workbench",
   "publisher": "google",
-  "displayName": "Vertex AI Workbench Instances",
+  "displayName": "Workbench",
   "description": "Connect notebooks to Vertex AI Workbench Instances",
   "icon": "icon.png",
   "version": "0.1.0",
