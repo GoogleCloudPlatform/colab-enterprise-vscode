@@ -1,20 +1,20 @@
 {
-  "name": "colab",
+  "name": "workbench",
   "publisher": "google",
-  "displayName": "Colab",
-  "description": "Connect notebooks to Colab servers.",
+  "displayName": "Workbench",
+  "description": "Connect notebooks to Vertex AI Workbench instances.",
   "icon": "icon.png",
   "version": "0.1.0",
   "pricing": "Free",
-  "homepage": "https://github.com/googlecolab/colab-vscode",
+  "homepage": "https://github.com/GoogleCloudPlatform/colab-enterprise-vscode",
   "repository": {
     "type": "git",
-    "url": "https://github.com/googlecolab/colab-vscode"
+    "url": "https://github.com/GoogleCloudPlatform/colab-enterprise-vscode"
   },
   "bugs": {
-    "url": "https://github.com/googlecolab/colab-vscode/issues"
+    "url": "https://github.com/GoogleCloudPlatform/colab-enterprise-vscode/issues"
   },
-  "qna": "https://github.com/googlecolab/colab-vscode/discussions",
+  "qna": "https://github.com/GoogleCloudPlatform/colab-enterprise-vscode/discussions",
   "type": "commonjs",
   "engines": {
     "vscode": "^1.103.0"
@@ -26,7 +26,6 @@
     "Notebooks"
   ],
   "tags": [
-    "colab",
     "google",
     "interactive",
     "julia",
@@ -42,47 +41,10 @@
   "contributes": {
     "authentication": [
       {
-        "label": "Google",
-        "id": "google"
+        "label": "Google Cloud Platform",
+        "id": "google-cloud-platform"
       }
-    ],
-    "commands": [
-      {
-        "category": "Colab",
-        "command": "colab.renameServerAlias",
-        "enablement": "colab.hasAssignedServer",
-        "title": "Rename Server Alias"
-      },
-      {
-        "category": "Colab",
-        "command": "colab.removeServer",
-        "enablement": "colab.hasAssignedServer",
-        "title": "Remove Server"
-      },
-      {
-        "command": "colab.toolbarCommand",
-        "category": "Colab",
-        "title": "Colab",
-        "icon": {
-          "light": "resources/colab_grayscale_light.svg",
-          "dark": "resources/colab_grayscale_dark.svg"
-        }
-      }
-    ],
-    "menus": {
-      "notebook/toolbar": [
-        {
-          "command": "colab.toolbarCommand",
-          "group": "navigation/control"
-        }
-      ],
-      "commandPalette": [
-        {
-          "command": "colab.toolbarCommand",
-          "when": "false"
-        }
-      ]
-    }
+    ]
   },
   "main": "./out/extension.js",
   "scripts": {

@@ -25,8 +25,8 @@ export interface StaticHeader extends Header {
 }
 
 /**
- * The HTTP header for the Colab client agent used for requests originating from
- * VS Code.
+n * The HTTP header for the Workbench client agent used for requests originating
+ * from VS Code.
  */
 export const WORKBENCH_CLIENT_AGENT_HEADER: StaticHeader = {
   key: 'X-Workbench-Client-Agent',

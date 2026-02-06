@@ -6,7 +6,7 @@
 
 import { JupyterServerCommand } from '@vscode/jupyter-extension';
 
-/** Identifying information for a Colab command. */
+/** Identifying information for a Workbench command. */
 export interface Command {
   /** The human readable label of the registered command. */
   label: string;
