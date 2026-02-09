@@ -5,8 +5,12 @@
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "preLaunchTask": "Watch Extension"
     },
     {
@@ -14,13 +18,23 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run-script", "test:unit", "--", "--timeout", "0"]
+      "runtimeArgs": [
+        "run-script",
+        "test:unit",
+        "--",
+        "--timeout",
+        "0"
+      ]
     },
     {
       "name": "Debug E2E Tests",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/node_modules/.bin/extest",
+      "runtimeExecutable": "/usr/bin/xvfb-run",
+      "runtimeArgs": [
+        "-a",
+        "${workspaceFolder}/node_modules/.bin/extest"
+      ],
       "args": [
         "setup-and-run",
         "./out/test/*.e2e.test.js",
@@ -31,7 +45,7 @@
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "preLaunchTask": "npm: build"
+      "preLaunchTask": "npm: build:tests"
     },
     {
       "name": "Extension Integration Tests",

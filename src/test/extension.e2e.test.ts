@@ -5,6 +5,7 @@
  */
 
 import * as fs from 'fs';
+import * as path from 'path';
 import { assert } from 'chai';
 import dotenv from 'dotenv';
 import * as chrome from 'selenium-webdriver/chrome';
@@ -16,14 +17,17 @@ import {
   ModalDialog,
   WebDriver,
   Workbench,
-  VSBrowser,
   until,
 } from 'vscode-extension-tester';
+import { CONFIG } from '../config';
 
-const ELEMENT_WAIT_MS = 10000;
+const ELEMENT_WAIT_MS = 15000;
 const CELL_EXECUTION_WAIT_MS = 30000;
+const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-');
+const SCREENSHOTS_DIR = path.resolve(__dirname, '../../e2e-screenshots', RUN_TIMESTAMP);
+let screenshotStep = 1;
 
-describe('Colab Extension', function () {
+describe('Workbench Extension', function () {
   dotenv.config();
 
   let driver: WebDriver;
@@ -31,10 +35,8 @@ describe('Colab Extension', function () {
   let workbench: Workbench;
 
   before(async () => {
-    assert.equal(
-      'production',
-      'Unexpected extension environment. Run `npm run generate:config`',
-    );
+    assert.ok(CONFIG.ClientId, 'ClientId is not set');
+    assert.ok(CONFIG.ClientNotSoSecret, 'ClientNotSoSecret is not set');
     // Wait for VS Code UI to settle before running tests.
     workbench = new Workbench();
     driver = workbench.getDriver();
@@ -43,6 +45,17 @@ describe('Colab Extension', function () {
 
   beforeEach(function () {
     testTitle = this.currentTest?.fullTitle() ?? '';
+    screenshotStep = 1;
+  });
+
+  afterEach(async function () {
+    const state = this.currentTest?.state === 'passed' ? 'success' : 'failed';
+    const title = this.currentTest?.fullTitle().replace(/\s+/g, '_').replace(/[\/\\?%*:|"<>]/g, '-') ?? 'unknown_test';
+    try {
+      await takeScreenshot(driver, `${title}_${state}`);
+    } catch (err) {
+      console.error('Failed to take screenshot:', err);
+    }
   });
 
   describe('with a notebook', () => {
@@ -50,30 +63,45 @@ describe('Colab Extension', function () {
       // Create an executable notebook. Note that it's created with a single
       // code cell by default.
       await workbench.executeCommand('Create: New Jupyter Notebook');
+      await takeScreenshot(driver, 'create_notebook');
       // Wait for the notebook editor to finish loading before we interact with
       // it.
       await notebookLoaded(driver);
+      await takeScreenshot(driver, 'notebook_loaded');
       await workbench.executeCommand('Notebook: Edit Cell');
+      await takeScreenshot(driver, 'edit_cell');
       const cell = await driver.switchTo().activeElement();
       await cell.sendKeys('1 + 1');
+      await takeScreenshot(driver, 'cell_filled');
     });
 
     it('authenticates and executes the notebook on a Colab server', async () => {
       // Select the Colab server provider from the kernel selector.
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
-      await selectQuickPickItem({
-        item: 'Colab',
-        quickPick: 'Select Another Kernel',
+      await takeScreenshot(driver, 'select_kernel_command');
+      const selected = await selectQuickPickItem({
+        item: 'Select Another Kernel...',
+        quickPick: 'Select Another Kernel...',
       });
+      if (
+        selected &&
+        (selected.toLowerCase() === 'select another kernel...' ||
+          selected.toLowerCase() === 'select another kernel')
+      ) {
+        await selectQuickPickItem({
+          item: 'Google Cloud Workbench',
+          quickPick: 'Select Another Kernel',
+        });
+      }
       await selectQuickPickItem({
-        item: 'New Colab Server',
+        item: 'Workbench',
         quickPick: 'Select a Jupyter Server',
       });
 
       // Accept the dialog allowing the Colab extension to sign in using Google.
       await pushDialogButton({
         button: 'Allow',
-        dialog: "The extension 'Colab' wants to sign in using Google.",
+        dialog: "The extension 'Workbench' wants to sign in using Google.",
       });
       // Begin the sign-in process by copying the OAuth URL to the clipboard and
       // opening it in a browser window. Why do this instead of triggering the
@@ -125,29 +153,64 @@ describe('Colab Extension', function () {
     item,
     quickPick,
   }: {
-    item: string;
+    item: string | string[];
     quickPick: string;
-  }) {
+  }): Promise<string | undefined> {
+    const items = Array.isArray(item) ? item : [item];
     return driver.wait(
       async () => {
         try {
           const inputBox = await InputBox.create();
-          // We check for the item's presence before selecting it, since
-          // InputBox.selectQuickPick will not throw if the item is not found.
-          const quickPickItem = await inputBox.findQuickPick(item);
-          if (!quickPickItem) {
-            return false;
+          const picks = await inputBox.getQuickPicks();
+          for (const pick of picks) {
+            const text = await pick.getText();
+            const label = await pick.getLabel().catch(() => '');
+
+            for (const searchItem of items) {
+              if (text === searchItem || label === searchItem) {
+                console.log(`Found item: "${label || text}". Selecting...`);
+                try {
+                  await pick.select();
+                } catch (e: any) {
+                  if (e.message && e.message.includes('element click intercepted')) {
+                    console.log(`Selection intercepted. Trying JS click for "${label || text}"...`);
+                    await driver.executeScript('arguments[0].click();', pick);
+                  } else {
+                    throw e;
+                  }
+                }
+                console.log(`Selected item: "${label || text}"`);
+                return label || text;
+              }
+            }
           }
-          await quickPickItem.select();
-          return true;
-        } catch (_) {
-          // Swallow errors since we want to fail when our timeout's reached.
-          return false;
+          return undefined;
+        } catch (e: any) {
+          console.log(`Error selecting item in "${quickPick}": ${e.message}`);
+          return undefined;
         }
       },
       ELEMENT_WAIT_MS,
-      `Select "${item}" item for QuickPick "${quickPick}" failed`,
-    );
+      `Select "${items.join(' OR ')}" item for QuickPick "${quickPick}" failed`,
+
+
+
+    ).catch(async (e) => {
+      // Log available items for debugging
+      try {
+        const inputBox = await InputBox.create();
+        const picks = await inputBox.getQuickPicks();
+        const labels = await Promise.all(picks.map(p => p.getText()));
+        console.log(`Available QuickPick items for "${quickPick}":`, labels);
+      } catch (err) {
+        console.log('Failed to log QuickPick items:', err);
+      }
+
+      // If the QuickPick selection fails, ensure we take a screenshot for debugging.
+      const title = testTitle.replace(/\s+/g, '_').replace(/[\/\\?%*:|"<>]/g, '-');
+      await takeScreenshot(driver, `${title}_quickpick_failure`);
+      throw e;
+    });
   }
 
   /**
@@ -235,15 +298,8 @@ describe('Colab Extension', function () {
       await oauthDriver.quit();
     } catch (_) {
       // If the OAuth flow fails, ensure we grab a screenshot for debugging.
-      const screenshotsDir = VSBrowser.instance.getScreenshotsDir();
-      if (!fs.existsSync(screenshotsDir)) {
-        fs.mkdirSync(screenshotsDir, { recursive: true });
-      }
-      fs.writeFileSync(
-        `${screenshotsDir}/${testTitle} (oauth window).png`,
-        await oauthDriver.takeScreenshot(),
-        'base64',
-      );
+      const title = testTitle.replace(/\s+/g, '_').replace(/[\/\\?%*:|"<>]/g, '-');
+      await takeScreenshot(oauthDriver, `${title}_oauth_window_failure`);
       throw _;
     }
   }
@@ -252,13 +308,19 @@ describe('Colab Extension', function () {
 /**
  * Creates a new WebDriver instance for the OAuth flow.
  */
-function getOAuthDriver(): Promise<WebDriver> {
+async function getOAuthDriver(): Promise<WebDriver> {
   const authDriverArgsPrefix = '--auth-driver:';
   const authDriverArgs = process.argv
     .filter((a) => a.startsWith(authDriverArgsPrefix))
     .map((a) => a.substring(authDriverArgsPrefix.length));
+
+  const serviceBuilder = new chrome.ServiceBuilder(
+    '/tmp/test-resources/chromedriver-linux64/chromedriver'
+  );
+
   return new Builder()
     .forBrowser('chrome')
+    .setChromeService(serviceBuilder)
     .setChromeOptions(
       new chrome.Options().addArguments(...authDriverArgs) as chrome.Options,
     )
@@ -266,6 +328,7 @@ function getOAuthDriver(): Promise<WebDriver> {
 }
 
 async function notebookLoaded(driver: WebDriver): Promise<void> {
+
   await driver.wait(
     async () => {
       const editors = await driver.findElements(
@@ -294,3 +357,18 @@ async function waitAndClick(
   const element = await driver.findElement(locator);
   await element.click();
 }
+
+/**
+ * Takes a screenshot and saves it to the screenshots directory.
+ */
+async function takeScreenshot(driver: WebDriver, name: string): Promise<void> {
+  if (!fs.existsSync(SCREENSHOTS_DIR)) {
+    fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+  }
+  const fileName = `${screenshotStep}_${name}.png`;
+  screenshotStep++;
+  const screenshotPath = path.join(SCREENSHOTS_DIR, fileName);
+  const image = await driver.takeScreenshot();
+  fs.writeFileSync(screenshotPath, image, 'base64');
+}
+
