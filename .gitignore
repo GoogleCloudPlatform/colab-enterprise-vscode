@@ -4,3 +4,4 @@
 node_modules/
 out/
 src/config.ts
+e2e-screenshots/

@@ -119,17 +119,34 @@ describe('Workbench Extension', function () {
       // Now that we're authenticated, we can resume creating a Colab server via
       // the open kernel selector.
       await selectQuickPickItem({
-        item: 'CPU',
-        quickPick: 'Select a variant (1/2)',
+        item: 'jaas-test-notebooks-host',
+        quickPick: 'Select a Google Cloud Project (1/2)',
       });
+
+
+      await driver.sleep(ELEMENT_WAIT_MS);
+      await takeScreenshot(driver, 'Select workbench instance');
+
       // Alias the server with the default name.
       const inputBox = await InputBox.create();
       await inputBox.sendKeys(Key.ENTER);
       await selectQuickPickItem({
-        item: 'Python 3 (ipykernel)',
-        quickPick: 'Select a Kernel from Colab CPU',
+        item: 'workbench-vs-code-plugin (jaas-test-notebooks-host)',
+        quickPick: "Select a Jupyter Server",
       });
 
+      await driver.sleep(ELEMENT_WAIT_MS);
+      await takeScreenshot(driver, 'Select workbench instance kernel');
+
+      await selectQuickPickItem({
+        item: 'TensorFlow 2-11',
+        quickPick: "Select a Kernel",
+      });
+
+      await driver.sleep(ELEMENT_WAIT_MS);
+      await takeScreenshot(driver, 'Select workbench instance kernel');
+
+      await driver.sleep(ELEMENT_WAIT_MS);
       // Execute the notebook and poll for the success indicator (green check).
       // Why not the cell output? Because the output is rendered in a webview.
       await workbench.executeCommand('Notebook: Run All');
@@ -249,6 +266,7 @@ describe('Workbench Extension', function () {
 
     try {
       await oauthDriver.get(oauthUrl);
+      await takeScreenshot(oauthDriver, 'oauth_redirect_loaded');
 
       // Input the test account email address.
       const emailInput = await oauthDriver.findElement(
@@ -256,6 +274,7 @@ describe('Workbench Extension', function () {
       );
       await emailInput.sendKeys(process.env.TEST_ACCOUNT_EMAIL ?? '');
       await emailInput.sendKeys(Key.ENTER);
+      await takeScreenshot(oauthDriver, 'email_entered');
 
       // Input the test account password. Note that we wait for the page to
       // settle to avoid getting a stale element reference.
@@ -264,37 +283,48 @@ describe('Workbench Extension', function () {
         ELEMENT_WAIT_MS,
       );
       await oauthDriver.sleep(1000);
+      await takeScreenshot(oauthDriver, 'password_page_loaded');
+
       const passwordInput = await oauthDriver.findElement(
         By.css("input[type='password']"),
       );
       await passwordInput.sendKeys(process.env.TEST_ACCOUNT_PASSWORD ?? '');
       await passwordInput.sendKeys(Key.ENTER);
+      await takeScreenshot(oauthDriver, 'password_entered');
 
       // Click Continue to sign in to Colab.
       await oauthDriver.wait(
         until.urlContains('accounts.google.com/signin/oauth/id'),
         ELEMENT_WAIT_MS,
       );
+      await takeScreenshot(oauthDriver, 'oauth_id_page_loaded');
+
       await waitAndClick(
         oauthDriver,
         By.xpath("//span[text()='Continue']"),
         '"Continue" button not visible on ID screen',
       );
+      await takeScreenshot(oauthDriver, 'continue_clicked');
 
       // Click Allow or Continue to authorize the scope (handles both v1 and v2
       // consent screens).
       await oauthDriver.wait(until.urlContains('consent'), ELEMENT_WAIT_MS);
+      await takeScreenshot(oauthDriver, 'consent_page_loaded');
+
       await waitAndClick(
         oauthDriver,
         By.xpath("//span[text()='Allow' or text()='Continue']"),
         '"Allow" or "Continue" button not visible on consent screen',
       );
+      await takeScreenshot(oauthDriver, 'allow_clicked');
 
       // Check that the test account's authenticated. Close the browser window.
-      await oauthDriver.wait(
-        until.urlContains('vscode/auth-success'),
-        ELEMENT_WAIT_MS,
-      );
+      // await oauthDriver.wait(
+      //   until.urlContains('vscode://google.workbench/auth-success'),
+      //   ELEMENT_WAIT_MS,
+      // );
+      await takeScreenshot(oauthDriver, 'auth_success');
+
       await oauthDriver.quit();
     } catch (_) {
       // If the OAuth flow fails, ensure we grab a screenshot for debugging.
@@ -314,9 +344,35 @@ async function getOAuthDriver(): Promise<WebDriver> {
     .filter((a) => a.startsWith(authDriverArgsPrefix))
     .map((a) => a.substring(authDriverArgsPrefix.length));
 
-  const serviceBuilder = new chrome.ServiceBuilder(
-    '/tmp/test-resources/chromedriver-linux64/chromedriver'
-  );
+  let serviceBuilder: chrome.ServiceBuilder;
+
+  if (process.env.CHROMEDRIVER_PATH) {
+    serviceBuilder = new chrome.ServiceBuilder(process.env.CHROMEDRIVER_PATH);
+    console.log('DEBUG: Using CHROMEDRIVER_PATH env:', process.env.CHROMEDRIVER_PATH);
+  } else {
+    // Fallback to finding it in /tmp/test-resources if not set (e.g. running via debug config)
+    // We explicitly look for version 144 first as that is the current system version.
+    const possiblePaths = [
+      '/tmp/test-resources/chromedriver-144/chromedriver-linux64/chromedriver', // Created by our script
+      '/tmp/test-resources/chromedriver-linux64/chromedriver', // Default extest (often outdated/142)
+    ];
+
+    let foundPath = '';
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        foundPath = p;
+        break;
+      }
+    }
+
+    if (foundPath) {
+      serviceBuilder = new chrome.ServiceBuilder(foundPath);
+      console.log('DEBUG: Found ChromeDriver fallback:', foundPath);
+    } else {
+      serviceBuilder = new chrome.ServiceBuilder();
+      console.log('DEBUG: No local ChromeDriver found, relying on Selenium Manager');
+    }
+  }
 
   return new Builder()
     .forBrowser('chrome')

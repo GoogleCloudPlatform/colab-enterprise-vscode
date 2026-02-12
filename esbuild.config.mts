@@ -92,7 +92,7 @@ const extensionOptions: esbuild.BuildOptions = {
 };
 
 /**
- * Ensures the `src/colab-config.ts` file exists before building.
+ * Ensures the `src/config.ts` file exists before building.
  * Throws an error if the file is not found.
  */
 function ensureConfigExists(): void {

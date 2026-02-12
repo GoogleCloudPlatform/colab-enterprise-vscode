@@ -45,7 +45,10 @@ export async function activate(context: vscode.ExtensionContext) {
     projectsClient,
     new WorkbenchInstanceManager(vscode, notebooksClient, () =>
       GoogleAuthProvider.getOrCreateSession(vscode).then(
-        (session) => session.accessToken,
+        (session) => {
+          console.log('[Workbench] Token:', session.accessToken);
+          return session.accessToken
+        },
       ),
     ),
     jupyter,
