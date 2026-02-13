@@ -30,6 +30,7 @@ jobs:
   generateConfig:
     name: Generate Config
     runs-on: ubuntu-latest
+    environment: Workbench
     env:
       WORKBENCH_EXTENSION_CLIENT_ID: ${{ vars.WORKBENCH_EXTENSION_CLIENT_ID }}
       WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET: ${{ vars.WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET }}
@@ -131,6 +132,7 @@ jobs:
         # For now, there's no sense acruing the cost of the runners.
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    environment: Workbench
     needs: generateConfig
 
     steps:
