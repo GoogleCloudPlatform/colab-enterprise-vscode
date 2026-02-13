@@ -24,7 +24,11 @@ import { CONFIG } from '../config';
 const ELEMENT_WAIT_MS = 15000;
 const CELL_EXECUTION_WAIT_MS = 30000;
 const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-');
-const SCREENSHOTS_DIR = path.resolve(__dirname, '../../e2e-screenshots', RUN_TIMESTAMP);
+const SCREENSHOTS_DIR = path.resolve(
+  __dirname,
+  '../../e2e-screenshots',
+  RUN_TIMESTAMP,
+);
 let screenshotStep = 1;
 
 describe('Workbench Extension', function () {
@@ -50,7 +54,11 @@ describe('Workbench Extension', function () {
 
   afterEach(async function () {
     const state = this.currentTest?.state === 'passed' ? 'success' : 'failed';
-    const title = this.currentTest?.fullTitle().replace(/\s+/g, '_').replace(/[\/\\?%*:|"<>]/g, '-') ?? 'unknown_test';
+    const title =
+      this.currentTest
+        ?.fullTitle()
+        .replace(/\s+/g, '_')
+        .replace(/[/\\?%*:|"<>]/g, '-') ?? 'unknown_test';
     try {
       await takeScreenshot(driver, `${title}_${state}`);
     } catch (err) {
@@ -123,7 +131,6 @@ describe('Workbench Extension', function () {
         quickPick: 'Select a Google Cloud Project (1/2)',
       });
 
-
       await driver.sleep(ELEMENT_WAIT_MS);
       await takeScreenshot(driver, 'Select workbench instance');
 
@@ -132,7 +139,7 @@ describe('Workbench Extension', function () {
       await inputBox.sendKeys(Key.ENTER);
       await selectQuickPickItem({
         item: 'workbench-vs-code-plugin (jaas-test-notebooks-host)',
-        quickPick: "Select a Jupyter Server",
+        quickPick: 'Select a Jupyter Server',
       });
 
       await driver.sleep(ELEMENT_WAIT_MS);
@@ -140,7 +147,7 @@ describe('Workbench Extension', function () {
 
       await selectQuickPickItem({
         item: 'TensorFlow 2-11',
-        quickPick: "Select a Kernel",
+        quickPick: 'Select a Kernel',
       });
 
       await driver.sleep(ELEMENT_WAIT_MS);
@@ -174,60 +181,68 @@ describe('Workbench Extension', function () {
     quickPick: string;
   }): Promise<string | undefined> {
     const items = Array.isArray(item) ? item : [item];
-    return driver.wait(
-      async () => {
+    return driver
+      .wait(
+        async () => {
+          try {
+            const inputBox = await InputBox.create();
+            const picks = await inputBox.getQuickPicks();
+            for (const pick of picks) {
+              const text = await pick.getText();
+              const label = await pick.getLabel().catch(() => '');
+
+              for (const searchItem of items) {
+                if (text === searchItem || label === searchItem) {
+                  console.log(`Found item: "${label || text}". Selecting...`);
+                  try {
+                    await pick.select();
+                  } catch (e: unknown) {
+                    if (
+                      e instanceof Error &&
+                      e.message.includes('element click intercepted')
+                    ) {
+                      console.log(
+                        `Selection intercepted. Trying JS click for "${label || text}"...`,
+                      );
+                      await driver.executeScript('arguments[0].click();', pick);
+                    } else {
+                      throw e;
+                    }
+                  }
+                  console.log(`Selected item: "${label || text}"`);
+                  return label || text;
+                }
+              }
+            }
+            return undefined;
+          } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e);
+            console.log(`Error selecting item in "${quickPick}": ${message}`);
+            return undefined;
+          }
+        },
+        ELEMENT_WAIT_MS,
+        `Select "${items.join(' OR ')}" item for QuickPick "${quickPick}" failed`,
+    )
+      .catch(async (e: unknown) => {
+        // Log available items for debugging
         try {
           const inputBox = await InputBox.create();
           const picks = await inputBox.getQuickPicks();
-          for (const pick of picks) {
-            const text = await pick.getText();
-            const label = await pick.getLabel().catch(() => '');
-
-            for (const searchItem of items) {
-              if (text === searchItem || label === searchItem) {
-                console.log(`Found item: "${label || text}". Selecting...`);
-                try {
-                  await pick.select();
-                } catch (e: any) {
-                  if (e.message && e.message.includes('element click intercepted')) {
-                    console.log(`Selection intercepted. Trying JS click for "${label || text}"...`);
-                    await driver.executeScript('arguments[0].click();', pick);
-                  } else {
-                    throw e;
-                  }
-                }
-                console.log(`Selected item: "${label || text}"`);
-                return label || text;
-              }
-            }
-          }
-          return undefined;
-        } catch (e: any) {
-          console.log(`Error selecting item in "${quickPick}": ${e.message}`);
-          return undefined;
+          const labels = await Promise.all(picks.map((p) => p.getText()));
+          console.log(`Available QuickPick items for "${quickPick}":`, labels);
+        } catch (err) {
+          console.log('Failed to log QuickPick items:', err);
         }
-      },
-      ELEMENT_WAIT_MS,
-      `Select "${items.join(' OR ')}" item for QuickPick "${quickPick}" failed`,
 
-
-
-    ).catch(async (e) => {
-      // Log available items for debugging
-      try {
-        const inputBox = await InputBox.create();
-        const picks = await inputBox.getQuickPicks();
-        const labels = await Promise.all(picks.map(p => p.getText()));
-        console.log(`Available QuickPick items for "${quickPick}":`, labels);
-      } catch (err) {
-        console.log('Failed to log QuickPick items:', err);
-      }
-
-      // If the QuickPick selection fails, ensure we take a screenshot for debugging.
-      const title = testTitle.replace(/\s+/g, '_').replace(/[\/\\?%*:|"<>]/g, '-');
-      await takeScreenshot(driver, `${title}_quickpick_failure`);
-      throw e;
-    });
+        // If the QuickPick selection fails, ensure we take a screenshot for
+        // debugging.
+        const title = testTitle
+          .replace(/\s+/g, '_')
+          .replace(/[/\\?%*:|"<>]/g, '-');
+        await takeScreenshot(driver, `${title}_quickpick_failure`);
+        throw e;
+      });
   }
 
   /**
@@ -326,11 +341,13 @@ describe('Workbench Extension', function () {
       await takeScreenshot(oauthDriver, 'auth_success');
 
       await oauthDriver.quit();
-    } catch (_) {
+    } catch (err) {
       // If the OAuth flow fails, ensure we grab a screenshot for debugging.
-      const title = testTitle.replace(/\s+/g, '_').replace(/[\/\\?%*:|"<>]/g, '-');
+      const title = testTitle
+        .replace(/\s+/g, '_')
+        .replace(/[/\\?%*:|"<>]/g, '-');
       await takeScreenshot(oauthDriver, `${title}_oauth_window_failure`);
-      throw _;
+      throw err;
     }
   }
 });
@@ -348,10 +365,15 @@ async function getOAuthDriver(): Promise<WebDriver> {
 
   if (process.env.CHROMEDRIVER_PATH) {
     serviceBuilder = new chrome.ServiceBuilder(process.env.CHROMEDRIVER_PATH);
-    console.log('DEBUG: Using CHROMEDRIVER_PATH env:', process.env.CHROMEDRIVER_PATH);
+    console.log(
+      'DEBUG: Using CHROMEDRIVER_PATH env:',
+      process.env.CHROMEDRIVER_PATH,
+    );
   } else {
-    // Fallback to finding it in /tmp/test-resources if not set (e.g. running via debug config)
-    // We explicitly look for version 144 first as that is the current system version.
+    // Fallback to finding it in /tmp/test-resources 
+    // if not set (e.g. running via debug config)
+    // We explicitly look for version 144 first as that
+    // is the current system version.
     const possiblePaths = [
       '/tmp/test-resources/chromedriver-144/chromedriver-linux64/chromedriver', // Created by our script
       '/tmp/test-resources/chromedriver-linux64/chromedriver', // Default extest (often outdated/142)
@@ -370,7 +392,9 @@ async function getOAuthDriver(): Promise<WebDriver> {
       console.log('DEBUG: Found ChromeDriver fallback:', foundPath);
     } else {
       serviceBuilder = new chrome.ServiceBuilder();
-      console.log('DEBUG: No local ChromeDriver found, relying on Selenium Manager');
+      console.log(
+        'DEBUG: No local ChromeDriver found, relying on Selenium Manager',
+      );
     }
   }
 
@@ -384,7 +408,6 @@ async function getOAuthDriver(): Promise<WebDriver> {
 }
 
 async function notebookLoaded(driver: WebDriver): Promise<void> {
-
   await driver.wait(
     async () => {
       const editors = await driver.findElements(
@@ -421,10 +444,9 @@ async function takeScreenshot(driver: WebDriver, name: string): Promise<void> {
   if (!fs.existsSync(SCREENSHOTS_DIR)) {
     fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
   }
-  const fileName = `${screenshotStep}_${name}.png`;
+  const fileName = `${String(screenshotStep)}_${name}.png`;
   screenshotStep++;
   const screenshotPath = path.join(SCREENSHOTS_DIR, fileName);
   const image = await driver.takeScreenshot();
   fs.writeFileSync(screenshotPath, image, 'base64');
 }
-

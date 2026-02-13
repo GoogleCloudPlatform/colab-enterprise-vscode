@@ -120,7 +120,7 @@ jobs:
       - name: npm run test:integration
         if: matrix.os != 'ubuntu-latest'
         run: npm run test:integration
-  
+
   e2eTests:
     name: VS Code E2E Tests
     strategy:
@@ -164,4 +164,3 @@ jobs:
         with:
           name: exthost log
           path: /tmp/test-resources/settings/logs/*/window1/exthost/exthost.log
-

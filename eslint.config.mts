@@ -16,10 +16,10 @@ import tsDocPlugin from 'eslint-plugin-tsdoc';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
+export default [
   eslint.configs.recommended,
-  tseslint.configs.strictTypeChecked,
-  tseslint.configs.stylisticTypeChecked,
+  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
   cspellESLintPluginRecommended,
   {
     languageOptions: {
@@ -118,4 +118,4 @@ export default tseslint.config(
   },
   // Intentionally last to override any conflicting rules.
   eslintConfigPrettier,
-);
+];

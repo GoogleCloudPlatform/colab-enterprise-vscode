@@ -61,7 +61,9 @@ export class FakeAuthenticationProviderManager {
    */
   async getSession(
     providerId: string,
-    scopeListOrRequest: readonly string[] | vscode.AuthenticationWwwAuthenticateRequest,
+    scopeListOrRequest:
+      | readonly string[]
+      | vscode.AuthenticationWwwAuthenticateRequest,
     // Cover all of the overloads.
     options?:
       | (vscode.AuthenticationGetSessionOptions & {
@@ -80,7 +82,9 @@ export class FakeAuthenticationProviderManager {
     }
 
     if (!Array.isArray(scopeListOrRequest)) {
-      throw new Error('This fake getSession implementation only supports scopes as string arrays');
+      throw new Error(
+        'This fake getSession implementation only supports scopes as string arrays',
+      );
     }
     const scopes = scopeListOrRequest as readonly string[];
     const sessionOptions = options ?? {};
