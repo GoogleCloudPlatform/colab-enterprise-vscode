@@ -51,14 +51,16 @@ describe('Workbench Extension', function () {
   });
 
   afterEach(async function () {
-    const state = this.currentTest?.state === 'passed' ? 'success' : 'failed';
+    const state = this.currentTest?.state ?? 'unknown';
     const title =
       this.currentTest
         ?.fullTitle()
         .replace(/\s+/g, '_')
         .replace(/[/\\?%*:|"<>]/g, '-') ?? 'unknown_test';
     try {
-      await takeScreenshot(driver, `${title}_${state}`);
+      if (state === 'failed') {
+        await takeScreenshot(driver, `FAILURE_${title}`);
+      }
     } catch (err) {
       console.error('Failed to take screenshot:', err);
     }
