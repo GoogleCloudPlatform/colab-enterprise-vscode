@@ -22,7 +22,7 @@ on:
 
 env:
   # See supported Node.js release schedule at https://nodejs.org/en/about/releases
-  NODE_VERSION: 22.x
+  NODE_VERSION: ${{ env.NODE_VERSION }}
 
 jobs:
   generateConfig:
@@ -131,8 +131,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: generateConfig
     env:
-      TEST_ACCOUNT_EMAIL: ${{ secrets.TEST_ACCOUNT_EMAIL }}
-      TEST_ACCOUNT_PASSWORD: ${{ secrets.TEST_ACCOUNT_PASSWORD }}
+      TEST_ACCOUNT_EMAIL: ${{ env.TEST_ACCOUNT_EMAIL }}
+      TEST_ACCOUNT_PASSWORD: ${{ env.TEST_ACCOUNT_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ env.NODE_VERSION }}
