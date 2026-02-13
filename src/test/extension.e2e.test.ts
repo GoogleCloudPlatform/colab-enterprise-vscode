@@ -25,7 +25,7 @@ const ELEMENT_WAIT_MS = 15000;
 const CELL_EXECUTION_WAIT_MS = 30000;
 const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-');
 const SCREENSHOTS_DIR =
-  process.env.SCREENSHOTS_DIR ||
+  process.env.SCREENSHOTS_DIR ??
   path.resolve(__dirname, '../../e2e-screenshots', RUN_TIMESTAMP);
 let screenshotStep = 1;
 
@@ -171,6 +171,8 @@ describe('Workbench Extension', function () {
         CELL_EXECUTION_WAIT_MS,
         'Notebook: Run All failed',
       );
+
+      await takeScreenshot(driver, 'notebook_run_all');
     });
   });
 
@@ -233,7 +235,7 @@ describe('Workbench Extension', function () {
         },
         ELEMENT_WAIT_MS,
         `Select "${items.join(' OR ')}" item for QuickPick "${quickPick}" failed`,
-    )
+      )
       .catch(async (e: unknown) => {
         // Log available items for debugging
         try {
