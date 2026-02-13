@@ -88,7 +88,7 @@ describe('Workbench Extension', function () {
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
       await takeScreenshot(driver, 'select_kernel_command');
       const selected = await selectQuickPickItem({
-        item: 'Select Another Kernel...',
+        item: ['Select Another Kernel...', 'Select Another Kernel', 'Google Cloud Workbench'],
         quickPick: 'Select Another Kernel...',
       });
       if (
