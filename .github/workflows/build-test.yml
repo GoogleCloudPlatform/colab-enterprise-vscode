@@ -31,8 +31,8 @@ jobs:
     name: Generate Config
     runs-on: ubuntu-latest
     env:
-      WORKBENCH_EXTENSION_CLIENT_ID: "client-id"
-      WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET: "client-not-so-secret"
+      WORKBENCH_EXTENSION_CLIENT_ID: ${{ vars.WORKBENCH_EXTENSION_CLIENT_ID }}
+      WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET: ${{ vars.WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ env.NODE_VERSION }}
