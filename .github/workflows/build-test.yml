@@ -22,7 +22,7 @@ on:
 
 env:
   # See supported Node.js release schedule at https://nodejs.org/en/about/releases
-  NODE_VERSION: '24'
+  NODE_VERSION: "24"
   TEST_ACCOUNT_EMAIL: ${{ vars.TEST_ACCOUNT_EMAIL }}
   TEST_ACCOUNT_PASSWORD: ${{ vars.TEST_ACCOUNT_PASSWORD }}
 
@@ -149,11 +149,15 @@ jobs:
       - name: npm run test:e2e:headless (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: npm run test:e2e:headless
+        env:
+          SCREENSHOTS_DIR: /tmp/test-resources/screenshots/
       - name: npm run test:e2e
         if: matrix.os != 'ubuntu-latest'
         run: npm run test:e2e
+        env:
+          SCREENSHOTS_DIR: /tmp/test-resources/screenshots/
       - name: upload screenshots
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: screenshots

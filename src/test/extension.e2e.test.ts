@@ -24,11 +24,9 @@ import { CONFIG } from '../config';
 const ELEMENT_WAIT_MS = 15000;
 const CELL_EXECUTION_WAIT_MS = 30000;
 const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-');
-const SCREENSHOTS_DIR = path.resolve(
-  __dirname,
-  '../../e2e-screenshots',
-  RUN_TIMESTAMP,
-);
+const SCREENSHOTS_DIR =
+  process.env.SCREENSHOTS_DIR ||
+  path.resolve(__dirname, '../../e2e-screenshots', RUN_TIMESTAMP);
 let screenshotStep = 1;
 
 describe('Workbench Extension', function () {
@@ -88,7 +86,11 @@ describe('Workbench Extension', function () {
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
       await takeScreenshot(driver, 'select_kernel_command');
       const selected = await selectQuickPickItem({
-        item: ['Select Another Kernel...', 'Select Another Kernel', 'Google Cloud Workbench'],
+        item: [
+          'Select Another Kernel...',
+          'Select Another Kernel',
+          'Google Cloud Workbench',
+        ],
         quickPick: 'Select Another Kernel...',
       });
       if (
@@ -132,7 +134,7 @@ describe('Workbench Extension', function () {
       });
 
       await driver.sleep(ELEMENT_WAIT_MS);
-      await takeScreenshot(driver, 'Select workbench instance');
+      await takeScreenshot(driver, 'project_selected');
 
       // Alias the server with the default name.
       const inputBox = await InputBox.create();
@@ -143,7 +145,7 @@ describe('Workbench Extension', function () {
       });
 
       await driver.sleep(ELEMENT_WAIT_MS);
-      await takeScreenshot(driver, 'Select workbench instance kernel');
+      await takeScreenshot(driver, 'server_selected');
 
       await selectQuickPickItem({
         item: 'TensorFlow 2-11',
@@ -151,7 +153,7 @@ describe('Workbench Extension', function () {
       });
 
       await driver.sleep(ELEMENT_WAIT_MS);
-      await takeScreenshot(driver, 'Select workbench instance kernel');
+      await takeScreenshot(driver, 'kernel_selected');
 
       await driver.sleep(ELEMENT_WAIT_MS);
       // Execute the notebook and poll for the success indicator (green check).
@@ -210,6 +212,12 @@ describe('Workbench Extension', function () {
                     }
                   }
                   console.log(`Selected item: "${label || text}"`);
+                  await takeScreenshot(
+                    driver,
+                    `selected_${(label || text)
+                      .replace(/[^a-z0-9]/gi, '_')
+                      .toLowerCase()}`,
+                  );
                   return label || text;
                 }
               }
@@ -370,7 +378,7 @@ async function getOAuthDriver(): Promise<WebDriver> {
       process.env.CHROMEDRIVER_PATH,
     );
   } else {
-    // Fallback to finding it in /tmp/test-resources 
+    // Fallback to finding it in /tmp/test-resources
     // if not set (e.g. running via debug config)
     // We explicitly look for version 144 first as that
     // is the current system version.
