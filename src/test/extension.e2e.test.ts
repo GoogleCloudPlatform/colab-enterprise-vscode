@@ -21,7 +21,7 @@ import {
 } from 'vscode-extension-tester';
 import { CONFIG } from '../config';
 
-const ELEMENT_WAIT_MS = 15000;
+const ELEMENT_WAIT_MS = 10000;
 const CELL_EXECUTION_WAIT_MS = 30000;
 const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-');
 const SCREENSHOTS_DIR =
@@ -50,43 +50,39 @@ describe('Workbench Extension', function () {
     screenshotStep = 1;
   });
 
-  afterEach(async function () {
-    const state = this.currentTest?.state ?? 'unknown';
-    const title =
-      this.currentTest
-        ?.fullTitle()
-        .replace(/\s+/g, '_')
-        .replace(/[/\\?%*:|"<>]/g, '-') ?? 'unknown_test';
-    try {
-      if (state === 'failed') {
-        await takeScreenshot(driver, `FAILURE_${title}`);
-      }
-    } catch (err) {
-      console.error('Failed to take screenshot:', err);
-    }
-  });
+  // afterEach(async function () {
+  //   const state = this.currentTest?.state ?? 'unknown';
+  //   const title =
+  //     this.currentTest
+  //       ?.fullTitle()
+  //       .replace(/\s+/g, '_')
+  //       .replace(/[/\\?%*:|"<>]/g, '-') ?? 'unknown_test';
+  //   try {
+  //     if (state === 'failed') {
+  //       await takeScreenshot(driver, `FAILURE_${title}`);
+  //     }
+  //   } catch (err) {
+  //     console.error('Failed to take screenshot:', err);
+  //   }
+  // });
 
   describe('with a notebook', () => {
     beforeEach(async () => {
       // Create an executable notebook. Note that it's created with a single
       // code cell by default.
       await workbench.executeCommand('Create: New Jupyter Notebook');
-      await takeScreenshot(driver, 'create_notebook');
+
       // Wait for the notebook editor to finish loading before we interact with
       // it.
       await notebookLoaded(driver);
-      await takeScreenshot(driver, 'notebook_loaded');
       await workbench.executeCommand('Notebook: Edit Cell');
-      await takeScreenshot(driver, 'edit_cell');
       const cell = await driver.switchTo().activeElement();
       await cell.sendKeys('1 + 1');
-      await takeScreenshot(driver, 'cell_filled');
     });
 
-    it('authenticates and executes the notebook on a Colab server', async () => {
+    it('authenticates and executes the notebook on a Workbench server', async () => {
       // Select the Colab server provider from the kernel selector.
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
-      await takeScreenshot(driver, 'select_kernel_command');
       const selected = await selectQuickPickItem({
         item: [
           'Select Another Kernel...',
@@ -345,11 +341,11 @@ describe('Workbench Extension', function () {
       );
       await takeScreenshot(oauthDriver, 'allow_clicked');
 
-      // Check that the test account's authenticated. Close the browser window.
-      // await oauthDriver.wait(
-      //   until.urlContains('vscode://google.workbench/auth-success'),
-      //   ELEMENT_WAIT_MS,
-      // );
+      // Check that the test account is authenticated. Close the browser window.
+      await oauthDriver.wait(
+        until.urlContains('https://cloud.google.com/vertex-ai-notebooks'),
+        ELEMENT_WAIT_MS,
+      );
       await takeScreenshot(oauthDriver, 'auth_success');
 
       await oauthDriver.quit();
