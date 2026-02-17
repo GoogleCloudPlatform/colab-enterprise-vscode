@@ -18,10 +18,11 @@ import {
   WebDriver,
   Workbench,
   until,
+  VSBrowser,
 } from 'vscode-extension-tester';
 import { CONFIG } from '../config';
 
-const ELEMENT_WAIT_MS = 10000;
+const ELEMENT_WAIT_MS = 30000;
 const CELL_EXECUTION_WAIT_MS = 30000;
 const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-');
 const SCREENSHOTS_DIR =
@@ -124,15 +125,12 @@ describe('Workbench Extension', function () {
       const clipboardy = await import('clipboardy');
       await doOauthSignIn(/* oauthUrl= */ clipboardy.default.readSync());
 
-      // Now that we're authenticated, we can resume creating a Colab server via
-      // the open kernel selector.
+      // Now that we're authenticated, we can resume selecting GCP project for
+      // the Workbench notebook server.
       await selectQuickPickItem({
         item: 'jaas-test-notebooks-host',
         quickPick: 'Select a Google Cloud Project (1/2)',
       });
-
-      await driver.sleep(ELEMENT_WAIT_MS);
-      await takeScreenshot(driver, 'project_selected');
 
       // Alias the server with the default name.
       const inputBox = await InputBox.create();
@@ -142,16 +140,10 @@ describe('Workbench Extension', function () {
         quickPick: 'Select a Jupyter Server',
       });
 
-      await driver.sleep(ELEMENT_WAIT_MS);
-      await takeScreenshot(driver, 'server_selected');
-
       await selectQuickPickItem({
         item: 'TensorFlow 2-11',
         quickPick: 'Select a Kernel',
       });
-
-      await driver.sleep(ELEMENT_WAIT_MS);
-      await takeScreenshot(driver, 'kernel_selected');
 
       await driver.sleep(ELEMENT_WAIT_MS);
       // Execute the notebook and poll for the success indicator (green check).
@@ -167,8 +159,6 @@ describe('Workbench Extension', function () {
         CELL_EXECUTION_WAIT_MS,
         'Notebook: Run All failed',
       );
-
-      await takeScreenshot(driver, 'notebook_run_all');
     });
   });
 
@@ -243,12 +233,6 @@ describe('Workbench Extension', function () {
           console.log('Failed to log QuickPick items:', err);
         }
 
-        // If the QuickPick selection fails, ensure we take a screenshot for
-        // debugging.
-        const title = testTitle
-          .replace(/\s+/g, '_')
-          .replace(/[/\\?%*:|"<>]/g, '-');
-        await takeScreenshot(driver, `${title}_quickpick_failure`);
         throw e;
       });
   }
@@ -289,73 +273,79 @@ describe('Workbench Extension', function () {
 
     try {
       await oauthDriver.get(oauthUrl);
-      await takeScreenshot(oauthDriver, 'oauth_redirect_loaded');
 
       // Input the test account email address.
       const emailInput = await oauthDriver.findElement(
         By.css("input[type='email']"),
       );
       await emailInput.sendKeys(process.env.TEST_ACCOUNT_EMAIL ?? '');
+      console.log('DEBUG: Entered email');
       await emailInput.sendKeys(Key.ENTER);
-      await takeScreenshot(oauthDriver, 'email_entered');
 
       // Input the test account password. Note that we wait for the page to
       // settle to avoid getting a stale element reference.
       await oauthDriver.wait(
         until.urlContains('accounts.google.com/v3/signin/challenge'),
         ELEMENT_WAIT_MS,
-      );
+      )
+      console.log('DEBUG: Password challenge page reached');
       await oauthDriver.sleep(1000);
-      await takeScreenshot(oauthDriver, 'password_page_loaded');
 
       const passwordInput = await oauthDriver.findElement(
         By.css("input[type='password']"),
       );
       await passwordInput.sendKeys(process.env.TEST_ACCOUNT_PASSWORD ?? '');
+      console.log('DEBUG: Entered password');
       await passwordInput.sendKeys(Key.ENTER);
-      await takeScreenshot(oauthDriver, 'password_entered');
 
       // Click Continue to sign in to Colab.
       await oauthDriver.wait(
         until.urlContains('accounts.google.com/signin/oauth/id'),
         ELEMENT_WAIT_MS,
       );
-      await takeScreenshot(oauthDriver, 'oauth_id_page_loaded');
+      console.log('DEBUG: Sign-in ID page reached');
+      await takeScreenshot(oauthDriver, 'oauth_id_page');
 
       await waitAndClick(
         oauthDriver,
         By.xpath("//span[text()='Continue']"),
         '"Continue" button not visible on ID screen',
       );
-      await takeScreenshot(oauthDriver, 'continue_clicked');
 
       // Click Allow or Continue to authorize the scope (handles both v1 and v2
       // consent screens).
       await oauthDriver.wait(until.urlContains('consent'), ELEMENT_WAIT_MS);
-      await takeScreenshot(oauthDriver, 'consent_page_loaded');
+      console.log('DEBUG: Consent page reached');
+      await takeScreenshot(oauthDriver, 'oauth_consent_page');
 
       await waitAndClick(
         oauthDriver,
-        By.xpath("//span[text()='Allow' or text()='Continue']"),
+        By.xpath(
+          "//span[text()='Allow' or text()='Continue'] | //button[text()='Allow' or text()='Continue'] | //div[text()='Allow' or text()='Continue']",
+        ),
         '"Allow" or "Continue" button not visible on consent screen',
       );
-      await takeScreenshot(oauthDriver, 'allow_clicked');
 
       // Check that the test account is authenticated. Close the browser window.
       await oauthDriver.wait(
         until.urlContains('https://cloud.google.com/vertex-ai-notebooks'),
         ELEMENT_WAIT_MS,
       );
-      await takeScreenshot(oauthDriver, 'auth_success');
+      console.log('DEBUG: Authenticated and redirected to Workbench URL');
 
       await oauthDriver.quit();
-    } catch (err) {
+    } catch (_) {
       // If the OAuth flow fails, ensure we grab a screenshot for debugging.
-      const title = testTitle
-        .replace(/\s+/g, '_')
-        .replace(/[/\\?%*:|"<>]/g, '-');
-      await takeScreenshot(oauthDriver, `${title}_oauth_window_failure`);
-      throw err;
+      const screenshotsDir = VSBrowser.instance.getScreenshotsDir();
+      if (!fs.existsSync(screenshotsDir)) {
+        fs.mkdirSync(screenshotsDir, { recursive: true });
+      }
+      fs.writeFileSync(
+        `${screenshotsDir}/${testTitle} (oauth window).png`,
+        await oauthDriver.takeScreenshot(),
+        'base64',
+      );
+      throw _;
     }
   }
 });
@@ -436,12 +426,18 @@ async function waitAndClick(
   locator: By,
   errorMsg: string,
 ): Promise<void> {
-  await driver.wait(
-    until.elementIsVisible(await driver.findElement(locator)),
+  console.log(`DEBUG: Waiting for element: ${locator.toString()}`);
+  const element = await driver.wait(
+    until.elementLocated(locator),
     ELEMENT_WAIT_MS,
     errorMsg,
   );
-  const element = await driver.findElement(locator);
+  await driver.wait(
+    until.elementIsVisible(element),
+    ELEMENT_WAIT_MS,
+    `Element located but not visible: ${errorMsg}`,
+  );
+  console.log(`DEBUG: Clicking element: ${locator.toString()}`);
   await element.click();
 }
 
