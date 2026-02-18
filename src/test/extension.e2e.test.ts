@@ -314,14 +314,8 @@ function getOAuthDriver(): WebDriver {
   const authDriverArgs = process.argv
     .filter((a) => a.startsWith(authDriverArgsPrefix))
     .map((a) => a.substring(authDriverArgsPrefix.length));
-
-
-  // let path = '/tmp/test-resources/chromedriver-144/chromedriver-linux64/chromedriver';
-  let serviceBuilder = new chrome.ServiceBuilder();
-
   return new Builder()
     .forBrowser('chrome')
-    .setChromeService(serviceBuilder)
     .setChromeOptions(
       new chrome.Options().addArguments(...authDriverArgs) as chrome.Options,
     )
