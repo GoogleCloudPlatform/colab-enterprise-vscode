@@ -43,7 +43,6 @@ describe('Workbench Extension', function () {
       // Create an executable notebook. Note that it's created with a single
       // code cell by default.
       await workbench.executeCommand('Create: New Jupyter Notebook');
-
       // Wait for the notebook editor to finish loading before we interact with
       // it.
       await notebookLoaded(driver);
@@ -146,19 +145,14 @@ describe('Workbench Extension', function () {
               const text = await pick.getText();
               for (const item of items) {
                 if (text.includes(item)) {
-                  console.log(`[E2E Debug] Found pick "${text}" matching "${item}" in "${quickPick}"`);
                   try {
                     await pick.select();
-                    console.log(`[E2E Debug] Successfully selected "${item}" in "${quickPick}"`);
                     return item;
                   } catch (selectErr) {
-                    console.warn(`[E2E Debug Warning] pick.select() failed for "${item}". Retrying with inputBox.selectQuickPick... Error was:`, selectErr instanceof Error ? selectErr.message : selectErr);
                     try {
                       await inputBox.selectQuickPick(text);
-                      console.log(`[E2E Debug] Successfully fallback-selected "${item}" using inputBox.selectQuickPick`);
                       return item;
                     } catch (fallbackErr) {
-                      console.error(`[E2E Debug Error] Fallback also failed for "${item}":`, fallbackErr instanceof Error ? fallbackErr.message : fallbackErr);
                       throw fallbackErr;
                     }
                   }
@@ -246,7 +240,6 @@ describe('Workbench Extension', function () {
         By.css("input[type='email']"),
       );
       await emailInput.sendKeys(process.env.TEST_ACCOUNT_EMAIL ?? '');
-      console.log('DEBUG: Entered email');
       await emailInput.sendKeys(Key.ENTER);
 
       // Input the test account password. Note that we wait for the page to
@@ -254,23 +247,20 @@ describe('Workbench Extension', function () {
       await oauthDriver.wait(
         until.urlContains('accounts.google.com/v3/signin/challenge'),
         ELEMENT_WAIT_MS,
-      )
-      console.log('DEBUG: Password challenge page reached');
+      );
       await oauthDriver.sleep(1000);
 
       const passwordInput = await oauthDriver.findElement(
         By.css("input[type='password']"),
       );
       await passwordInput.sendKeys(process.env.TEST_ACCOUNT_PASSWORD ?? '');
-      console.log('DEBUG: Entered password');
       await passwordInput.sendKeys(Key.ENTER);
 
       // Click Continue to sign in to Colab.
       await oauthDriver.wait(
         until.urlContains('accounts.google.com/signin/oauth/id'),
         ELEMENT_WAIT_MS,
-      );
-      console.log('DEBUG: Sign-in ID page reached');
+      )
 
       await waitAndClick(
         oauthDriver,
@@ -281,14 +271,11 @@ describe('Workbench Extension', function () {
       // Click Allow or Continue to authorize the scope (handles both v1 and v2
       // consent screens).
       await oauthDriver.wait(until.urlContains('consent'), ELEMENT_WAIT_MS);
-      console.log('DEBUG: Consent page reached');
       await driver.sleep(2000);
 
       await waitAndClick(
         oauthDriver,
-        By.xpath(
-          "//span[text()='Allow' or text()='Continue'] | //button[text()='Allow' or text()='Continue'] | //div[text()='Allow' or text()='Continue']",
-        ),
+        By.xpath("//span[text()='Allow' or text()='Continue']"),
         '"Allow" or "Continue" button not visible on consent screen',
       );
 
@@ -297,7 +284,6 @@ describe('Workbench Extension', function () {
         until.urlContains('https://cloud.google.com/vertex-ai-notebooks'),
         ELEMENT_WAIT_MS,
       );
-      console.log('DEBUG: Authenticated and redirected to Workbench URL');
 
       await oauthDriver.quit();
     } catch (_) {
@@ -343,7 +329,6 @@ async function waitAndClick(
   locator: By,
   errorMsg: string,
 ): Promise<void> {
-  console.log(`DEBUG: Waiting for element: ${locator.toString()}`);
   const element = await driver.wait(
     until.elementLocated(locator),
     ELEMENT_WAIT_MS,
@@ -354,6 +339,5 @@ async function waitAndClick(
     ELEMENT_WAIT_MS,
     `Element located but not visible: ${errorMsg}`,
   );
-  console.log(`DEBUG: Clicking element: ${locator.toString()}`);
   await element.click();
 }
