@@ -56,9 +56,9 @@ describe('Workbench Extension', function () {
     it('authenticates and executes the notebook on a Workbench server', async () => {
       // Select the Colab server provider from the kernel selector.
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
-      const selected = await selectQuickPickItem({
-        item: 'Select Another Kernel...',
-        quickPick: 'Select Another Kernel...',
+      const selected = await selectAnyQuickPickItem({
+        items: ['Select Another Kernel...', 'Google Cloud Workbench'],
+        quickPick: 'Select Notebook Kernel',
       });
       if (
         selected &&
@@ -130,14 +130,11 @@ describe('Workbench Extension', function () {
     });
   });
 
-  /**
-   * Selects the QuickPick option.
-   */
-  async function selectQuickPickItem({
-    item,
+  async function selectAnyQuickPickItem({
+    items,
     quickPick,
   }: {
-    item: string;
+      items: string[];
     quickPick: string;
   }): Promise<string> {
     return driver
@@ -148,9 +145,11 @@ describe('Workbench Extension', function () {
             const picks = await inputBox.getQuickPicks();
             for (const pick of picks) {
               const text = await pick.getText();
-              if (text.includes(item)) {
-                await pick.select();
-                return item;
+              for (const item of items) {
+                if (text.includes(item)) {
+                  await pick.select();
+                  return item;
+                }
               }
             }
             return false;
@@ -159,7 +158,7 @@ describe('Workbench Extension', function () {
           }
         },
         ELEMENT_WAIT_MS,
-        `Selecting "${item}" item for QuickPick "${quickPick}" failed`
+        `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`
       )
       .catch(async (e: unknown) => {
         // Log available items for debugging
@@ -174,6 +173,19 @@ describe('Workbench Extension', function () {
 
         throw e;
       }) as Promise<string>;
+  }
+
+  /**
+   * Selects the QuickPick option.
+   */
+  async function selectQuickPickItem({
+    item,
+    quickPick,
+  }: {
+    item: string;
+    quickPick: string;
+  }): Promise<string> {
+    return selectAnyQuickPickItem({ items: [item], quickPick });
   }
   /**
    * Pushes a button in a modal dialog and waits for the action to complete.
