@@ -39,22 +39,6 @@ describe('Workbench Extension', function () {
   });
 
 
-  // afterEach(async function () {
-  //   const state = this.currentTest?.state ?? 'unknown';
-  //   const title =
-  //     this.currentTest
-  //       ?.fullTitle()
-  //       .replace(/\s+/g, '_')
-  //       .replace(/[/\\?%*:|"<>]/g, '-') ?? 'unknown_test';
-  //   try {
-  //     if (state === 'failed') {
-  //       await takeScreenshot(driver, `FAILURE_${title}`);
-  //     }
-  //   } catch (err) {
-  //     console.error('Failed to take screenshot:', err);
-  //   }
-  // });
-
   describe('with a notebook', () => {
     beforeEach(async () => {
       // Create an executable notebook. Note that it's created with a single
@@ -73,11 +57,7 @@ describe('Workbench Extension', function () {
       // Select the Colab server provider from the kernel selector.
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
       const selected = await selectQuickPickItem({
-        item: [
-          'Select Another Kernel...',
-          'Select Another Kernel',
-          'Google Cloud Workbench',
-        ],
+        item: 'Select Another Kernel...',
         quickPick: 'Select Another Kernel...',
       });
       if (
@@ -157,10 +137,9 @@ describe('Workbench Extension', function () {
     item,
     quickPick,
   }: {
-    item: string | string[];
+    item: string;
     quickPick: string;
-  }): Promise<string | undefined> {
-    const items = Array.isArray(item) ? item : [item];
+  }): Promise<string> {
     return driver
       .wait(
         async () => {
@@ -169,40 +148,18 @@ describe('Workbench Extension', function () {
             const picks = await inputBox.getQuickPicks();
             for (const pick of picks) {
               const text = await pick.getText();
-              const label = await pick.getLabel().catch(() => '');
-
-              for (const searchItem of items) {
-                if (text === searchItem || label === searchItem) {
-                  console.log(`Found item: "${label || text}". Selecting...`);
-                  try {
-                    await pick.select();
-                  } catch (e: unknown) {
-                    if (
-                      e instanceof Error &&
-                      e.message.includes('element click intercepted')
-                    ) {
-                      console.log(
-                        `Selection intercepted. Trying JS click for "${label || text}"...`,
-                      );
-                      await driver.executeScript('arguments[0].click();', pick);
-                    } else {
-                      throw e;
-                    }
-                  }
-                  console.log(`Selected item: "${label || text}"`);
-                  return label || text;
-                }
+              if (text.includes(item)) {
+                await pick.select();
+                return item;
               }
             }
-            return undefined;
-          } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : String(e);
-            console.log(`Error selecting item in "${quickPick}": ${message}`);
-            return undefined;
+            return false;
+          } catch (e) {
+            return false;
           }
         },
         ELEMENT_WAIT_MS,
-        `Select "${items.join(' OR ')}" item for QuickPick "${quickPick}" failed`,
+        `Selecting "${item}" item for QuickPick "${quickPick}" failed`
       )
       .catch(async (e: unknown) => {
         // Log available items for debugging
@@ -210,15 +167,14 @@ describe('Workbench Extension', function () {
           const inputBox = await InputBox.create();
           const picks = await inputBox.getQuickPicks();
           const labels = await Promise.all(picks.map((p) => p.getText()));
-          console.log(`Available QuickPick items for "${quickPick}":`, labels);
+          console.error(`Available QuickPick items for "${quickPick}":`, labels);
         } catch (err) {
-          console.log('Failed to log QuickPick items:', err);
+          console.error('Failed to log QuickPick items:', err);
         }
 
         throw e;
-      });
+      }) as Promise<string>;
   }
-
   /**
    * Pushes a button in a modal dialog and waits for the action to complete.
    */
