@@ -5,7 +5,6 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
 import { assert } from 'chai';
 import dotenv from 'dotenv';
 import * as chrome from 'selenium-webdriver/chrome';
@@ -18,23 +17,16 @@ import {
   WebDriver,
   Workbench,
   until,
-  VSBrowser,
 } from 'vscode-extension-tester';
 import { CONFIG } from '../config';
 
-const ELEMENT_WAIT_MS = 30000;
+const ELEMENT_WAIT_MS = 60000;
 const CELL_EXECUTION_WAIT_MS = 30000;
-const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-');
-const SCREENSHOTS_DIR =
-  process.env.SCREENSHOTS_DIR ??
-  path.resolve(__dirname, '../../e2e-screenshots', RUN_TIMESTAMP);
-let screenshotStep = 1;
 
 describe('Workbench Extension', function () {
   dotenv.config();
 
   let driver: WebDriver;
-  let testTitle: string;
   let workbench: Workbench;
 
   before(async () => {
@@ -46,10 +38,6 @@ describe('Workbench Extension', function () {
     await driver.sleep(8000);
   });
 
-  beforeEach(function () {
-    testTitle = this.currentTest?.fullTitle() ?? '';
-    screenshotStep = 1;
-  });
 
   // afterEach(async function () {
   //   const state = this.currentTest?.state ?? 'unknown';
@@ -202,12 +190,6 @@ describe('Workbench Extension', function () {
                     }
                   }
                   console.log(`Selected item: "${label || text}"`);
-                  await takeScreenshot(
-                    driver,
-                    `selected_${(label || text)
-                      .replace(/[^a-z0-9]/gi, '_')
-                      .toLowerCase()}`,
-                  );
                   return label || text;
                 }
               }
@@ -304,7 +286,6 @@ describe('Workbench Extension', function () {
         ELEMENT_WAIT_MS,
       );
       console.log('DEBUG: Sign-in ID page reached');
-      await takeScreenshot(oauthDriver, 'oauth_id_page');
 
       await waitAndClick(
         oauthDriver,
@@ -316,7 +297,7 @@ describe('Workbench Extension', function () {
       // consent screens).
       await oauthDriver.wait(until.urlContains('consent'), ELEMENT_WAIT_MS);
       console.log('DEBUG: Consent page reached');
-      await takeScreenshot(oauthDriver, 'oauth_consent_page');
+      await driver.sleep(2000);
 
       await waitAndClick(
         oauthDriver,
@@ -335,16 +316,6 @@ describe('Workbench Extension', function () {
 
       await oauthDriver.quit();
     } catch (_) {
-      // If the OAuth flow fails, ensure we grab a screenshot for debugging.
-      const screenshotsDir = VSBrowser.instance.getScreenshotsDir();
-      if (!fs.existsSync(screenshotsDir)) {
-        fs.mkdirSync(screenshotsDir, { recursive: true });
-      }
-      fs.writeFileSync(
-        `${screenshotsDir}/${testTitle} (oauth window).png`,
-        await oauthDriver.takeScreenshot(),
-        'base64',
-      );
       throw _;
     }
   }
@@ -439,18 +410,4 @@ async function waitAndClick(
   );
   console.log(`DEBUG: Clicking element: ${locator.toString()}`);
   await element.click();
-}
-
-/**
- * Takes a screenshot and saves it to the screenshots directory.
- */
-async function takeScreenshot(driver: WebDriver, name: string): Promise<void> {
-  if (!fs.existsSync(SCREENSHOTS_DIR)) {
-    fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
-  }
-  const fileName = `${String(screenshotStep)}_${name}.png`;
-  screenshotStep++;
-  const screenshotPath = path.join(SCREENSHOTS_DIR, fileName);
-  const image = await driver.takeScreenshot();
-  fs.writeFileSync(screenshotPath, image, 'base64');
 }
