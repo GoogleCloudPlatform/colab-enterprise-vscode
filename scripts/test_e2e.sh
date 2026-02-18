@@ -108,7 +108,6 @@ setup_extest() {
   extest install-vsix "${storage_flag[@]+"${storage_flag[@]}"}" --vsix_file "$VSIX_FILE"
 }
 
-
 build_test_cmd() {
   local base_cmd=()
   if [[ -n "$VSIX_FILE" ]]; then
