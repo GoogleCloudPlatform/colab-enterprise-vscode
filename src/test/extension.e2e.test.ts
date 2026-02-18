@@ -219,7 +219,7 @@ describe('Workbench Extension', function () {
    * Performs the OAuth sign-in flow for the Colab extension.
    */
   async function doOauthSignIn(oauthUrl: string): Promise<void> {
-    const oauthDriver = await getOAuthDriver();
+    const oauthDriver = getOAuthDriver();
 
     try {
       await oauthDriver.get(oauthUrl);
@@ -292,7 +292,7 @@ describe('Workbench Extension', function () {
 /**
  * Creates a new WebDriver instance for the OAuth flow.
  */
-async function getOAuthDriver(): Promise<WebDriver> {
+function getOAuthDriver(): WebDriver {
   const authDriverArgsPrefix = '--auth-driver:';
   const authDriverArgs = process.argv
     .filter((a) => a.startsWith(authDriverArgsPrefix))
@@ -313,7 +313,7 @@ async function getOAuthDriver(): Promise<WebDriver> {
     // is the current system version.
     const possiblePaths = [
       '/tmp/test-resources/chromedriver-144/chromedriver-linux64/chromedriver', // Created by our script
-      '/tmp/test-resources/chromedriver-linux64/chromedriver', // Default extest (often outdated/142)
+      // '/tmp/test-resources/chromedriver-linux64/chromedriver', // Default extest (often outdated/142)
     ];
 
     let foundPath = '';
