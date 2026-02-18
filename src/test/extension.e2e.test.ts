@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import * as fs from 'fs';
 import { assert } from 'chai';
 import dotenv from 'dotenv';
 import * as chrome from 'selenium-webdriver/chrome';
@@ -15,6 +16,7 @@ import {
   ModalDialog,
   WebDriver,
   Workbench,
+  VSBrowser,
   until,
 } from 'vscode-extension-tester';
 import { CONFIG } from '../config';
@@ -26,7 +28,12 @@ describe('Workbench Extension', function () {
   dotenv.config();
 
   let driver: WebDriver;
+  let testTitle: string;
   let workbench: Workbench;
+
+  beforeEach(function () {
+    testTitle = this.currentTest?.fullTitle() ?? '';
+  });
 
   before(async () => {
     assert.ok(CONFIG.ClientId, 'ClientId is not set');
@@ -138,51 +145,28 @@ describe('Workbench Extension', function () {
     return driver
       .wait(
         async () => {
-          try {
             const inputBox = await InputBox.create();
             const picks = await inputBox.getQuickPicks();
             for (const pick of picks) {
               const text = await pick.getText();
               for (const item of items) {
                 if (text.includes(item)) {
-                  try {
-                    await pick.select();
-                    return item;
-                  } catch (selectErr) {
-                    try {
-                      await inputBox.selectQuickPick(text);
-                      return item;
-                    } catch (fallbackErr) {
-                      throw fallbackErr;
-                    }
-                  }
+                  await pick.select();
+                  return item;
                 }
               }
             }
-            return false;
-          } catch (e) {
-            // Log exceptions that aren't run-of-the-mill DOM state errors
-            if (e instanceof Error && !e.message.includes('stale element reference') && !e.message.includes('no such element')) {
-              console.log(`[E2E Debug] Error polling QuickPick "${quickPick}":`, e.message);
-            }
-            return false;
-          }
+          return false;
         },
         ELEMENT_WAIT_MS,
         `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`
       )
-      .catch(async (e: unknown) => {
+      .catch(async () => {
         // Log available items for debugging
-        try {
-          const inputBox = await InputBox.create();
-          const picks = await inputBox.getQuickPicks();
-          const labels = await Promise.all(picks.map((p) => p.getText()));
-          console.error(`Available QuickPick items for "${quickPick}":`, labels);
-        } catch (err) {
-          console.error('Failed to log QuickPick items:', err);
-        }
-
-        throw e;
+        const inputBox = await InputBox.create();
+        const picks = await inputBox.getQuickPicks();
+        const labels = await Promise.all(picks.map((p) => p.getText()));
+        console.error(`Available QuickPick items for "${quickPick}":`, labels);
       }) as Promise<string>;
   }
 
@@ -271,8 +255,6 @@ describe('Workbench Extension', function () {
       // Click Allow or Continue to authorize the scope (handles both v1 and v2
       // consent screens).
       await oauthDriver.wait(until.urlContains('consent'), ELEMENT_WAIT_MS);
-      await driver.sleep(2000);
-
       await waitAndClick(
         oauthDriver,
         By.xpath("//span[text()='Allow' or text()='Continue']"),
@@ -287,6 +269,16 @@ describe('Workbench Extension', function () {
 
       await oauthDriver.quit();
     } catch (_) {
+      // If the OAuth flow fails, ensure we grab a screenshot for debugging.
+      const screenshotsDir = VSBrowser.instance.getScreenshotsDir();
+      if (!fs.existsSync(screenshotsDir)) {
+        fs.mkdirSync(screenshotsDir, { recursive: true });
+      }
+      fs.writeFileSync(
+        `${screenshotsDir}/${testTitle} (oauth window).png`,
+        await oauthDriver.takeScreenshot(),
+        'base64',
+      );
       throw _;
     }
   }
@@ -329,11 +321,12 @@ async function waitAndClick(
   locator: By,
   errorMsg: string,
 ): Promise<void> {
-  const element = await driver.wait(
+  await driver.wait(
     until.elementLocated(locator),
     ELEMENT_WAIT_MS,
     errorMsg,
   );
+  const element = await driver.findElement(locator);
   await driver.wait(
     until.elementIsVisible(element),
     ELEMENT_WAIT_MS,
