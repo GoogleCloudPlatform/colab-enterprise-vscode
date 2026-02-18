@@ -108,40 +108,6 @@ setup_extest() {
   extest install-vsix "${storage_flag[@]+"${storage_flag[@]}"}" --vsix_file "$VSIX_FILE"
 }
 
-setup_auth_chromedriver() {
-  local chromedriver_dir="/tmp/test-resources/chromedriver-144"
-  local chromedriver_path="$chromedriver_dir/chromedriver-linux64/chromedriver"
-  
-  if [[ -f "$chromedriver_path" ]]; then
-    echo "✅ ChromeDriver 144 already installed at $chromedriver_path" >&2
-    return
-  fi
-
-  echo "⬇️ Downloading ChromeDriver 144..." >&2
-  mkdir -p "$chromedriver_dir"
-  # URL for 144.0.7559.133 (compatible with 144.0.7559.x)
-  local url="https://storage.googleapis.com/chrome-for-testing-public/144.0.7559.133/linux64/chromedriver-linux64.zip"
-  
-  if command -v curl >/dev/null 2>&1; then
-    curl -s -L -o "$chromedriver_dir/chromedriver.zip" "$url"
-  elif command -v wget >/dev/null 2>&1; then
-    wget -q -O "$chromedriver_dir/chromedriver.zip" "$url"
-  else
-    echo "❌ Neither curl nor wget found. Cannot download ChromeDriver 144." >&2
-    exit 1
-  fi
-
-  echo "📦 Extracting ChromeDriver 144..." >&2
-  if command -v unzip >/dev/null 2>&1; then
-    unzip -o -q "$chromedriver_dir/chromedriver.zip" -d "$chromedriver_dir"
-  else
-    echo "❌ unzip not found. Cannot extract ChromeDriver 144." >&2
-    exit 1
-  fi
-  
-  chmod +x "$chromedriver_path"
-  echo "✅ ChromeDriver 144 installed at $chromedriver_path" >&2
-}
 
 build_test_cmd() {
   local base_cmd=()
@@ -176,7 +142,6 @@ main() {
   [[ -n "$STORAGE" ]] && storage_flag=(--storage="$STORAGE")
   check_deps
   setup_extest
-  setup_auth_chromedriver
   local test_cmd=()
   while IFS= read -r line; do
     test_cmd+=("$line")
