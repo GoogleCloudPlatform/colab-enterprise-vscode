@@ -20,8 +20,7 @@
       "name": "Debug E2E Tests",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "/usr/bin/xvfb-run",
-      "runtimeArgs": ["-a", "${workspaceFolder}/node_modules/.bin/extest"],
+      "program": "${workspaceFolder}/node_modules/.bin/extest",
       "args": [
         "setup-and-run",
         "./out/test/*.e2e.test.js",
@@ -32,7 +31,7 @@
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "preLaunchTask": "npm: build:tests"
+      "preLaunchTask": "npm: build"
     },
     {
       "name": "Extension Integration Tests",
