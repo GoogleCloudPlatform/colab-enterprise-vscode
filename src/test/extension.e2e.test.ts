@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'fs';
 import { assert } from 'chai';
 import dotenv from 'dotenv';
 import * as chrome from 'selenium-webdriver/chrome';
@@ -147,13 +146,31 @@ describe('Workbench Extension', function () {
               const text = await pick.getText();
               for (const item of items) {
                 if (text.includes(item)) {
-                  await pick.select();
-                  return item;
+                  console.log(`[E2E Debug] Found pick "${text}" matching "${item}" in "${quickPick}"`);
+                  try {
+                    await pick.select();
+                    console.log(`[E2E Debug] Successfully selected "${item}" in "${quickPick}"`);
+                    return item;
+                  } catch (selectErr) {
+                    console.warn(`[E2E Debug Warning] pick.select() failed for "${item}". Retrying with inputBox.selectQuickPick... Error was:`, selectErr instanceof Error ? selectErr.message : selectErr);
+                    try {
+                      await inputBox.selectQuickPick(text);
+                      console.log(`[E2E Debug] Successfully fallback-selected "${item}" using inputBox.selectQuickPick`);
+                      return item;
+                    } catch (fallbackErr) {
+                      console.error(`[E2E Debug Error] Fallback also failed for "${item}":`, fallbackErr instanceof Error ? fallbackErr.message : fallbackErr);
+                      throw fallbackErr;
+                    }
+                  }
                 }
               }
             }
             return false;
           } catch (e) {
+            // Log exceptions that aren't run-of-the-mill DOM state errors
+            if (e instanceof Error && !e.message.includes('stale element reference') && !e.message.includes('no such element')) {
+              console.log(`[E2E Debug] Error polling QuickPick "${quickPick}":`, e.message);
+            }
             return false;
           }
         },
@@ -298,42 +315,9 @@ function getOAuthDriver(): WebDriver {
     .filter((a) => a.startsWith(authDriverArgsPrefix))
     .map((a) => a.substring(authDriverArgsPrefix.length));
 
-  let serviceBuilder: chrome.ServiceBuilder;
 
-  if (process.env.CHROMEDRIVER_PATH) {
-    serviceBuilder = new chrome.ServiceBuilder(process.env.CHROMEDRIVER_PATH);
-    console.log(
-      'DEBUG: Using CHROMEDRIVER_PATH env:',
-      process.env.CHROMEDRIVER_PATH,
-    );
-  } else {
-    // Fallback to finding it in /tmp/test-resources
-    // if not set (e.g. running via debug config)
-    // We explicitly look for version 144 first as that
-    // is the current system version.
-    const possiblePaths = [
-      '/tmp/test-resources/chromedriver-144/chromedriver-linux64/chromedriver', // Created by our script
-      // '/tmp/test-resources/chromedriver-linux64/chromedriver', // Default extest (often outdated/142)
-    ];
-
-    let foundPath = '';
-    for (const p of possiblePaths) {
-      if (fs.existsSync(p)) {
-        foundPath = p;
-        break;
-      }
-    }
-
-    if (foundPath) {
-      serviceBuilder = new chrome.ServiceBuilder(foundPath);
-      console.log('DEBUG: Found ChromeDriver fallback:', foundPath);
-    } else {
-      serviceBuilder = new chrome.ServiceBuilder();
-      console.log(
-        'DEBUG: No local ChromeDriver found, relying on Selenium Manager',
-      );
-    }
-  }
+  let path = '/tmp/test-resources/chromedriver-144/chromedriver-linux64/chromedriver';
+  let serviceBuilder = new chrome.ServiceBuilder(path);
 
   return new Builder()
     .forBrowser('chrome')
