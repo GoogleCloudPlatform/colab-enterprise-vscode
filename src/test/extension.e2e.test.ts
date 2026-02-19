@@ -6,7 +6,6 @@
 
 import * as fs from 'fs';
 import { assert } from 'chai';
-import { error } from 'selenium-webdriver';
 import dotenv from 'dotenv';
 import * as chrome from 'selenium-webdriver/chrome';
 import {
@@ -61,7 +60,9 @@ describe('Workbench Extension', function () {
 
     it('authenticates and executes the notebook on a Workbench server', async () => {
       // Select the Colab server provider from the kernel selector.
+      console.log('STEP 1: Executing Notebook: Select Notebook Kernel');
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
+      console.log('STEP 2: Selecting Any QuickPick Item (Kernel or Another Kernel)');
       const selected = await selectAnyQuickPickItem({
         items: ['Select Another Kernel...', 'Google Cloud Workbench'],
         quickPick: 'Select Notebook Kernel',
@@ -71,11 +72,13 @@ describe('Workbench Extension', function () {
         (selected.toLowerCase() === 'select another kernel...' ||
           selected.toLowerCase() === 'select another kernel')
       ) {
+        console.log('STEP 3: Selecting Google Cloud Workbench from Another Kernel menu');
         await selectQuickPickItem({
           item: 'Google Cloud Workbench',
           quickPick: 'Select Another Kernel',
         });
       }
+      console.log('STEP 4: Selecting Workbench from Jupyter Server menu');
       await selectQuickPickItem({
         item: 'Workbench',
         quickPick: 'Select a Jupyter Server',
@@ -146,14 +149,26 @@ describe('Workbench Extension', function () {
     return driver
       .wait(
         async () => {
-            const inputBox = await InputBox.create();
-            const picks = await inputBox.getQuickPicks();
+          const inputBox = await InputBox.create();
+          const picks = await inputBox.getQuickPicks();
             for (const pick of picks) {
               const text = await pick.getText();
+              console.log(`Checking pick "${text}" against items: ${JSON.stringify(items)}`);
               for (const item of items) {
                 if (text.includes(item)) {
-                  await pick.select();
-                  return item;
+                  console.log(`MATCH MATCH MATCH: Found item "${item}" in QuickPick option "${text}", attempting selection...`);
+                  try {
+                    await pick.select();
+                    console.log(`Selection of "${item}" completed (promise resolved).`);
+                    return item;
+                  } catch (e) {
+                    console.warn(`Selection of "${item}" failed (likely stale or intercepted):`, e);
+                    console.log(`Attempting fallback: Filter by "${item}" and confirm.`);
+                    await inputBox.setText(item);
+                    await driver.sleep(500); // Wait for filter to apply
+                    await inputBox.confirm();
+                    return item;
+                  }
                 }
               }
             }
@@ -323,22 +338,15 @@ async function waitAndClick(
   errorMsg: string,
 ): Promise<void> {
   await driver.wait(
-    async () => {
-      try {
-        const element = await driver.findElement(locator);
-        if (await element.isDisplayed()) {
-          await element.click();
-          return true;
-        }
-      } catch (e) {
-        if (e instanceof error.StaleElementReferenceError || e instanceof error.NoSuchElementError) {
-          return false;
-        }
-        throw e;
-      }
-      return false;
-    },
+    until.elementLocated(locator),
     ELEMENT_WAIT_MS,
     errorMsg,
   );
+  const element = await driver.findElement(locator);
+  await driver.wait(
+    until.elementIsVisible(element),
+    ELEMENT_WAIT_MS,
+    `Element located but not visible: ${errorMsg}`,
+  );
+  await element.click();
 }
