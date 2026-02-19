@@ -6,6 +6,7 @@
 
 import * as fs from 'fs';
 import { assert } from 'chai';
+import { error } from 'selenium-webdriver';
 import dotenv from 'dotenv';
 import * as chrome from 'selenium-webdriver/chrome';
 import {
@@ -322,15 +323,22 @@ async function waitAndClick(
   errorMsg: string,
 ): Promise<void> {
   await driver.wait(
-    until.elementLocated(locator),
+    async () => {
+      try {
+        const element = await driver.findElement(locator);
+        if (await element.isDisplayed()) {
+          await element.click();
+          return true;
+        }
+      } catch (e) {
+        if (e instanceof error.StaleElementReferenceError || e instanceof error.NoSuchElementError) {
+          return false;
+        }
+        throw e;
+      }
+      return false;
+    },
     ELEMENT_WAIT_MS,
     errorMsg,
   );
-  const element = await driver.findElement(locator);
-  await driver.wait(
-    until.elementIsVisible(element),
-    ELEMENT_WAIT_MS,
-    `Element located but not visible: ${errorMsg}`,
-  );
-  await element.click();
 }
