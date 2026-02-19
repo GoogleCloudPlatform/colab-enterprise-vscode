@@ -103,16 +103,11 @@ describe('Workbench Extension', function () {
         },
       });
 
-      // await driver.sleep(ELEMENT_WAIT_MS);
-
       // Accept the dialog allowing the Colab extension to sign in using Google.
-      // Only if we haven't already handled it during interception.
-      if (!authDialogHandled) {
-        await pushDialogButton({
-          button: 'Allow',
-          dialog: "The extension 'Workbench' wants to sign in using Google.",
-        });
-      }
+      await pushDialogButton({
+        button: 'Allow',
+        dialog: "The extension 'Workbench' wants to sign in using Google.",
+      });
 
       // Begin the sign-in process by copying the OAuth URL to the clipboard and
       // opening it in a browser window. Why do this instead of triggering the
