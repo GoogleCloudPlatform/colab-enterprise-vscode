@@ -230,7 +230,7 @@ describe('Workbench Extension', function () {
    * Performs the OAuth sign-in flow for the Colab extension.
    */
   async function doOauthSignIn(oauthUrl: string): Promise<void> {
-    const oauthDriver = getOAuthDriver();
+    const oauthDriver = await getOAuthDriver();
 
     try {
       await oauthDriver.get(oauthUrl);
@@ -249,7 +249,6 @@ describe('Workbench Extension', function () {
         ELEMENT_WAIT_MS,
       );
       await oauthDriver.sleep(1000);
-
       const passwordInput = await oauthDriver.findElement(
         By.css("input[type='password']"),
       );
@@ -261,7 +260,6 @@ describe('Workbench Extension', function () {
         until.urlContains('accounts.google.com/signin/oauth/id'),
         ELEMENT_WAIT_MS,
       )
-
       await waitAndClick(
         oauthDriver,
         By.xpath("//span[text()='Continue']"),
@@ -277,7 +275,7 @@ describe('Workbench Extension', function () {
         '"Allow" or "Continue" button not visible on consent screen',
       );
 
-      // Check that the test account is authenticated. Close the browser window.
+      // Check that the test account's authenticated. Close the browser window.
       await oauthDriver.wait(
         until.urlContains('https://cloud.google.com/vertex-ai-notebooks'),
         ELEMENT_WAIT_MS,
@@ -303,7 +301,7 @@ describe('Workbench Extension', function () {
 /**
  * Creates a new WebDriver instance for the OAuth flow.
  */
-function getOAuthDriver(): WebDriver {
+function getOAuthDriver(): Promise<WebDriver> {
   const authDriverArgsPrefix = '--auth-driver:';
   const authDriverArgs = process.argv
     .filter((a) => a.startsWith(authDriverArgsPrefix))
