@@ -63,21 +63,17 @@ describe('Workbench Extension', function () {
       console.log('STEP 1: Executing Notebook: Select Notebook Kernel');
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
       console.log('STEP 2: Selecting Any QuickPick Item (Kernel or Another Kernel)');
-      const selected = await selectAnyQuickPickItem({
+      await selectAnyQuickPickItem({
         items: ['Select Another Kernel...', 'Google Cloud Workbench'],
         quickPick: 'Select Notebook Kernel',
       });
-      if (
-        selected &&
-        (selected.toLowerCase() === 'select another kernel...' ||
-          selected.toLowerCase() === 'select another kernel')
-      ) {
-        console.log('STEP 3: Selecting Google Cloud Workbench from Another Kernel menu');
-        await selectQuickPickItem({
-          item: 'Google Cloud Workbench',
-          quickPick: 'Select Another Kernel',
-        });
-      }
+
+      console.log('STEP 3: Selecting Google Cloud Workbench from Another Kernel menu');
+      await selectQuickPickItem({
+        item: 'Google Cloud Workbench',
+        quickPick: 'Select Another Kernel',
+      }); 
+
       console.log('STEP 4: Selecting Workbench from Jupyter Server menu');
       await selectQuickPickItem({
         item: 'Workbench',
@@ -145,7 +141,7 @@ describe('Workbench Extension', function () {
   }: {
       items: string[];
     quickPick: string;
-    }): Promise<string | boolean> {
+    }): Promise<string> {
     return driver
       .wait(
         async () => {
@@ -162,7 +158,7 @@ describe('Workbench Extension', function () {
                 }
               }
             }
-          return false;
+          return '';
         },
         ELEMENT_WAIT_MS,
         `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`
