@@ -73,69 +73,31 @@ describe('Workbench Extension', function () {
         });
       }
 
-      await driver.sleep(ELEMENT_WAIT_MS);
-
-      let authDialogHandled = false;
-      let externalLinkDialogHandled = false;
       await selectQuickPickItem({
         item: 'Workbench',
-        quickPick: 'Select a Jupyter Server',
-        onInterception: async () => {
-          // If the auth dialog appears during selection, it blocks the click.
-          // We try to handle it here so the selection can proceed on retry.
-          // Use a short timeout since we only want to click if it's actually there.
-          if (!authDialogHandled) {
-            const handled = await pushDialogButton({
-              button: 'Allow',
-              dialog: "The extension 'Workbench' wants to sign in using Google.",
-              timeout: 2000,
-            });
-            if (handled) {
-              authDialogHandled = true;
-            }
-          }
-
-          if (!externalLinkDialogHandled) {
-            const handled = await pushDialogButton({
-              button: 'Copy',
-              dialog: 'Do you want Code to open the external website?',
-              timeout: 2000,
-            });
-            if (handled) {
-              externalLinkDialogHandled = true;
-            }
-          }
-        },
+        quickPick: 'Select a Jupyter Server'
       });
 
-      // await driver.sleep(ELEMENT_WAIT_MS);
+      await pushDialogButton({
+        button: 'Allow',
+        dialog: "The extension 'Colab' wants to sign in using Google.",
+      });
 
-      // Accept the dialog allowing the Colab extension to sign in using Google.
-      // Only if we haven't already handled it during interception.
-      if (!authDialogHandled) {
-        await pushDialogButton({
-          button: 'Allow',
-          dialog: "The extension 'Workbench' wants to sign in using Google.",
-        });
-      }
 
       // Begin the sign-in process by copying the OAuth URL to the clipboard and
       // opening it in a browser window. Why do this instead of triggering the
       // "Open" button in the dialog? We copy the URL so that we can use a new
       // driver instance for the OAuth flow, since the original driver instance
       // does not have a handle to the window that would be spawned with "Open".
-      if (!externalLinkDialogHandled) {
-        await pushDialogButton({
-          button: 'Copy',
-          dialog: 'Do you want Code to open the external website?',
-        });
-      }
+      await pushDialogButton({
+        button: 'Copy',
+        dialog: 'Do you want Code to open the external website?',
+      });
       // TODO: Remove this dynamic import
       const clipboardy = await import('clipboardy');
-      // Wait a bit for clipboard to be populated if we just clicked Copy
-      if (externalLinkDialogHandled) {
-        await driver.sleep(1000);
-      }
+
+      await driver.sleep(1000);
+
       await doOauthSignIn(/* oauthUrl= */ clipboardy.default.readSync());
 
       // Now that we're authenticated, we can resume selecting GCP project for
@@ -237,11 +199,9 @@ describe('Workbench Extension', function () {
   async function pushDialogButton({
     button,
     dialog,
-    timeout = ELEMENT_WAIT_MS,
   }: {
     button: string;
-    dialog: string;
-    timeout?: number;
+      dialog: string;
   }) {
     // ModalDialog.pushButton will throw if the dialog is not found; to reduce
     // flakes we attempt this until it succeeds or times out.
@@ -256,7 +216,7 @@ describe('Workbench Extension', function () {
           return false;
         }
       },
-      timeout,
+      ELEMENT_WAIT_MS,
       `Push "${button}" button for dialog "${dialog}" failed`,
     );
   }
