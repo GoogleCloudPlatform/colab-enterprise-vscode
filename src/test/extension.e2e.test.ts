@@ -161,11 +161,13 @@ describe('Workbench Extension', function () {
                     console.log(`Selection of "${item}" completed (promise resolved).`);
                     return item;
                   } catch (e: any) {
-                    if (
-                      e.name === 'ElementClickInterceptedError' &&
-                      onInterception
-                    ) {
-                      await onInterception();
+                    if (e.name === 'ElementClickInterceptedError') {
+                      if (onInterception) {
+                        await onInterception();
+                      }
+                      console.log(
+                        `Selection of "${item}" intercepted. Retrying...`,
+                      );
                       return '';
                     }
                     throw e;
