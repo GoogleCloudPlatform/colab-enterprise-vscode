@@ -94,7 +94,7 @@ describe('Workbench Extension', function () {
         },
       });
 
-      await driver.sleep(ELEMENT_WAIT_MS);
+      // await driver.sleep(ELEMENT_WAIT_MS);
 
       // Accept the dialog allowing the Colab extension to sign in using Google.
       // Only if we haven't already handled it during interception.
@@ -160,7 +160,7 @@ describe('Workbench Extension', function () {
     quickPick,
     onInterception,
   }: {
-    items: string[];
+      items: string[];
     quickPick: string;
     onInterception?: () => Promise<void>;
   }): Promise<string> {
@@ -178,13 +178,11 @@ describe('Workbench Extension', function () {
                   console.log(`Selection of "${item}" completed (promise resolved).`);
                   return item;
                 } catch (e: any) {
-                  if (e.name === 'ElementClickInterceptedError') {
-                    if (onInterception) {
+                  if (
+                    e.name === 'ElementClickInterceptedError' &&
+                    onInterception
+                  ) {
                       await onInterception();
-                    }
-                    console.log(
-                      `Selection of "${item}" intercepted. Retrying...`,
-                    );
                     return '';
                   }
                   throw e;
@@ -196,7 +194,7 @@ describe('Workbench Extension', function () {
         },
         ELEMENT_WAIT_MS,
         `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`
-      )
+    )
   }
 
   /**
@@ -209,7 +207,7 @@ describe('Workbench Extension', function () {
   }: {
     item: string;
     quickPick: string;
-    onInterception?: () => Promise<void>;
+      onInterception?: () => Promise<void>;
   }): Promise<string> {
     return selectAnyQuickPickItem({ items: [item], quickPick, onInterception });
   }
