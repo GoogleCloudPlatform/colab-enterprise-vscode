@@ -145,7 +145,7 @@ describe('Workbench Extension', function () {
   }: {
       items: string[];
     quickPick: string;
-  }): Promise<string> {
+    }): Promise<string | boolean> {
     return driver
       .wait(
         async () => {
@@ -155,9 +155,9 @@ describe('Workbench Extension', function () {
               const text = await pick.getText();
               for (const item of items) {
                 if (text.includes(item)) {
-                    await inputBox.setText(item);
-                    await driver.sleep(500); // Wait for filter to apply
-                    await inputBox.confirm();
+                  await inputBox.setText(item);
+                  await driver.sleep(500); // Wait for filter to apply
+                  await inputBox.confirm();
                   return item;
                 }
               }
@@ -166,14 +166,7 @@ describe('Workbench Extension', function () {
         },
         ELEMENT_WAIT_MS,
         `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`
-      )
-      .catch(async () => {
-        // Log available items for debugging
-        const inputBox = await InputBox.create();
-        const picks = await inputBox.getQuickPicks();
-        const labels = await Promise.all(picks.map((p) => p.getText()));
-        console.error(`Available QuickPick items for "${quickPick}":`, labels);
-      }) as Promise<string>;
+    )
   }
 
   /**
@@ -249,7 +242,7 @@ describe('Workbench Extension', function () {
       await oauthDriver.wait(
         until.urlContains('accounts.google.com/signin/oauth/id'),
         ELEMENT_WAIT_MS,
-      )
+      );
       await waitAndClick(
         oauthDriver,
         By.xpath("//span[text()='Continue']"),
@@ -270,7 +263,6 @@ describe('Workbench Extension', function () {
         until.urlContains('https://cloud.google.com/vertex-ai-notebooks'),
         ELEMENT_WAIT_MS,
       );
-
       await oauthDriver.quit();
     } catch (_) {
       // If the OAuth flow fails, ensure we grab a screenshot for debugging.
