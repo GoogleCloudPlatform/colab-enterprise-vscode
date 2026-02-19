@@ -17,3 +17,4 @@ scripts/
 src/
 tsconfig*.json
 tsdoc.json
+e2e-screenshots/
