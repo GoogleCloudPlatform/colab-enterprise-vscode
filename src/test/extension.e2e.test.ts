@@ -73,25 +73,20 @@ describe('Workbench Extension', function () {
         });
       }
 
-      let authHandled = false;
-      const handleAuthDialog = async () => {
-        await pushDialogButton({
-          button: 'Allow',
-          dialog: "The extension 'Workbench' wants to sign in using Google.",
-        });
-        authHandled = true;
-      };
+      await driver.sleep(ELEMENT_WAIT_MS);
 
       await selectQuickPickItem({
         item: 'Workbench',
         quickPick: 'Select a Jupyter Server',
-        onInterception: handleAuthDialog,
       });
 
-      if (!authHandled) {
-        // Accept the dialog if it wasn't handled during interception (i.e. appeared after).
-        await handleAuthDialog();
-      }
+      await driver.sleep(ELEMENT_WAIT_MS);
+
+      // Accept the dialog allowing the Colab extension to sign in using Google.
+      await pushDialogButton({
+        button: 'Allow',
+        dialog: "The extension 'Workbench' wants to sign in using Google.",
+      });
 
       // Begin the sign-in process by copying the OAuth URL to the clipboard and
       // opening it in a browser window. Why do this instead of triggering the
