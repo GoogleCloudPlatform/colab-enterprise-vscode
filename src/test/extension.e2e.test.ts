@@ -140,11 +140,9 @@ describe('Workbench Extension', function () {
   async function selectAnyQuickPickItem({
     items,
     quickPick,
-    onInterception,
   }: {
       items: string[];
-    quickPick: string;
-    onInterception?: () => Promise<void>;
+      quickPick: string;
   }): Promise<string> {
     return driver
       .wait(
@@ -155,20 +153,9 @@ describe('Workbench Extension', function () {
             const text = await pick.getText();
             for (const item of items) {
               if (text.includes(item)) {
-                try {
-                  await pick.select();
-                  console.log(`Selection of "${item}" completed (promise resolved).`);
-                  return item;
-                } catch (e: any) {
-                  if (
-                    e.name === 'ElementClickInterceptedError' &&
-                    onInterception
-                  ) {
-                      await onInterception();
-                    return '';
-                  }
-                  throw e;
-                }
+                await pick.select();
+                console.log(`Selection of "${item}" completed (promise resolved).`);
+                return item;
               }
             }
           }
@@ -184,14 +171,12 @@ describe('Workbench Extension', function () {
    */
   async function selectQuickPickItem({
     item,
-    quickPick,
-    onInterception,
+    quickPick
   }: {
     item: string;
-    quickPick: string;
-      onInterception?: () => Promise<void>;
+      quickPick: string;
   }): Promise<string> {
-    return selectAnyQuickPickItem({ items: [item], quickPick, onInterception });
+    return selectAnyQuickPickItem({ items: [item], quickPick });
   }
   /**
    * Pushes a button in a modal dialog and waits for the action to complete.
