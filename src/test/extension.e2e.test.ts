@@ -66,7 +66,7 @@ describe('Workbench Extension', function () {
         quickPick: 'Select Notebook Kernel',
       });
 
-      if (selected) {
+      if (selected === 'Select Another Kernel...') {
         await selectQuickPickItem({
           item: 'Google Cloud Workbench',
           quickPick: 'Select Another Kernel',
