@@ -13,5 +13,4 @@ import { defineConfig } from '@vscode/test-cli';
 export default defineConfig({
   files: 'out/test/**/*vscode.test.js',
   installExtensions: ['google.colab'],
-  launchArgs: ['--user-data-dir', '.vscode-test-user-data'],
 });
