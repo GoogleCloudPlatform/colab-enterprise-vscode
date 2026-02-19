@@ -338,30 +338,10 @@ async function waitAndClick(
   errorMsg: string,
 ): Promise<void> {
   await driver.wait(
-      async () => {
-        try {
-          const elements = await driver.findElements(locator);
-          if (elements.length === 0) {
-            return false;
-          }
-          const element = elements[0];
-          if (await element.isDisplayed()) {
-            await element.click();
-            return true;
-          }
-          return false;
-        } catch (e: any) {
-          // Retry if the element reference is stale or the click was intercepted.
-          if (
-            e.name === 'StaleElementReferenceError' ||
-            e.name === 'ElementClickInterceptedError'
-          ) {
-            return false;
-          }
-          throw e;
-        }
-      },
-      ELEMENT_WAIT_MS,
-      errorMsg,
-    );
-  }
+    until.elementIsVisible(await driver.findElement(locator)),
+    ELEMENT_WAIT_MS,
+    errorMsg,
+  );
+  const element = await driver.findElement(locator);
+  await element.click();
+}
