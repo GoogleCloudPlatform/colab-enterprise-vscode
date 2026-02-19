@@ -22,7 +22,7 @@ on:
 
 env:
   # See supported Node.js release schedule at https://nodejs.org/en/about/releases
-  NODE_VERSION: "24"
+  NODE_VERSION: 22.x
   TEST_ACCOUNT_EMAIL: ${{ vars.TEST_ACCOUNT_EMAIL }}
   TEST_ACCOUNT_PASSWORD: ${{ vars.TEST_ACCOUNT_PASSWORD }}
 
