@@ -75,6 +75,7 @@ describe('Workbench Extension', function () {
 
       await driver.sleep(ELEMENT_WAIT_MS);
 
+      let authDialogHandled = false;
       let externalLinkDialogHandled = false;
       await selectQuickPickItem({
         item: 'Workbench',
@@ -83,11 +84,16 @@ describe('Workbench Extension', function () {
           // If the auth dialog appears during selection, it blocks the click.
           // We try to handle it here so the selection can proceed on retry.
           // Use a short timeout since we only want to click if it's actually there.
-          await pushDialogButton({
-            button: 'Allow',
-            dialog: "The extension 'Workbench' wants to sign in using Google.",
-            timeout: 2000,
-          });
+          if (!authDialogHandled) {
+            const handled = await pushDialogButton({
+              button: 'Allow',
+              dialog: "The extension 'Workbench' wants to sign in using Google.",
+              timeout: 2000,
+            });
+            if (handled) {
+              authDialogHandled = true;
+            }
+          }
 
           if (!externalLinkDialogHandled) {
             const handled = await pushDialogButton({
@@ -95,7 +101,6 @@ describe('Workbench Extension', function () {
               dialog: 'Do you want Code to open the external website?',
               timeout: 2000,
             });
-
             if (handled) {
               externalLinkDialogHandled = true;
             }
@@ -103,11 +108,16 @@ describe('Workbench Extension', function () {
         },
       });
 
+      // await driver.sleep(ELEMENT_WAIT_MS);
+
       // Accept the dialog allowing the Colab extension to sign in using Google.
-      await pushDialogButton({
-        button: 'Allow',
-        dialog: "The extension 'Workbench' wants to sign in using Google.",
-      });
+      // Only if we haven't already handled it during interception.
+      if (!authDialogHandled) {
+        await pushDialogButton({
+          button: 'Allow',
+          dialog: "The extension 'Workbench' wants to sign in using Google.",
+        });
+      }
 
       // Begin the sign-in process by copying the OAuth URL to the clipboard and
       // opening it in a browser window. Why do this instead of triggering the
