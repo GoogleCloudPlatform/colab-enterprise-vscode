@@ -72,16 +72,27 @@ describe('Workbench Extension', function () {
           quickPick: 'Select Another Kernel',
         });
       }
+
+      let authHandled = false;
+      const handleAuthDialog = async () => {
+        await pushDialogButton({
+          button: 'Allow',
+          dialog: "The extension 'Workbench' wants to sign in using Google.",
+        });
+        authHandled = true;
+      };
+
       await selectQuickPickItem({
         item: 'Workbench',
         quickPick: 'Select a Jupyter Server',
+        onInterception: handleAuthDialog,
       });
 
-      // Accept the dialog allowing the Colab extension to sign in using Google.
-      await pushDialogButton({
-        button: 'Allow',
-        dialog: "The extension 'Workbench' wants to sign in using Google.",
-      });
+      if (!authHandled) {
+        // Accept the dialog if it wasn't handled during interception (i.e. appeared after).
+        await handleAuthDialog();
+      }
+
       // Begin the sign-in process by copying the OAuth URL to the clipboard and
       // opening it in a browser window. Why do this instead of triggering the
       // "Open" button in the dialog? We copy the URL so that we can use a new
@@ -135,9 +146,11 @@ describe('Workbench Extension', function () {
   async function selectAnyQuickPickItem({
     items,
     quickPick,
+    onInterception,
   }: {
       items: string[];
     quickPick: string;
+      onInterception?: () => Promise<void>;
     }): Promise<string> {
     return driver
       .wait(
@@ -148,9 +161,20 @@ describe('Workbench Extension', function () {
               const text = await pick.getText();
               for (const item of items) {
                 if (text.includes(item)) {
-                  await pick.select();
-                  console.log(`Selection of "${item}" completed (promise resolved).`);
-                  return item;
+                  try {
+                    await pick.select();
+                    console.log(`Selection of "${item}" completed (promise resolved).`);
+                    return item;
+                  } catch (e: any) {
+                    if (
+                      e.name === 'ElementClickInterceptedError' &&
+                      onInterception
+                    ) {
+                      await onInterception();
+                      return '';
+                    }
+                    throw e;
+                  }
                 }
               }
             }
@@ -167,11 +191,13 @@ describe('Workbench Extension', function () {
   async function selectQuickPickItem({
     item,
     quickPick,
+    onInterception,
   }: {
     item: string;
     quickPick: string;
+      onInterception?: () => Promise<void>;
   }): Promise<string> {
-    return selectAnyQuickPickItem({ items: [item], quickPick });
+    return selectAnyQuickPickItem({ items: [item], quickPick, onInterception });
   }
   /**
    * Pushes a button in a modal dialog and waits for the action to complete.
