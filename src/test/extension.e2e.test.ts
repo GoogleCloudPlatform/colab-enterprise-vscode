@@ -21,7 +21,7 @@ import {
 } from 'vscode-extension-tester';
 import { CONFIG } from '../config';
 
-const ELEMENT_WAIT_MS = 120000;
+const ELEMENT_WAIT_MS = 60000;
 const CELL_EXECUTION_WAIT_MS = 30000;
 
 describe('Workbench Extension', function () {
@@ -338,15 +338,27 @@ async function waitAndClick(
   errorMsg: string,
 ): Promise<void> {
   await driver.wait(
-    until.elementLocated(locator),
+    async () => {
+      try {
+        const element = await driver.findElement(locator);
+        await driver.wait(
+          until.elementIsVisible(element),
+          ELEMENT_WAIT_MS,
+          `Element located but not visible: ${errorMsg}`,
+        );
+        await element.click();
+        return true;
+      } catch (e: any) {
+        if (
+          e.name === 'StaleElementReferenceError' ||
+          e.name === 'ElementClickInterceptedError'
+        ) {
+          return false;
+        }
+        throw e;
+      }
+    },
     ELEMENT_WAIT_MS,
     errorMsg,
   );
-  const element = await driver.findElement(locator);
-  await driver.wait(
-    until.elementIsVisible(element),
-    ELEMENT_WAIT_MS,
-    `Element located but not visible: ${errorMsg}`,
-  );
-  await element.click();
 }
