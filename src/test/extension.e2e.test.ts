@@ -60,21 +60,17 @@ describe('Workbench Extension', function () {
 
     it('authenticates and executes the notebook on a Workbench server', async () => {
       // Select the Colab server provider from the kernel selector.
-      console.log('STEP 1: Executing Notebook: Select Notebook Kernel');
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
-      console.log('STEP 2: Selecting Any QuickPick Item (Kernel or Another Kernel)');
-      await selectAnyQuickPickItem({
+      const selected = await selectAnyQuickPickItem({
         items: ['Select Another Kernel...', 'Google Cloud Workbench'],
         quickPick: 'Select Notebook Kernel',
       });
-
-      console.log('STEP 3: Selecting Google Cloud Workbench from Another Kernel menu');
-      await selectQuickPickItem({
-        item: 'Google Cloud Workbench',
-        quickPick: 'Select Another Kernel',
-      }); 
-
-      console.log('STEP 4: Selecting Workbench from Jupyter Server menu');
+      if (selected) {
+        await selectQuickPickItem({
+          item: 'Google Cloud Workbench',
+          quickPick: 'Select Another Kernel',
+        });
+      }
       await selectQuickPickItem({
         item: 'Workbench',
         quickPick: 'Select a Jupyter Server',
