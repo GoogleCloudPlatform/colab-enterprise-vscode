@@ -153,22 +153,12 @@ describe('Workbench Extension', function () {
           const picks = await inputBox.getQuickPicks();
             for (const pick of picks) {
               const text = await pick.getText();
-              console.log(`Checking pick "${text}" against items: ${JSON.stringify(items)}`);
               for (const item of items) {
                 if (text.includes(item)) {
-                  console.log(`MATCH MATCH MATCH: Found item "${item}" in QuickPick option "${text}", attempting selection...`);
-                  try {
-                    await pick.select();
-                    console.log(`Selection of "${item}" completed (promise resolved).`);
-                    return item;
-                  } catch (e) {
-                    console.warn(`Selection of "${item}" failed (likely stale or intercepted):`, e);
-                    console.log(`Attempting fallback: Filter by "${item}" and confirm.`);
                     await inputBox.setText(item);
                     await driver.sleep(500); // Wait for filter to apply
                     await inputBox.confirm();
-                    return item;
-                  }
+                  return item;
                 }
               }
             }
@@ -301,7 +291,7 @@ describe('Workbench Extension', function () {
 /**
  * Creates a new WebDriver instance for the OAuth flow.
  */
-function getOAuthDriver(): Promise<WebDriver> {
+function getOAuthDriver(): WebDriver {
   const authDriverArgsPrefix = '--auth-driver:';
   const authDriverArgs = process.argv
     .filter((a) => a.startsWith(authDriverArgsPrefix))
