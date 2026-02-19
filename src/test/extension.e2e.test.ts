@@ -75,18 +75,35 @@ describe('Workbench Extension', function () {
 
       await driver.sleep(ELEMENT_WAIT_MS);
 
+      let authDialogHandled = false;
       await selectQuickPickItem({
         item: 'Workbench',
         quickPick: 'Select a Jupyter Server',
+        onInterception: async () => {
+          // If the auth dialog appears during selection, it blocks the click.
+          // We try to handle it here so the selection can proceed on retry.
+          // Use a short timeout since we only want to click if it's actually there.
+          const handled = await pushDialogButton({
+            button: 'Allow',
+            dialog: "The extension 'Workbench' wants to sign in using Google.",
+            timeout: 5000,
+          });
+          if (handled) {
+            authDialogHandled = true;
+          }
+        },
       });
 
       await driver.sleep(ELEMENT_WAIT_MS);
 
       // Accept the dialog allowing the Colab extension to sign in using Google.
-      await pushDialogButton({
-        button: 'Allow',
-        dialog: "The extension 'Workbench' wants to sign in using Google.",
-      });
+      // Only if we haven't already handled it during interception.
+      if (!authDialogHandled) {
+        await pushDialogButton({
+          button: 'Allow',
+          dialog: "The extension 'Workbench' wants to sign in using Google.",
+        });
+      }
 
       // Begin the sign-in process by copying the OAuth URL to the clipboard and
       // opening it in a browser window. Why do this instead of triggering the
@@ -143,43 +160,43 @@ describe('Workbench Extension', function () {
     quickPick,
     onInterception,
   }: {
-      items: string[];
+    items: string[];
     quickPick: string;
-      onInterception?: () => Promise<void>;
-    }): Promise<string> {
+    onInterception?: () => Promise<void>;
+  }): Promise<string> {
     return driver
       .wait(
         async () => {
           const inputBox = await InputBox.create();
           const picks = await inputBox.getQuickPicks();
-            for (const pick of picks) {
-              const text = await pick.getText();
-              for (const item of items) {
-                if (text.includes(item)) {
-                  try {
-                    await pick.select();
-                    console.log(`Selection of "${item}" completed (promise resolved).`);
-                    return item;
-                  } catch (e: any) {
-                    if (e.name === 'ElementClickInterceptedError') {
-                      if (onInterception) {
-                        await onInterception();
-                      }
-                      console.log(
-                        `Selection of "${item}" intercepted. Retrying...`,
-                      );
-                      return '';
+          for (const pick of picks) {
+            const text = await pick.getText();
+            for (const item of items) {
+              if (text.includes(item)) {
+                try {
+                  await pick.select();
+                  console.log(`Selection of "${item}" completed (promise resolved).`);
+                  return item;
+                } catch (e: any) {
+                  if (e.name === 'ElementClickInterceptedError') {
+                    if (onInterception) {
+                      await onInterception();
                     }
-                    throw e;
+                    console.log(
+                      `Selection of "${item}" intercepted. Retrying...`,
+                    );
+                    return '';
                   }
+                  throw e;
                 }
               }
             }
+          }
           return '';
         },
         ELEMENT_WAIT_MS,
         `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`
-    )
+      )
   }
 
   /**
@@ -192,7 +209,7 @@ describe('Workbench Extension', function () {
   }: {
     item: string;
     quickPick: string;
-      onInterception?: () => Promise<void>;
+    onInterception?: () => Promise<void>;
   }): Promise<string> {
     return selectAnyQuickPickItem({ items: [item], quickPick, onInterception });
   }
@@ -202,9 +219,11 @@ describe('Workbench Extension', function () {
   async function pushDialogButton({
     button,
     dialog,
+    timeout = ELEMENT_WAIT_MS,
   }: {
     button: string;
     dialog: string;
+    timeout?: number;
   }) {
     // ModalDialog.pushButton will throw if the dialog is not found; to reduce
     // flakes we attempt this until it succeeds or times out.
@@ -219,7 +238,7 @@ describe('Workbench Extension', function () {
           return false;
         }
       },
-      ELEMENT_WAIT_MS,
+      timeout,
       `Push "${button}" button for dialog "${dialog}" failed`,
     );
   }
