@@ -65,6 +65,7 @@ describe('Workbench Extension', function () {
         items: ['Select Another Kernel...', 'Google Cloud Workbench'],
         quickPick: 'Select Notebook Kernel',
       });
+
       if (selected) {
         await selectQuickPickItem({
           item: 'Google Cloud Workbench',
@@ -147,9 +148,8 @@ describe('Workbench Extension', function () {
               const text = await pick.getText();
               for (const item of items) {
                 if (text.includes(item)) {
-                  await inputBox.setText(item);
-                  await driver.sleep(500); // Wait for filter to apply
-                  await inputBox.confirm();
+                  await pick.select();
+                  console.log(`Selection of "${item}" completed (promise resolved).`);
                   return item;
                 }
               }
