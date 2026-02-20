@@ -16,6 +16,8 @@ import tsDocPlugin from 'eslint-plugin-tsdoc';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+// TODO need to update config
+// eslint-disable-next-line @typescript-eslint/no-deprecated
 export default tseslint.config(
   eslint.configs.recommended,
   tseslint.configs.strictTypeChecked,

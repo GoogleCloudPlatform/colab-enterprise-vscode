@@ -44,7 +44,6 @@ describe('Workbench Extension', function () {
     await driver.sleep(8000);
   });
 
-
   describe('with a notebook', () => {
     beforeEach(async () => {
       // Create an executable notebook. Note that it's created with a single
@@ -75,14 +74,13 @@ describe('Workbench Extension', function () {
 
       await selectQuickPickItem({
         item: 'Workbench',
-        quickPick: 'Select a Jupyter Server'
+        quickPick: 'Select a Jupyter Server',
       });
 
       await pushDialogButton({
         button: 'Allow',
         dialog: "The extension 'Colab' wants to sign in using Google.",
       });
-
 
       // Begin the sign-in process by copying the OAuth URL to the clipboard and
       // opening it in a browser window. Why do this instead of triggering the
@@ -144,26 +142,27 @@ describe('Workbench Extension', function () {
     items: string[];
     quickPick: string;
   }): Promise<string> {
-    return driver
-      .wait(
-        async () => {
-          const inputBox = await InputBox.create();
-          const picks = await inputBox.getQuickPicks();
-          for (const pick of picks) {
-            const text = await pick.getText();
-            for (const item of items) {
-              if (text.includes(item)) {
-                await pick.select();
-                console.log(`Selection of "${item}" completed (promise resolved).`);
-                return item;
-              }
+    return driver.wait(
+      async () => {
+        const inputBox = await InputBox.create();
+        const picks = await inputBox.getQuickPicks();
+        for (const pick of picks) {
+          const text = await pick.getText();
+          for (const item of items) {
+            if (text.includes(item)) {
+              await pick.select();
+              console.log(
+                `Selection of "${item}" completed (promise resolved).`,
+              );
+              return item;
             }
           }
-          return '';
-        },
-        ELEMENT_WAIT_MS,
-        `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`
-      )
+        }
+        return '';
+      },
+      ELEMENT_WAIT_MS,
+      `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`,
+    );
   }
 
   /**
@@ -171,7 +170,7 @@ describe('Workbench Extension', function () {
    */
   async function selectQuickPickItem({
     item,
-    quickPick
+    quickPick,
   }: {
     item: string;
     quickPick: string;
@@ -325,10 +324,11 @@ async function waitAndClick(
         );
         await element.click();
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (
-          e.name === 'StaleElementReferenceError' ||
-          e.name === 'ElementClickInterceptedError'
+          e instanceof Error &&
+          (e.name === 'StaleElementReferenceError' ||
+            e.name === 'ElementClickInterceptedError')
         ) {
           return false;
         }
