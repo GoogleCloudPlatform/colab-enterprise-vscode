@@ -316,14 +316,24 @@ async function waitAndClick(
 ): Promise<void> {
   await driver.wait(
     async () => {
-      const element = await driver.findElement(locator);
-      await driver.wait(
-        until.elementIsVisible(element),
-        ELEMENT_WAIT_MS,
-        `Element located but not visible: ${errorMsg}`,
-      );
-      await element.click();
-      return true;
+      try {
+        const element = await driver.findElement(locator);
+        await driver.wait(
+          until.elementIsVisible(element),
+          ELEMENT_WAIT_MS,
+          `Element located but not visible: ${errorMsg}`,
+        );
+        await element.click();
+        return true;
+      } catch (e: any) {
+        if (
+          e.name === 'StaleElementReferenceError' ||
+          e.name === 'ElementClickInterceptedError'
+        ) {
+          return false;
+        }
+        throw e;
+      }
     },
     ELEMENT_WAIT_MS,
     errorMsg,
