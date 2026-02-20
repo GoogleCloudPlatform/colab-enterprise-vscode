@@ -21,8 +21,9 @@ import {
 } from 'vscode-extension-tester';
 import { CONFIG } from '../config';
 
-const ELEMENT_WAIT_MS = 60000;
-const CELL_EXECUTION_WAIT_MS = 30000;
+const ELEMENT_WAIT_MS = 60 * 1000;
+const CELL_EXECUTION_WAIT_MS = 30 * 1000;
+const AUTH_WAIT_MS = 1000;
 
 describe('Workbench Extension', function () {
   dotenv.config();
@@ -41,7 +42,7 @@ describe('Workbench Extension', function () {
     // Wait for VS Code UI to settle before running tests.
     workbench = new Workbench();
     driver = workbench.getDriver();
-    await driver.sleep(8000);
+    await driver.sleep(ELEMENT_WAIT_MS);
   });
 
   describe('with a notebook', () => {
@@ -94,7 +95,7 @@ describe('Workbench Extension', function () {
       // TODO: Remove this dynamic import
       const clipboardy = await import('clipboardy');
 
-      await driver.sleep(1000);
+      await driver.sleep(AUTH_WAIT_MS);
 
       await doOauthSignIn(/* oauthUrl= */ clipboardy.default.readSync());
 
