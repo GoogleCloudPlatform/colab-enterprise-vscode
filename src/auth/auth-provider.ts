@@ -261,7 +261,7 @@ export class GoogleAuthProvider
    */
   async removeSession(sessionId: string): Promise<void> {
     this.assertReady();
-    if (!this.session || this.session.id !== sessionId) {
+    if (this.session?.id !== sessionId) {
       return;
     }
     const removedSession = this.session;

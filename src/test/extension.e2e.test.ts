@@ -141,8 +141,8 @@ describe('Workbench Extension', function () {
     items,
     quickPick,
   }: {
-      items: string[];
-      quickPick: string;
+    items: string[];
+    quickPick: string;
   }): Promise<string> {
     return driver
       .wait(
@@ -163,7 +163,7 @@ describe('Workbench Extension', function () {
         },
         ELEMENT_WAIT_MS,
         `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`
-    )
+      )
   }
 
   /**
@@ -174,7 +174,7 @@ describe('Workbench Extension', function () {
     quickPick
   }: {
     item: string;
-      quickPick: string;
+    quickPick: string;
   }): Promise<string> {
     return selectAnyQuickPickItem({ items: [item], quickPick });
   }
@@ -186,7 +186,7 @@ describe('Workbench Extension', function () {
     dialog,
   }: {
     button: string;
-      dialog: string;
+    dialog: string;
   }) {
     // ModalDialog.pushButton will throw if the dialog is not found; to reduce
     // flakes we attempt this until it succeeds or times out.
@@ -280,7 +280,7 @@ describe('Workbench Extension', function () {
 /**
  * Creates a new WebDriver instance for the OAuth flow.
  */
-function getOAuthDriver(): WebDriver {
+function getOAuthDriver(): Promise<WebDriver> {
   const authDriverArgsPrefix = '--auth-driver:';
   const authDriverArgs = process.argv
     .filter((a) => a.startsWith(authDriverArgsPrefix))
@@ -316,24 +316,14 @@ async function waitAndClick(
 ): Promise<void> {
   await driver.wait(
     async () => {
-      try {
-        const element = await driver.findElement(locator);
-        await driver.wait(
-          until.elementIsVisible(element),
-          ELEMENT_WAIT_MS,
-          `Element located but not visible: ${errorMsg}`,
-        );
-        await element.click();
-        return true;
-      } catch (e: any) {
-        if (
-          e.name === 'StaleElementReferenceError' ||
-          e.name === 'ElementClickInterceptedError'
-        ) {
-          return false;
-        }
-        throw e;
-      }
+      const element = await driver.findElement(locator);
+      await driver.wait(
+        until.elementIsVisible(element),
+        ELEMENT_WAIT_MS,
+        `Element located but not visible: ${errorMsg}`,
+      );
+      await element.click();
+      return true;
     },
     ELEMENT_WAIT_MS,
     errorMsg,
