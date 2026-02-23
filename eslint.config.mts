@@ -19,9 +19,6 @@ import tseslint from 'typescript-eslint';
 
 
 export default defineConfig([
-  {
-    ignores: ['out/', 'dist/', '**/*.d.ts', '.vscode-test/', '.test-resources/'],
-  },
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
