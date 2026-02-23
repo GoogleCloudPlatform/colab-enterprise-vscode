@@ -39,6 +39,11 @@ describe('Workbench Extension', function () {
   before(async () => {
     assert.ok(CONFIG.ClientId, 'ClientId is not set');
     assert.ok(CONFIG.ClientNotSoSecret, 'ClientNotSoSecret is not set');
+    assert.ok(process.env.TEST_ACCOUNT_EMAIL, 'TEST_ACCOUNT_EMAIL is not set');
+    assert.ok(
+      process.env.TEST_ACCOUNT_PASSWORD,
+      'TEST_ACCOUNT_PASSWORD is not set',
+    );
     // Wait for VS Code UI to settle before running tests.
     workbench = new Workbench();
     driver = workbench.getDriver();
