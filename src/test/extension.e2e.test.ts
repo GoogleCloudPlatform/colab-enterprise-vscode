@@ -64,7 +64,7 @@ describe('Workbench Extension', function () {
     });
 
     it('authenticates and executes the notebook on a Workbench server', async () => {
-      // Select the Colab server provider from the kernel selector.
+      // Select the Workbench server provider from the kernel selector.
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
       const selected = await selectAnyQuickPickItem({
         items: ['Select Another Kernel...', 'Google Cloud Workbench'],
@@ -85,7 +85,7 @@ describe('Workbench Extension', function () {
 
       await pushDialogButton({
         button: 'Allow',
-        dialog: "The extension 'Colab' wants to sign in using Google.",
+        dialog: "The extension 'Workbench' wants to sign in using Google.",
       });
 
       // Begin the sign-in process by copying the OAuth URL to the clipboard and
@@ -240,7 +240,7 @@ describe('Workbench Extension', function () {
       await passwordInput.sendKeys(process.env.TEST_ACCOUNT_PASSWORD ?? '');
       await passwordInput.sendKeys(Key.ENTER);
 
-      // Click Continue to sign in to Colab.
+      // Click Continue to sign in to Workbench.
       await oauthDriver.wait(
         until.urlContains('accounts.google.com/signin/oauth/id'),
         ELEMENT_WAIT_MS,
