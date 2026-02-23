@@ -7,6 +7,7 @@
 import cspellESLintPluginRecommended from '@cspell/eslint-plugin/recommended';
 import eslint from '@eslint/js';
 import stylisticTs from '@stylistic/eslint-plugin';
+import { defineConfig } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import checkFile from 'eslint-plugin-check-file';
 import importPlugin from 'eslint-plugin-import';
@@ -16,12 +17,14 @@ import tsDocPlugin from 'eslint-plugin-tsdoc';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-// TODO need to update config
-// eslint-disable-next-line @typescript-eslint/no-deprecated
-export default tseslint.config(
+
+export default defineConfig([
+  {
+    ignores: ['out/', 'dist/', '**/*.d.ts', '.vscode-test/', '.test-resources/'],
+  },
   eslint.configs.recommended,
-  tseslint.configs.strictTypeChecked,
-  tseslint.configs.stylisticTypeChecked,
+  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
   cspellESLintPluginRecommended,
   {
     languageOptions: {
@@ -120,4 +123,4 @@ export default tseslint.config(
   },
   // Intentionally last to override any conflicting rules.
   eslintConfigPrettier,
-);
+]);
