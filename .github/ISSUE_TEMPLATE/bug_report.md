@@ -13,7 +13,7 @@ TODO A clear and concise description of what the bug is.
 ## Environment
 
 - VS Code version: TODO
-- Colab extension version: TODO
+- Workbench extension version: TODO
 - Jupyter extension version: TODO
 - OS (Linux | Mac | Windows): TODO
 
@@ -37,7 +37,7 @@ TODO: Optionally add any other context about the problem here.
 
 ## Logs
 
-Logs from `Colab` in the `Output` panel (`View` > `Output`, change the drop-down the upper-right of the `Output` panel to `Colab`).
+Logs from `Workbench` in the `Output` panel (`View` > `Output`, change the drop-down the upper-right of the `Output` panel to `Workbench`).
 
 ```txt
 TODO
