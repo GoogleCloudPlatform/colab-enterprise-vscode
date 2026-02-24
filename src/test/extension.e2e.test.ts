@@ -67,13 +67,13 @@ describe('Workbench Extension', function () {
       // Select the Workbench server provider from the kernel selector.
       await workbench.executeCommand('Notebook: Select Notebook Kernel');
       const selected = await selectAnyQuickPickItem({
-        items: ['Select Another Kernel...', 'Google Cloud Workbench'],
+        items: ['Select Another Kernel...', 'Google Cloud'],
         quickPick: 'Select Notebook Kernel',
       });
 
       if (selected === 'Select Another Kernel...') {
         await selectQuickPickItem({
-          item: 'Google Cloud Workbench',
+          item: 'Google Cloud',
           quickPick: 'Select Another Kernel',
         });
       }
