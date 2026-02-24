@@ -176,25 +176,4 @@ describe('LocalServerFlow', () => {
     expect(resStub.statusCode).to.equal(302);
     sinon.assert.calledOnce(resStub.end);
   });
-
-  // TODO: This SUT and test read from disk, we should add the following test as
-  // an integration test to keep the UTs zippy ⚡.
-  //
-  // Commenting out for now to avoid unnecessary test bloat. It's also
-  // non-critical user functionality.
-  /*
-  it("serves the favicon throughout the flow", async () => {
-    void flow.trigger(defaultTriggerOpts);
-    const faviconReq = {
-      method: "GET",
-      url: "/favicon.ico",
-      headers: { host: DEFAULT_HOST },
-    } as http.IncomingMessage;
-
-    fakeServer.emit("request", faviconReq, resStub);
-
-    const favicon = await fs.readFile(path.join("out/test/media/favicon.ico"));
-    sinon.assert.calledOnceWithMatch(resStub.end, favicon);
-  });
-  */
 });
