@@ -103,8 +103,8 @@ describe('WorkbenchJupyterServerProvider', () => {
     it('registers the "Workbench" Jupyter server collection', () => {
       sinon.assert.calledOnceWithExactly(
         jupyterStub.createJupyterServerCollection,
-        'google-cloud-workbench',
-        'Google Cloud Workbench',
+        'google-cloud',
+        'Google Cloud',
         serverProvider,
       );
     });

@@ -50,8 +50,8 @@ export class WorkbenchJupyterServerProvider
     this.onDidChangeServers = this.serverChangeEmitter.event;
 
     this.serverCollection = jupyter.createJupyterServerCollection(
-      'google-cloud-workbench',
-      'Google Cloud Workbench',
+      'google-cloud',
+      'Google Cloud',
       this,
     );
     this.serverCollection.commandProvider = this;
