@@ -44,7 +44,7 @@ for more information.
 ## Security
 
 To mitigate the risk of malicious extensions accessing your OAuth credentials, ensure the extension is installed from a trusted source (such as the [Visual Studio
-   Marketplace](https://marketplace.visualstudio.com/items?itemName=google.workbench) or [Open VSX](https://open-vsx.org/extension/Google/workbench)) and is authored by the **verified publisher (Google)**.
+   Marketplace](https://marketplace.visualstudio.com) or [Open VSX](https://open-vsx.org)) and is authored by the **verified publisher (Google)**.
 
 Please see our [security disclosure process](./SECURITY.md). All [security
 advisories](https://github.com/GoogleCloudPlatform/colab-enterprise-vscode/security/advisories) are
