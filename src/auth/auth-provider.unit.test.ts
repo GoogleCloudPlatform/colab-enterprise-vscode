@@ -219,6 +219,20 @@ describe('GoogleAuthProvider', () => {
             changed: [DEFAULT_AUTH_SESSION],
           });
         });
+        it('handles "Invalid grant" error by clearing session', async () => {
+          sinon
+            .stub(oauth2Client, 'refreshAccessToken')
+            .rejects(new Error('Invalid grant'));
+
+          await expect(authProvider.initialize()).to.eventually.be.fulfilled;
+
+          sinon.assert.calledOnceWithExactly(
+            storageStub.removeSession,
+            DEFAULT_REFRESH_SESSION.id,
+          );
+          const sessions = await authProvider.getSessions(undefined, {});
+          expect(sessions).to.deep.equal([]);
+        });
       });
     });
   });

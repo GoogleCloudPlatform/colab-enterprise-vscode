@@ -120,7 +120,18 @@ export class GoogleAuthProvider
       token_type: 'Bearer',
       scope: session.scopes.join(' '),
     });
-    await this.oAuth2Client.refreshAccessToken();
+    try {
+      await this.oAuth2Client.refreshAccessToken();
+    } catch (err: unknown) {
+      console.warn(
+        `Failed to refresh token during initialization: ${String(err)}`,
+      );
+      // The refresh token is likely invalid or revoked.
+      // Clear the session so the user can sign in again.
+      await this.storage.removeSession(session.id);
+      this.isInitialized = true;
+      return;
+    }
     const accessToken = this.oAuth2Client.credentials.access_token;
     if (!accessToken) {
       throw new Error('Failed to refresh Google OAuth token.');
