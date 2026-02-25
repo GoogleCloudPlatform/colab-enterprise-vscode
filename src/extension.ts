@@ -10,6 +10,7 @@ import { GoogleAuthProvider } from './auth/auth-provider';
 import { getOAuth2Flows } from './auth/flows/flows';
 import { login } from './auth/login';
 import { AuthStorage } from './auth/storage';
+import { initializeLogger } from './common/logger';
 import { CONFIG } from './config';
 import { getJupyterApi } from './jupyter/jupyter-extension';
 import { WorkbenchJupyterServerProvider } from './jupyter/provider';
@@ -23,6 +24,7 @@ import { ProjectsClient } from './workbench/projects-client';
  * @param context - The extension context.
  */
 export async function activate(context: vscode.ExtensionContext) {
+  const logger = initializeLogger(vscode, context);
   const jupyter = await getJupyterApi(vscode);
   const authClient = new OAuth2Client(
     CONFIG.ClientId,
@@ -55,6 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
     disposeAll(authFlows),
     authProvider,
     workbenchServerProvider,
+    logger
   );
 }
 

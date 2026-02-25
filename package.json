@@ -44,7 +44,24 @@
         "label": "Google Cloud Platform",
         "id": "google-cloud-platform"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Workbench",
+      "properties": {
+        "workbench.logging.level": {
+          "type": "string",
+          "default": "info",
+          "enum": [
+            "off",
+            "error",
+            "warn",
+            "info",
+            "debug"
+          ],
+          "description": "Controls the verbosity of logs. These can be found in the 'Workbench' output channel."
+        }
+      }
+    }
   },
   "main": "./out/extension.js",
   "scripts": {
