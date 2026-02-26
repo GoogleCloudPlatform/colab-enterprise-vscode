@@ -12,7 +12,8 @@ describe('Extension', () => {
     assert.ok(vscode.extensions.getExtension('google.workbench'));
   });
 
-  it('should activate', async () => {
+  it('should activate', async function () {
+    this.timeout(60000); // Activating Jupyter extension takes time
     const extension = vscode.extensions.getExtension('google.workbench');
 
     await extension?.activate();
