@@ -58,6 +58,17 @@ describe('ProjectsClient', () => {
     sinon.restore();
   });
 
+  it('sets the correct client agent header', () => {
+    const testClient = new ProjectsClient(mockAuthClient);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const internalClient = (testClient as any).projectClient as {
+      _opts: { otherArgs: { headers: Record<string, string> } };
+    };
+    expect(
+      internalClient._opts.otherArgs.headers['X-Goog-Api-Client'],
+    ).to.match(/^vertex-ai-workbench-vscode-ext\//);
+  });
+
   describe('getProjects', () => {
     beforeEach(() => {
       // Inject the stub into the client instance since it creates its own

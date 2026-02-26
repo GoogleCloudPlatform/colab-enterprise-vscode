@@ -67,6 +67,17 @@ describe('NotebooksClient', () => {
     sinon.restore();
   });
 
+  it('sets the correct client agent header', () => {
+    const testClient = new NotebooksClient(mockAuthClient);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const internalClient = (testClient as any).notebookServiceClient as {
+      _opts: { otherArgs: { headers: Record<string, string> } };
+    };
+    expect(
+      internalClient._opts.otherArgs.headers['X-Goog-Api-Client'],
+    ).to.match(/^vertex-ai-workbench-vscode-ext\//);
+  });
+
   describe('listInstances', () => {
     it('should return a list of instances', async () => {
       const projectId = 'mock-project-id';
