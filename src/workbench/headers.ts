@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 /**
  * An HTTP header key.
  */
@@ -24,13 +27,28 @@ export interface StaticHeader extends Header {
   readonly value: string;
 }
 
+// Read version from package.json
+function getExtensionVersion(): string {
+  try {
+    const packageJsonPath = path.resolve(__dirname, '../../package.json');
+    const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8');
+    const packageJson = JSON.parse(packageJsonContent) as { version?: string };
+    return packageJson.version ?? '0.0.0'; // Fallback version
+  } catch (error) {
+    console.error('Failed to load extension version from package.json:', error);
+    return '0.0.0'; // Fallback version
+  }
+}
+
+const EXTENSION_VERSION = getExtensionVersion();
+
 /**
 n * The HTTP header for the Workbench client agent used for requests originating
  * from VS Code.
  */
 export const WORKBENCH_CLIENT_AGENT_HEADER: StaticHeader = {
   key: 'X-Goog-Api-Client',
-  value: 'workbench-vscode-ext/1.0.0',
+  value: `vertex-ai-workbench-vscode-ext/${EXTENSION_VERSION}`,
 };
 
 /**
