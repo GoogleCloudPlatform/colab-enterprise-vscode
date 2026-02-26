@@ -28,10 +28,10 @@ export interface StaticHeader extends Header {
 }
 
 // Read version from package.json
-function getExtensionVersion(): string {
+export function getExtensionVersion(_fs = fs, _path = path): string {
   try {
-    const packageJsonPath = path.resolve(__dirname, '../../package.json');
-    const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8');
+    const packageJsonPath = _path.resolve(__dirname, '../../package.json');
+    const packageJsonContent = _fs.readFileSync(packageJsonPath, 'utf8');
     const packageJson = JSON.parse(packageJsonContent) as { version?: string };
     return packageJson.version ?? '0.0.0'; // Fallback version
   } catch (error) {

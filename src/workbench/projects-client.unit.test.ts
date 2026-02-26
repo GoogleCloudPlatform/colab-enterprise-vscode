@@ -60,7 +60,7 @@ describe('ProjectsClient', () => {
 
   it('sets the correct client agent header', () => {
     const testClient = new ProjectsClient(mockAuthClient);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
     const internalClient = (testClient as any).projectClient as {
       _opts: { otherArgs: { headers: Record<string, string> } };
     };
