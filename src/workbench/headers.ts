@@ -43,8 +43,12 @@ export function getExtensionVersion(_fs = fs, _path = path): string {
 const EXTENSION_VERSION = getExtensionVersion();
 
 /**
-n * The HTTP header for the Workbench client agent used for requests originating
+ * The HTTP header for the Workbench client agent used for requests originating
  * from VS Code.
+ * 
+ * IMPORTANT: This exact header value prefix ('vertex-ai-workbench-vscode-ext/')
+ * is used to track extension usage on the Google side. Do not modify it without
+ * verifying the impact on analytics and tracking.
  */
 export const WORKBENCH_CLIENT_AGENT_HEADER: StaticHeader = {
   key: 'X-Goog-Api-Client',
