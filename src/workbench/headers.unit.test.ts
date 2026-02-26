@@ -17,7 +17,7 @@ describe('headers', () => {
   describe('getExtensionVersion', () => {
     it('returns version from vscode.extensions', () => {
       (vscode.extensions.getExtension as sinon.SinonStub).returns({
-        packageJSON: { version: '3.2.1' }
+        packageJSON: { version: '3.2.1' },
       } as unknown as vscode.Extension<unknown>);
 
       expect(getExtensionVersion()).to.equal('3.2.1');
@@ -25,7 +25,7 @@ describe('headers', () => {
 
     it('returns fallback version if vscode.extensions has no version', () => {
       (vscode.extensions.getExtension as sinon.SinonStub).returns({
-        packageJSON: {}
+        packageJSON: {},
       } as unknown as vscode.Extension<unknown>);
 
       expect(getExtensionVersion()).to.equal('0.0.0');
