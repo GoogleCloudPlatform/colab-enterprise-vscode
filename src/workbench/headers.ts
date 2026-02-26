@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import * as vscode from 'vscode';
 
 /**
  * An HTTP header key.
@@ -27,15 +26,16 @@ export interface StaticHeader extends Header {
   readonly value: string;
 }
 
-// Read version from package.json
-export function getExtensionVersion(_fs = fs, _path = path): string {
+// Read version from vscode extension
+export function getExtensionVersion(): string {
   try {
-    const packageJsonPath = _path.resolve(__dirname, '../../package.json');
-    const packageJsonContent = _fs.readFileSync(packageJsonPath, 'utf8');
-    const packageJson = JSON.parse(packageJsonContent) as { version?: string };
-    return packageJson.version ?? '0.0.0'; // Fallback version
+    const extension = vscode.extensions.getExtension('google.workbench');
+    const extPackageJSON = extension?.packageJSON as
+      | { version?: string }
+      | undefined;
+    return extPackageJSON?.version ?? '0.0.0';
   } catch (error) {
-    console.error('Failed to load extension version from package.json:', error);
+    console.error('Failed to load extension version:', error);
     return '0.0.0'; // Fallback version
   }
 }
@@ -45,7 +45,7 @@ const EXTENSION_VERSION = getExtensionVersion();
 /**
  * The HTTP header for the Workbench client agent used for requests originating
  * from VS Code.
- * 
+ *
  * IMPORTANT: This exact header value prefix ('vertex-ai-workbench-vscode-ext/')
  * is used to track extension usage on the Google side. Do not modify it without
  * verifying the impact on analytics and tracking.
