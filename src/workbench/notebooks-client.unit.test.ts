@@ -68,9 +68,10 @@ describe('NotebooksClient', () => {
   });
 
   it('sets the correct client agent header', () => {
-    const testClient = new NotebooksClient(mockAuthClient);
+    const notebooksTestClient = new NotebooksClient(mockAuthClient);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-    const internalClient = (testClient as any).notebookServiceClient as {
+    const internalClient = (notebooksTestClient as any)
+      .notebookServiceClient as {
       _opts: { otherArgs: { headers: Record<string, string> } };
     };
     expect(

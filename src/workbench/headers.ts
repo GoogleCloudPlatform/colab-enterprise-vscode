@@ -30,10 +30,16 @@ export interface StaticHeader extends Header {
 export function getExtensionVersion(): string {
   try {
     const extension = vscode.extensions.getExtension('google.workbench');
-    const extPackageJSON = extension?.packageJSON as
-      | { version?: string }
-      | undefined;
-    return extPackageJSON?.version ?? '0.0.0';
+    const packageJSON: unknown = extension?.packageJSON;
+    if (
+      packageJSON &&
+      typeof packageJSON === 'object' &&
+      'version' in packageJSON &&
+      typeof packageJSON.version === 'string'
+    ) {
+      return packageJSON.version;
+    }
+    return '0.0.0';
   } catch (error) {
     console.error('Failed to load extension version:', error);
     return '0.0.0'; // Fallback version
