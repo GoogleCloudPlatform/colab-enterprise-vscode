@@ -68,12 +68,18 @@ describe('NotebooksClient', () => {
   });
 
   it('sets the correct client agent header', () => {
-    const notebooksTestClient = new NotebooksClient(mockAuthClient);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-    const client = (notebooksTestClient as any).notebookServiceClient as {
-      _opts: { otherArgs: { headers: Record<string, string> } };
+    const fakeConstructor = sinon.stub();
+    sinon.stub(v2, 'NotebookServiceClient').get(() => fakeConstructor);
+
+    new NotebooksClient(mockAuthClient);
+
+    sinon.assert.calledOnce(fakeConstructor);
+    const args = fakeConstructor.firstCall.args[0] as {
+      otherArgs: {
+        headers: Record<string, string>;
+      };
     };
-    expect(client._opts.otherArgs.headers['X-Goog-Api-Client']).to.match(
+    expect(args.otherArgs.headers['X-Goog-Api-Client']).to.match(
       /^vertex-ai-workbench-vscode-ext\//,
     );
   });

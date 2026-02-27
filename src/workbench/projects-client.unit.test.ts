@@ -59,14 +59,20 @@ describe('ProjectsClient', () => {
   });
 
   it('sets the correct client agent header', () => {
-    const projectsTestClient = new ProjectsClient(mockAuthClient);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-    const internalClient = (projectsTestClient as any).projectClient as {
-      _opts: { otherArgs: { headers: Record<string, string> } };
+    const fakeConstructor = sinon.stub();
+    sinon.stub(v3, 'ProjectsClient').get(() => fakeConstructor);
+
+    new ProjectsClient(mockAuthClient);
+
+    sinon.assert.calledOnce(fakeConstructor);
+    const args = fakeConstructor.firstCall.args[0] as {
+      otherArgs: {
+        headers: Record<string, string>;
+      };
     };
-    expect(
-      internalClient._opts.otherArgs.headers['X-Goog-Api-Client'],
-    ).to.match(/^vertex-ai-workbench-vscode-ext\//);
+    expect(args.otherArgs.headers['X-Goog-Api-Client']).to.match(
+      /^vertex-ai-workbench-vscode-ext\//,
+    );
   });
 
   describe('getProjects', () => {
