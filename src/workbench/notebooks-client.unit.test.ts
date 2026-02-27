@@ -70,13 +70,12 @@ describe('NotebooksClient', () => {
   it('sets the correct client agent header', () => {
     const notebooksTestClient = new NotebooksClient(mockAuthClient);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-    const internalClient = (notebooksTestClient as any)
-      .notebookServiceClient as {
+    const client = (notebooksTestClient as any).notebookServiceClient as {
       _opts: { otherArgs: { headers: Record<string, string> } };
     };
-    expect(
-      internalClient._opts.otherArgs.headers['X-Goog-Api-Client'],
-    ).to.match(/^vertex-ai-workbench-vscode-ext\//);
+    expect(client._opts.otherArgs.headers['X-Goog-Api-Client']).to.match(
+      /^vertex-ai-workbench-vscode-ext\//,
+    );
   });
 
   describe('listInstances', () => {
