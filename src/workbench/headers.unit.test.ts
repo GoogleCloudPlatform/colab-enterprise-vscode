@@ -17,7 +17,11 @@ describe('headers', () => {
   describe('getExtensionVersion', () => {
     it('returns version from vscode.extensions', () => {
       (vscode.extensions.getExtension as sinon.SinonStub).returns({
-        packageJSON: { version: '3.2.1' },
+        packageJSON: {
+          publisher: 'google',
+          name: 'workbench',
+          version: '3.2.1',
+        },
       } as unknown as vscode.Extension<unknown>);
 
       expect(getExtensionVersion()).to.equal('3.2.1');

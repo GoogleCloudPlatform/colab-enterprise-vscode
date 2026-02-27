@@ -5,6 +5,23 @@
  */
 
 import * as vscode from 'vscode';
+import { getPackageInfo } from '../config/package-info';
+
+/**
+ * Returns the version of the Workbench extension.
+ * Returns '0.0.0' if the extension is not found or has no valid version.
+ */
+export function getExtensionVersion(): string {
+  try {
+    const extension = vscode.extensions.getExtension('google.workbench');
+    if (extension) {
+      return getPackageInfo(extension).version;
+    }
+  } catch {
+    // Return fallback version below
+  }
+  return '0.0.0';
+}
 
 /**
  * An HTTP header key.
@@ -26,39 +43,17 @@ export interface StaticHeader extends Header {
   readonly value: string;
 }
 
-// Read version from vscode extension
-export function getExtensionVersion(): string {
-  try {
-    const extension = vscode.extensions.getExtension('google.workbench');
-    const packageJSON: unknown = extension?.packageJSON;
-    if (
-      packageJSON &&
-      typeof packageJSON === 'object' &&
-      'version' in packageJSON &&
-      typeof packageJSON.version === 'string'
-    ) {
-      return packageJSON.version;
-    }
-    return '0.0.0';
-  } catch (error) {
-    console.error('Failed to load extension version:', error);
-    return '0.0.0'; // Fallback version
-  }
-}
-
-const EXTENSION_VERSION = getExtensionVersion();
-
 /**
  * The HTTP header for the Workbench client agent used for requests originating
  * from VS Code.
  *
  * IMPORTANT: This exact header value prefix ('vertex-ai-workbench-vscode-ext/')
- * is used to track extension usage on the Google side. Do not modify it without
- * verifying the impact on analytics and tracking.
+ * is used to monitor the extension on the Google side. Do not modify it without
+ * verifying the impact on monitoring.
  */
 export const WORKBENCH_CLIENT_AGENT_HEADER: StaticHeader = {
   key: 'X-Goog-Api-Client',
-  value: `vertex-ai-workbench-vscode-ext/${EXTENSION_VERSION}`,
+  value: `vertex-ai-workbench-vscode-ext/${getExtensionVersion()}`,
 };
 
 /**
