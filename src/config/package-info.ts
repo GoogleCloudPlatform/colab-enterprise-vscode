@@ -6,6 +6,8 @@
 
 import { Extension } from 'vscode';
 import { z } from 'zod';
+import * as vscode from 'vscode';
+
 
 /**
  * A partial representation of the package.json file.
@@ -25,4 +27,8 @@ export type PackageInfo = z.infer<typeof PackageInfoSchema>;
 
 export function getPackageInfo(ext: Extension<unknown>): PackageInfo {
   return PackageInfoSchema.parse(ext.packageJSON);
+}
+
+export function getExtension(): Extension<unknown> {
+  return vscode.extensions.getExtension('google.workbench')!;
 }

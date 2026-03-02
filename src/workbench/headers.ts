@@ -4,24 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as vscode from 'vscode';
-import { getPackageInfo } from '../config/package-info';
-
-/**
- * Returns the version of the Workbench extension.
- * Returns '0.0.0' if the extension is not found or has no valid version.
- */
-export function getExtensionVersion(): string {
-  try {
-    const extension = vscode.extensions.getExtension('google.workbench');
-    if (extension) {
-      return getPackageInfo(extension).version;
-    }
-  } catch {
-    // Return fallback version below
-  }
-  return '0.0.0';
-}
+import { getExtension, getPackageInfo } from '../config/package-info';
 
 /**
  * An HTTP header key.
@@ -53,7 +36,7 @@ export interface StaticHeader extends Header {
  */
 export const WORKBENCH_CLIENT_AGENT_HEADER: StaticHeader = {
   key: 'X-Goog-Api-Client',
-  value: `vertex-ai-workbench-vscode-ext/${getExtensionVersion()}`,
+  value: `vertex-ai-workbench-vscode-ext/${getPackageInfo(getExtension()).version}`,
 };
 
 /**
