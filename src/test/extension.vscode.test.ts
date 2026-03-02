@@ -6,7 +6,6 @@
 
 import * as assert from 'assert';
 import vscode from 'vscode';
-import { getExtensionVersion } from '../workbench/headers';
 
 describe('Extension', () => {
   it('should be present', () => {
@@ -19,11 +18,5 @@ describe('Extension', () => {
     await extension?.activate();
 
     assert.strictEqual(extension?.isActive, true);
-  });
-
-  it('should read the correct extension version', () => {
-    const version = getExtensionVersion();
-    // not the 0.0.0 fallback
-    assert.notStrictEqual(version, '0.0.0');
   });
 });

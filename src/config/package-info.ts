@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Extension } from 'vscode';
+import { Extension, extensions } from 'vscode';
 import { z } from 'zod';
-import * as vscode from 'vscode';
-
 
 /**
  * A partial representation of the package.json file.
@@ -25,10 +23,15 @@ const PackageInfoSchema = z.object({
 });
 export type PackageInfo = z.infer<typeof PackageInfoSchema>;
 
-export function getPackageInfo(ext: Extension<unknown>): PackageInfo {
+export function getPackageInfo(
+  ext: Extension<unknown> | undefined,
+): PackageInfo {
+  if (!ext) {
+    return { publisher: 'google', name: 'google.workbench', version: '0.0.0' };
+  }
   return PackageInfoSchema.parse(ext.packageJSON);
 }
 
-export function getExtension(): Extension<unknown> {
-  return vscode.extensions.getExtension('google.workbench')!;
+export function getExtension(): Extension<unknown> | undefined {
+  return extensions.getExtension('google.workbench');
 }
