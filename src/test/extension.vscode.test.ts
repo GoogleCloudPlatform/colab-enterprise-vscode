@@ -13,7 +13,7 @@ describe('Extension', () => {
     assert.ok(vscode.extensions.getExtension('google.workbench'));
   });
 
-  it('should activate', async function () {
+  it('should activate', async () => {
     const extension = vscode.extensions.getExtension('google.workbench');
 
     await extension?.activate();
