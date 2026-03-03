@@ -23,15 +23,14 @@ const PackageInfoSchema = z.object({
 });
 export type PackageInfo = z.infer<typeof PackageInfoSchema>;
 
-export function getPackageInfo(
-  ext: Extension<unknown> | undefined,
-): PackageInfo {
-  if (!ext) {
-    return { publisher: 'google', name: 'google.workbench', version: '0.0.0' };
-  }
+export function getPackageInfo(ext: Extension<unknown>): PackageInfo {
   return PackageInfoSchema.parse(ext.packageJSON);
 }
 
-export function getExtension(): Extension<unknown> | undefined {
-  return extensions.getExtension('google.workbench');
+export function getExtension(): Extension<unknown> {
+  const ext = extensions.getExtension('google.workbench');
+  if (!ext) {
+    throw new Error('Extension google.workbench not found');
+  }
+  return ext;
 }

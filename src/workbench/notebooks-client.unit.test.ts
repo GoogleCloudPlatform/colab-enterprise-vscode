@@ -51,6 +51,15 @@ describe('NotebooksClient', () => {
   beforeEach(() => {
     mockAuthClient = new OAuth2Client();
     listInstancesStub = sinon.createStubInstance(v2.NotebookServiceClient);
+
+    (vscode.extensions.getExtension as sinon.SinonStub).returns({
+      packageJSON: {
+        publisher: 'google',
+        name: 'workbench',
+        version: '1.2.3',
+      },
+    } as vscode.Extension<undefined>);
+
     client = new NotebooksClient(mockAuthClient);
 
     // Inject the stub into the client instance since it creates its own

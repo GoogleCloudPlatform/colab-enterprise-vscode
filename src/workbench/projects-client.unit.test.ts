@@ -50,8 +50,17 @@ describe('ProjectsClient', () => {
   beforeEach(() => {
     mockAuthClient = new OAuth2Client();
 
-    client = new ProjectsClient(mockAuthClient);
     searchProjectsStub = sinon.createStubInstance(v3.ProjectsClient);
+
+    (vscode.extensions.getExtension as sinon.SinonStub).returns({
+      packageJSON: {
+        publisher: 'google',
+        name: 'workbench',
+        version: '1.2.3',
+      },
+    } as vscode.Extension<undefined>);
+
+    client = new ProjectsClient(mockAuthClient);
   });
 
   afterEach(() => {

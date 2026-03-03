@@ -6,7 +6,7 @@
 
 import { v3 } from '@google-cloud/resource-manager';
 import { OAuth2Client } from 'google-auth-library';
-import { WORKBENCH_CLIENT_AGENT_HEADER } from './headers';
+import { getWorkbenchClientHeaderWithVersion } from './headers';
 
 /**
  * The number of projects to retrieve per page.
@@ -38,8 +38,8 @@ export class ProjectsClient {
       authClient: authClient,
       otherArgs: {
         headers: {
-          [WORKBENCH_CLIENT_AGENT_HEADER.key]:
-            WORKBENCH_CLIENT_AGENT_HEADER.value,
+          [getWorkbenchClientHeaderWithVersion().key]:
+            getWorkbenchClientHeaderWithVersion().value,
         },
       },
     });
