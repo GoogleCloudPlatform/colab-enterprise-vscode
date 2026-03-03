@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2026 Google LLC
+ * Copyright 2025 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -52,7 +52,11 @@ describe('LocalServerFlow', () => {
       pkceChallenge: '1 + 1 = ?',
     };
     resStub = sinon.createStubInstance(http.ServerResponse);
-    flow = new LocalServerFlow(vs.asVsCode(), 'out/test/media', oauth2Client);
+    flow = new LocalServerFlow(
+      vs.asVsCode(),
+      'out/test/media',
+      oauth2Client,
+    );
   });
 
   afterEach(() => {
@@ -148,10 +152,10 @@ describe('LocalServerFlow', () => {
     const authSuccessUri = 'vscode://google.workbench/auth-success';
     const externalAuthSuccessUri = `${authSuccessUri}?windowId=1`;
     const state = encodeURIComponent(externalAuthSuccessUri);
-    const colabAuthSuccessUrl = `https://cloud.google.com/vertex-ai-notebooks?state=${state}`;
+    const workbenchAuthSuccessUrl = `https://cloud.google.com/vertex-ai-notebooks?state=${state}`;
     const responseRedirected = new Promise<void>((resolve) => {
       resStub.writeHead
-        .withArgs(302, sinon.match({ Location: colabAuthSuccessUrl }))
+        .withArgs(302, sinon.match({ Location: workbenchAuthSuccessUrl }))
         .callsFake(() => {
           resolve();
           resStub.statusCode = 302;
@@ -176,4 +180,25 @@ describe('LocalServerFlow', () => {
     expect(resStub.statusCode).to.equal(302);
     sinon.assert.calledOnce(resStub.end);
   });
+
+  // TODO: This SUT and test read from disk, we should add the following test as
+  // an integration test to keep the UTs zippy ⚡.
+  //
+  // Commenting out for now to avoid unnecessary test bloat. It's also
+  // non-critical user functionality.
+  /*
+  it("serves the favicon throughout the flow", async () => {
+    void flow.trigger(defaultTriggerOpts);
+    const faviconReq = {
+      method: "GET",
+      url: "/favicon.ico",
+      headers: { host: DEFAULT_HOST },
+    } as http.IncomingMessage;
+
+    fakeServer.emit("request", faviconReq, resStub);
+
+    const favicon = await fs.readFile(path.join("out/test/media/favicon.ico"));
+    sinon.assert.calledOnceWithMatch(resStub.end, favicon);
+  });
+  */
 });

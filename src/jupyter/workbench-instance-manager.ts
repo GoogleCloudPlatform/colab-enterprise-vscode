@@ -110,7 +110,9 @@ export class WorkbenchInstanceManager {
    *
    * @returns An array of WorkbenchJupyterServer objects.
    */
-  async getWorkbenchServers(): Promise<WorkbenchJupyterServer[]> {
+  async getWorkbenchServers(
+    vs: typeof vscode,
+  ): Promise<WorkbenchJupyterServer[]> {
     const { projectId } = this;
     if (!projectId) {
       return [];
@@ -128,6 +130,7 @@ export class WorkbenchInstanceManager {
       },
       () =>
         withError(
+          vs,
           /* operation= */ () => this.notebooksClient.listInstances(projectId),
           /* defaultValue= */ [],
           /* errorMessage= */ 'Failed to list Workbench instances',

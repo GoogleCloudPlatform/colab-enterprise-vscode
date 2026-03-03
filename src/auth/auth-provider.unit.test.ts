@@ -5,19 +5,23 @@
  */
 
 import { expect } from 'chai';
+import { GaxiosError, GaxiosResponse } from 'gaxios';
 import { OAuth2Client } from 'google-auth-library';
 import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
 import { SinonStub, SinonStubbedInstance, SinonFakeTimers } from 'sinon';
 import * as sinon from 'sinon';
 import vscode from 'vscode';
-import { Toggleable } from '../common/toggleable';
 import { PROVIDER_ID } from '../config/constants';
 import { newVsCodeStub, VsCodeStub } from '../test/helpers/vscode';
 import {
   AUTHORIZATION_HEADER,
   CONTENT_TYPE_JSON_HEADER,
 } from '../workbench/headers';
-import { GoogleAuthProvider, REQUIRED_SCOPES } from './auth-provider';
+import {
+  AuthChangeEvent,
+  GoogleAuthProvider,
+  REQUIRED_SCOPES,
+} from './auth-provider';
 import { Credentials } from './login';
 import { AuthStorage, RefreshableAuthenticationSession } from './storage';
 
@@ -58,6 +62,13 @@ const DEFAULT_USER_INFO = {
   picture: 'https://example.com/foo.jpg',
   hd: 'google.com',
 };
+const GAXIOS_ERRORS: { message: string; status: number }[] = [
+  {
+    message: 'invalid_grant',
+    status: 400,
+  },
+  { message: 'unauthorized_client', status: 401 },
+];
 
 describe('GoogleAuthProvider', () => {
   let fakeClock: SinonFakeTimers;
@@ -79,10 +90,19 @@ describe('GoogleAuthProvider', () => {
    * compromise, but it seems like the best middle ground.
    */
   let oauth2Client: OAuth2Client;
-  let onDidChangeSessionsStub: sinon.SinonStub<
-    [vscode.AuthenticationProviderAuthenticationSessionsChangeEvent]
-  >;
+  let onDidChangeSessionsStub: sinon.SinonStub<[AuthChangeEvent]>;
   let authProvider: GoogleAuthProvider;
+
+  function signedInContextCalledWith(): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      vsCodeStub.commands.executeCommand
+        .withArgs('setContext', 'colab.isSignedIn')
+        .callsFake((_command: string, _contextKey: string, value: boolean) => {
+          resolve(value);
+          return Promise.resolve();
+        });
+    });
+  }
 
   beforeEach(() => {
     fakeClock = sinon.useFakeTimers({ now: NOW, toFake: [] });
@@ -113,21 +133,8 @@ describe('GoogleAuthProvider', () => {
   });
 
   describe('lifecycle', () => {
-    it('registers the "google-cloud-platform" authentication provider', async () => {
-      await authProvider.initialize();
-      // Expect the provider-specific rejection surrounding the scopes not
-      // matching the required set. This validates that the provider was
-      // registered and is being used.
-      await expect(
-        vsCodeStub.authentication.getSession(PROVIDER_ID, [
-          'make',
-          'it',
-          'error',
-        ]),
-      ).to.eventually.be.rejectedWith(/scopes/);
-    });
-
     it('disposes the "google-cloud-platform" authentication provider', async () => {
+      await authProvider.initialize();
       authProvider.dispose();
 
       await expect(
@@ -148,6 +155,20 @@ describe('GoogleAuthProvider', () => {
     });
 
     describe('initialize', () => {
+      it('registers the "google-cloud-platform" authentication provider', async () => {
+        await authProvider.initialize();
+        // Expect the provider-specific rejection surrounding the scopes not
+        // matching the required set. This validates that the provider was
+        // registered and is being used.
+        await expect(
+          vsCodeStub.authentication.getSession(PROVIDER_ID, [
+            'make',
+            'it',
+            'error',
+          ]),
+        ).to.eventually.be.rejectedWith(/scopes/);
+      });
+
       it('throws an error if disposed', async () => {
         authProvider.dispose();
 
@@ -213,137 +234,79 @@ describe('GoogleAuthProvider', () => {
           });
 
           await expect(authProvider.initialize()).to.eventually.be.fulfilled;
+
           sinon.assert.calledOnceWithExactly(onDidChangeSessionsStub, {
             added: [],
             removed: [],
             changed: [DEFAULT_AUTH_SESSION],
+            hasValidSession: true,
           });
         });
-        it('handles "Invalid grant" error by clearing session', async () => {
-          sinon
-            .stub(oauth2Client, 'refreshAccessToken')
-            .rejects(new Error('Invalid grant'));
+        it('registers the auth provider', async () => {
+          sinon.stub(oauth2Client, 'refreshAccessToken').callsFake(() => {
+            oauth2Client.credentials.access_token = DEFAULT_ACCESS_TOKEN;
+          });
+          storageStub.getSession.resolves(DEFAULT_REFRESH_SESSION);
+
+          await authProvider.initialize();
+
+          await expect(
+            vsCodeStub.authentication.getSession(PROVIDER_ID, SCOPES),
+          ).to.eventually.be.fulfilled;
+        });
+
+        for (const { message, status } of GAXIOS_ERRORS) {
+          it(`clears the session and re-initializes if refreshAccessToken throws a ${status.toString()} GaxiosError`, async () => {
+            const gaxiosError: GaxiosError = new GaxiosError(
+              message,
+              { headers: new Headers(), url: new URL('http://example.com') },
+              {
+                config: {
+                  headers: new Headers(),
+                  url: new URL('http://example.com'),
+                },
+                data: undefined,
+                status,
+                statusText: 'Unauthorized',
+                headers: new Headers(),
+              } as GaxiosResponse<undefined>,
+            );
+            sinon.stub(oauth2Client, 'refreshAccessToken').throws(gaxiosError);
+            storageStub.getSession.onSecondCall().resolves(undefined);
+
+            await expect(authProvider.initialize()).to.eventually.be.fulfilled;
+
+            await expect(
+              authProvider.getSessions(undefined, {}),
+            ).to.eventually.deep.equal([]);
+            sinon.assert.calledOnceWithExactly(
+              storageStub.removeSession,
+              DEFAULT_REFRESH_SESSION.id,
+            );
+          });
+        }
+
+        it('sets the signed in context', async () => {
+          sinon.stub(oauth2Client, 'refreshAccessToken').callsFake(() => {
+            oauth2Client.credentials.access_token = DEFAULT_ACCESS_TOKEN;
+          });
+          const signedInContext = signedInContextCalledWith();
 
           await expect(authProvider.initialize()).to.eventually.be.fulfilled;
 
-          sinon.assert.calledOnceWithExactly(
-            storageStub.removeSession,
-            DEFAULT_REFRESH_SESSION.id,
+          await expect(signedInContext).to.eventually.be.true;
+        });
+
+        it('re-throws non handled errors when refreshing the access token', async () => {
+          sinon
+            .stub(oauth2Client, 'refreshAccessToken')
+            .throws(new Error('🤮'));
+
+          await expect(authProvider.initialize()).to.eventually.be.rejectedWith(
+            /🤮/,
           );
-          const sessions = await authProvider.getSessions(undefined, {});
-          expect(sessions).to.deep.equal([]);
         });
       });
-    });
-  });
-
-  describe('whileAuthorized', () => {
-    let toggles: sinon.SinonStubbedInstance<Toggleable>[];
-
-    beforeEach(() => {
-      toggles = [
-        {
-          on: sinon.stub(),
-          off: sinon.stub(),
-        },
-        {
-          on: sinon.stub(),
-          off: sinon.stub(),
-        },
-      ];
-    });
-
-    it('throws when uninitialized', () => {
-      expect(() => authProvider.whileAuthorized(...toggles)).to.throw(
-        /initialize/,
-      );
-    });
-
-    it('throws when disposed', async () => {
-      await authProvider.initialize();
-      authProvider.dispose();
-
-      expect(() => authProvider.whileAuthorized(...toggles)).to.throw(
-        /disposed/,
-      );
-    });
-
-    it('initializes toggles to on when authorized', async () => {
-      sinon.stub(oauth2Client, 'refreshAccessToken').callsFake(() => {
-        oauth2Client.credentials.access_token = DEFAULT_ACCESS_TOKEN;
-      });
-      storageStub.getSession.resolves(DEFAULT_REFRESH_SESSION);
-      await authProvider.initialize();
-
-      authProvider.whileAuthorized(...toggles);
-
-      for (const t of toggles) {
-        sinon.assert.calledOnce(t.on);
-        sinon.assert.notCalled(t.off);
-      }
-    });
-
-    it('initializes toggles to off when not authorized', async () => {
-      await authProvider.initialize();
-
-      authProvider.whileAuthorized(...toggles);
-
-      for (const t of toggles) {
-        sinon.assert.calledOnce(t.off);
-        sinon.assert.notCalled(t.on);
-      }
-    });
-
-    it('turns toggles on when session becomes authorized', async () => {
-      await authProvider.initialize();
-      authProvider.whileAuthorized(...toggles);
-      loginStub.withArgs(SCOPES).resolves(DEFAULT_CREDENTIALS);
-      fetchStub
-        .withArgs('https://www.googleapis.com/oauth2/v2/userinfo', {
-          headers: {
-            [AUTHORIZATION_HEADER.key]: `Bearer ${DEFAULT_ACCESS_TOKEN}`,
-          },
-        })
-        .resolves(
-          new Response(JSON.stringify(DEFAULT_USER_INFO), {
-            status: 200,
-            headers: {
-              [CONTENT_TYPE_JSON_HEADER.key]: CONTENT_TYPE_JSON_HEADER.value,
-            },
-          }),
-        );
-      for (const t of toggles) {
-        t.on.resetHistory();
-        t.off.resetHistory();
-      }
-
-      await authProvider.createSession(SCOPES);
-
-      for (const t of toggles) {
-        sinon.assert.notCalled(t.off);
-        sinon.assert.calledOnce(t.on);
-      }
-    });
-
-    it('turns toggles off when session is no longer authorized', async () => {
-      sinon.stub(oauth2Client, 'refreshAccessToken').callsFake(() => {
-        oauth2Client.credentials.access_token = DEFAULT_ACCESS_TOKEN;
-      });
-      storageStub.getSession.resolves(DEFAULT_REFRESH_SESSION);
-      await authProvider.initialize();
-      sinon.stub(oauth2Client, 'revokeToken').resolves();
-      authProvider.whileAuthorized(...toggles);
-      for (const t of toggles) {
-        t.on.resetHistory();
-        t.off.resetHistory();
-      }
-
-      await authProvider.removeSession(DEFAULT_REFRESH_SESSION.id);
-
-      for (const t of toggles) {
-        sinon.assert.calledOnce(t.off);
-        sinon.assert.notCalled(t.on);
-      }
     });
   });
 
@@ -468,6 +431,41 @@ describe('GoogleAuthProvider', () => {
           { ...DEFAULT_AUTH_SESSION, accessToken: 'new' },
         ]);
       });
+
+      for (const { message, status } of GAXIOS_ERRORS) {
+        it(`clears the session when refreshing the access token throws a ${status.toString()} GaxiosError`, async () => {
+          const gaxiosError: GaxiosError = new GaxiosError(
+            message,
+            { headers: new Headers(), url: new URL('http://example.com') },
+            {
+              config: {
+                headers: new Headers(),
+                url: new URL('http://example.com'),
+              },
+              data: undefined,
+              status,
+              statusText: 'Unauthorized',
+              headers: new Headers(),
+            } as GaxiosResponse<undefined>,
+          );
+          refreshAccessTokenStub.throws(gaxiosError);
+          sinon.stub(oauth2Client, 'revokeToken').resolves();
+          fakeClock.tick(HOUR_MS * 2);
+
+          const sessions = authProvider.getSessions(undefined, {});
+
+          await expect(sessions).to.eventually.deep.equal([]);
+        });
+      }
+
+      it('ignores unhandled errors when refreshing the access token', async () => {
+        refreshAccessTokenStub.throws(new Error('🤮'));
+        fakeClock.tick(HOUR_MS * 2);
+
+        const sessions = authProvider.getSessions(undefined, {});
+
+        await expect(sessions).to.eventually.deep.equal([DEFAULT_AUTH_SESSION]);
+      });
     });
   });
 
@@ -536,6 +534,7 @@ describe('GoogleAuthProvider', () => {
       });
 
       it('creates a new session', async () => {
+        const signedInContext = signedInContextCalledWith();
         const session = await authProvider.createSession(SCOPES);
 
         const newSession = {
@@ -551,7 +550,9 @@ describe('GoogleAuthProvider', () => {
           added: [newSession],
           removed: [],
           changed: [],
+          hasValidSession: true,
         });
+        await expect(signedInContext).to.eventually.be.true;
       });
 
       it('replaces an existing session', async () => {
@@ -567,6 +568,7 @@ describe('GoogleAuthProvider', () => {
           added: [],
           removed: [],
           changed: [session],
+          hasValidSession: true,
         });
       });
     });
@@ -629,12 +631,14 @@ describe('GoogleAuthProvider', () => {
 
       it('removes the session', async () => {
         sinon.stub(oauth2Client, 'revokeToken').resolves();
+        const signedInContext = signedInContextCalledWith();
 
         await authProvider.removeSession(DEFAULT_REFRESH_SESSION.id);
 
         await expect(
           authProvider.getSessions(undefined, {}),
         ).to.eventually.deep.equal([]);
+        await expect(signedInContext).to.eventually.be.false;
       });
 
       it('notifies of the removed session', async () => {
@@ -648,6 +652,7 @@ describe('GoogleAuthProvider', () => {
           added: [],
           removed: [session[0]],
           changed: [],
+          hasValidSession: false,
         });
       });
     });

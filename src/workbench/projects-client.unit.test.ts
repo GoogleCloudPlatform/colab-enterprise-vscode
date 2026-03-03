@@ -66,7 +66,6 @@ describe('ProjectsClient', () => {
         value: searchProjectsStub,
         writable: true,
       });
-      (vscode.window.showErrorMessage as sinon.SinonStub).resetHistory();
     });
 
     it('should return a list of projects', async () => {
@@ -101,7 +100,6 @@ describe('ProjectsClient', () => {
       await expect(client.getProjects('test-query')).to.be.rejectedWith(
         'Search failed',
       );
-      sinon.assert.notCalled(vscode.window.showErrorMessage as sinon.SinonStub);
     });
   });
 });

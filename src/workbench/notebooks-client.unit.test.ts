@@ -8,7 +8,6 @@ import { v2, protos } from '@google-cloud/notebooks';
 import { expect } from 'chai';
 import { OAuth2Client } from 'google-auth-library';
 import * as sinon from 'sinon';
-import vscode from 'vscode';
 import { NotebooksClient } from './notebooks-client';
 
 const DEFAULT_INSTANCES_RESPONSE: protos.google.cloud.notebooks.v2.IInstance[] =
@@ -59,8 +58,6 @@ describe('NotebooksClient', () => {
       value: listInstancesStub,
       writable: true,
     });
-
-    (vscode.window.showErrorMessage as sinon.SinonStub).resetHistory();
   });
 
   afterEach(() => {
@@ -90,7 +87,6 @@ describe('NotebooksClient', () => {
       await expect(client.listInstances(projectId)).to.be.rejectedWith(
         'List failed',
       );
-      sinon.assert.notCalled(vscode.window.showErrorMessage as sinon.SinonStub);
     });
   });
 });

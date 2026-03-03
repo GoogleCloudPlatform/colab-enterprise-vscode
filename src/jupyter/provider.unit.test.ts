@@ -53,7 +53,7 @@ describe('WorkbenchJupyterServerProvider', () => {
     },
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vsCodeStub = newVsCodeStub();
     cancellationToken = new vsCodeStub.CancellationTokenSource().token;
     serverCollectionDisposeStub = sinon.stub();
@@ -64,14 +64,12 @@ describe('WorkbenchJupyterServerProvider', () => {
       (
         id: string,
         label: string,
-        serverProvider: JupyterServerProvider,
+        _serverProvider: JupyterServerProvider,
       ): JupyterServerCollection => {
         serverCollectionStub = {
           id,
           label,
-          serverProvider,
           dispose: serverCollectionDisposeStub,
-          commandProvider: undefined, // Added for new test logic
         } as unknown as SinonStubbedInstance<JupyterServerCollection>;
         return serverCollectionStub;
       },
@@ -96,7 +94,7 @@ describe('WorkbenchJupyterServerProvider', () => {
 
   afterEach(() => {
     sinon.restore();
-    serverProvider.dispose(); // Ensure provider is disposed after each test
+    serverProvider.dispose();
   });
 
   describe('lifecycle', () => {
@@ -139,8 +137,6 @@ describe('WorkbenchJupyterServerProvider', () => {
 
   describe('resolveJupyterServer', () => {
     it('delegates to instance manager', async () => {
-      // Create a plain object that mimics WorkbenchJupyterServer for the
-      // argument. The implementation expects WorkbenchJupyterServer structure.
       const serverArg: WorkbenchJupyterServer = {
         id: 's1',
         projectId: 'p1',

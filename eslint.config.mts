@@ -10,9 +10,9 @@ import stylisticTs from '@stylistic/eslint-plugin';
 import { defineConfig } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import checkFile from 'eslint-plugin-check-file';
-import importPlugin from 'eslint-plugin-import';
 // @ts-expect-error: No type definitions available for this plugin.
-import licenseHeader from 'eslint-plugin-license-header';
+import headers from 'eslint-plugin-headers';
+import importPlugin from 'eslint-plugin-import';
 import tsDocPlugin from 'eslint-plugin-tsdoc';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -36,7 +36,7 @@ export default defineConfig([
       '@stylistic/ts': stylisticTs,
       'check-file': checkFile,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      'license-header': licenseHeader,
+      headers,
       import: importPlugin,
       tsdoc: tsDocPlugin,
     },
@@ -86,7 +86,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['**/*.unit.test.ts'],
+    files: ['**/*.unit.test.ts', '**/*.vscode.test.ts', '**/*.e2e.test.ts'],
     rules: {
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
@@ -105,15 +105,22 @@ export default defineConfig([
   {
     files: ['**/*.{ts,js,mocharc.js,mjs,mts}'],
     rules: {
-      'license-header/header': [
+      'headers/header-format': [
         'error',
-        [
-          '/**',
-          ' * @license',
-          ' * Copyright ' + new Date().getFullYear().toString() + ' Google LLC',
-          ' * SPDX-License-Identifier: Apache-2.0',
-          ' */',
-        ],
+        {
+          source: 'string',
+          content: [
+            '@license',
+            'Copyright (year) Google LLC',
+            'SPDX-License-Identifier: Apache-2.0',
+          ].join('\n'),
+          patterns: {
+            year: {
+              pattern: '202[5-6]',
+              defaultValue: '2026',
+            },
+          },
+        },
       ],
     },
   },

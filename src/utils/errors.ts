@@ -16,6 +16,7 @@ import vscode from 'vscode';
  * @returns The result of the operation or the default value if an error occurs.
  */
 export async function withError<T>(
+  vs: typeof vscode,
   operation: () => Promise<T>,
   defaultValue: T,
   errorMessage: string,
@@ -24,7 +25,7 @@ export async function withError<T>(
     return await operation();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    vscode.window.showErrorMessage(`${errorMessage}: ${message}`);
+    vs.window.showErrorMessage(`${errorMessage}: ${message}`);
     return defaultValue;
   }
 }

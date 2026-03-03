@@ -67,7 +67,7 @@ export class WorkbenchJupyterServerProvider
   async provideJupyterServers(
     _token: CancellationToken,
   ): Promise<JupyterServer[]> {
-    return await this.instanceManager.getWorkbenchServers();
+    return await this.instanceManager.getWorkbenchServers(this.vs);
   }
 
   /**

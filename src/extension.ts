@@ -4,13 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Jupyter } from '@vscode/jupyter-extension';
 import { OAuth2Client } from 'google-auth-library';
 import vscode, { Disposable } from 'vscode';
 import { GoogleAuthProvider } from './auth/auth-provider';
 import { getOAuth2Flows } from './auth/flows/flows';
 import { login } from './auth/login';
 import { AuthStorage } from './auth/storage';
+import { initializeLogger, log } from './common/logging';
 import { CONFIG } from './config';
+import { getPackageInfo } from './config/package-info';
 import { getJupyterApi } from './jupyter/jupyter-extension';
 import { WorkbenchJupyterServerProvider } from './jupyter/provider';
 import { WorkbenchInstanceManager } from './jupyter/workbench-instance-manager';
@@ -23,7 +26,10 @@ import { ProjectsClient } from './workbench/projects-client';
  * @param context - The extension context.
  */
 export async function activate(context: vscode.ExtensionContext) {
+  const logging = initializeLogger(vscode, context.extensionMode);
   const jupyter = await getJupyterApi(vscode);
+  logEnvInfo(jupyter);
+
   const authClient = new OAuth2Client(
     CONFIG.ClientId,
     CONFIG.ClientNotSoSecret,
@@ -48,14 +54,23 @@ export async function activate(context: vscode.ExtensionContext) {
         (session) => session.accessToken,
       ),
     ),
-    jupyter,
+    jupyter.exports,
   );
 
   context.subscriptions.push(
+    logging,
     disposeAll(authFlows),
     authProvider,
     workbenchServerProvider,
   );
+}
+
+function logEnvInfo(jupyter: vscode.Extension<Jupyter>) {
+  log.info(`${vscode.env.appName}: ${vscode.version}`);
+  log.info(`Remote: ${vscode.env.remoteName ?? 'N/A'}`);
+  log.info(`App Host: ${vscode.env.appHost}`);
+  const jupyterVersion = getPackageInfo(jupyter).version;
+  log.info(`Jupyter extension version: ${jupyterVersion}`);
 }
 
 /**

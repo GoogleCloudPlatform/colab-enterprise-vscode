@@ -193,8 +193,7 @@ describe('MultiStepQuickPick', () => {
       const input = MultiStepInput.run(vsCodeStub.asVsCode(), step);
       // Once the quick pick has been shown, select "foo" and trigger accept.
       await inputShown;
-      quickPickStub.selectedItems = [{ label: 'foo' }];
-      quickPickStub.onDidAccept.yield();
+      quickPickStub.onDidChangeSelection.yield([{ label: 'foo' }]);
 
       await expect(input).to.eventually.be.fulfilled;
       expect(selected).to.deep.equal({ label: 'foo' });
@@ -227,8 +226,7 @@ describe('MultiStepQuickPick', () => {
         ...optsToCompare,
         activeItems: [activeItem],
       });
-      quickPickStub.selectedItems = [{ label: 'foo' }];
-      quickPickStub.onDidAccept.yield();
+      quickPickStub.onDidChangeSelection.yield([{ label: 'foo' }]);
 
       await expect(input).to.eventually.be.fulfilled;
     });
@@ -243,8 +241,7 @@ describe('MultiStepQuickPick', () => {
       const input = MultiStepInput.run(vsCodeStub.asVsCode(), step);
       // Once the quick pick has been shown, select "foo".
       await inputShown;
-      quickPickStub.selectedItems = [{ label: 'foo' }];
-      quickPickStub.onDidAccept.yield();
+      quickPickStub.onDidChangeSelection.yield([{ label: 'foo' }]);
 
       await expect(input).to.eventually.be.fulfilled;
       sinon.assert.calledOnce(quickPickStub.dispose);

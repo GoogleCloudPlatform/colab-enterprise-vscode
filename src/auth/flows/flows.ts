@@ -59,7 +59,11 @@ export function getOAuth2Flows(
   const flows: OAuth2Flow[] = [];
   if (vs.env.uiKind === vs.UIKind.Desktop) {
     flows.push(
-      new LocalServerFlow(vs, path.join(__dirname, 'auth/media'), oAuth2Client),
+      new LocalServerFlow(
+        vs,
+        path.join(__dirname, 'auth/media'),
+        oAuth2Client,
+      ),
     );
   }
   return flows;

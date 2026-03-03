@@ -4,12 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { GaxiosError } from 'gaxios';
 import { OAuth2Client } from 'google-auth-library';
 import fetch from 'node-fetch';
 import { v4 as uuid } from 'uuid';
-import vscode, { AuthenticationSession, Disposable } from 'vscode';
+import vscode, {
+  AuthenticationProvider,
+  AuthenticationProviderAuthenticationSessionsChangeEvent,
+  AuthenticationProviderSessionOptions,
+  AuthenticationSession,
+  Disposable,
+  Event,
+  EventEmitter,
+} from 'vscode';
 import { z } from 'zod';
-import { Toggleable } from '../common/toggleable';
+import { log } from '../common/logging';
 import { AUTHORIZATION_HEADER } from '../workbench/headers';
 import { Credentials } from './login';
 import { AuthStorage, RefreshableAuthenticationSession } from './storage';
@@ -24,6 +33,19 @@ const PROVIDER_LABEL = 'Google Cloud Platform';
 const REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
+ * An {@link Event} which fires when an authentication session is added,
+ * removed, or changed.
+ */
+export interface AuthChangeEvent
+  extends AuthenticationProviderAuthenticationSessionsChangeEvent {
+  /**
+   * True when there is a valid {@link AuthenticationSession} for the
+   * {@link AuthenticationProvider}.
+   */
+  hasValidSession: boolean;
+}
+
+/**
  * Provides authentication using Google OAuth2.
  *
  * Registers itself with the VS Code authentication API and emits events when
@@ -32,13 +54,11 @@ const REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes
  * Session access tokens are refreshed JIT upon access if they are near or past
  * their expiry.
  */
-export class GoogleAuthProvider
-  implements vscode.AuthenticationProvider, vscode.Disposable
-{
-  readonly onDidChangeSessions: vscode.Event<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>;
+export class GoogleAuthProvider implements AuthenticationProvider, Disposable {
+  readonly onDidChangeSessions: Event<AuthChangeEvent>;
   private isInitialized = false;
-  private readonly authProvider: vscode.Disposable;
-  private readonly emitter: vscode.EventEmitter<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>;
+  private authProvider?: Disposable;
+  private readonly emitter: EventEmitter<AuthChangeEvent>;
   private session?: Readonly<AuthenticationSession>;
   private readonly disposeController = new AbortController();
   private readonly disposeSignal: AbortSignal = this.disposeController.signal;
@@ -60,16 +80,12 @@ export class GoogleAuthProvider
     private readonly oAuth2Client: OAuth2Client,
     private readonly login: (scopes: string[]) => Promise<Credentials>,
   ) {
-    this.emitter =
-      new vs.EventEmitter<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>();
+    this.emitter = new vs.EventEmitter<AuthChangeEvent>();
     this.onDidChangeSessions = this.emitter.event;
 
-    this.authProvider = this.vs.authentication.registerAuthenticationProvider(
-      PROVIDER_ID,
-      PROVIDER_LABEL,
-      this,
-      { supportsMultipleAccounts: false },
-    );
+    this.onDidChangeSessions(() => {
+      void this.setSignedInContext();
+    });
   }
 
   /**
@@ -80,7 +96,7 @@ export class GoogleAuthProvider
    */
   static async getOrCreateSession(
     vs: typeof vscode,
-  ): Promise<vscode.AuthenticationSession> {
+  ): Promise<AuthenticationSession> {
     const session = await vs.authentication.getSession(
       PROVIDER_ID,
       REQUIRED_SCOPES,
@@ -95,7 +111,7 @@ export class GoogleAuthProvider
    * Disposes the provider and cleans up resources.
    */
   dispose() {
-    this.authProvider.dispose();
+    this.authProvider?.dispose();
     this.disposeController.abort(new Error('GoogleAuthProvider was disposed.'));
   }
 
@@ -113,6 +129,7 @@ export class GoogleAuthProvider
     const session = await this.storage.getSession();
     if (!session) {
       this.isInitialized = true;
+      this.register();
       return;
     }
     this.oAuth2Client.setCredentials({
@@ -123,19 +140,22 @@ export class GoogleAuthProvider
     try {
       await this.oAuth2Client.refreshAccessToken();
     } catch (err: unknown) {
-      console.warn(
-        `Failed to refresh token during initialization: ${String(err)}`,
-      );
-      // The refresh token is likely invalid or revoked.
-      // Clear the session so the user can sign in again.
-      await this.storage.removeSession(session.id);
-      this.isInitialized = true;
-      return;
+      const { shouldClearSession, reason } =
+        this.shouldClearSessionOnRefreshError(err);
+      if (shouldClearSession) {
+        log.warn(`${reason}. Clearing session.`, err);
+        await this.storage.removeSession(session.id);
+        await this.initialize();
+        return;
+      }
+      log.error('Unable to refresh access token', err);
+      throw err;
     }
     const accessToken = this.oAuth2Client.credentials.access_token;
     if (!accessToken) {
       throw new Error('Failed to refresh Google OAuth token.');
     }
+
     this.session = {
       id: session.id,
       accessToken,
@@ -147,32 +167,9 @@ export class GoogleAuthProvider
       added: [],
       removed: [],
       changed: [this.session],
+      hasValidSession: true,
     });
-  }
-
-  /**
-   * Sets the state of the toggles based on the authentication session.
-   *
-   * @returns A {@link Disposable} that can be used to stop toggling the
-   * provided toggles when there are changes to the authorization status.
-   */
-  whileAuthorized(...toggles: Toggleable[]): Disposable {
-    this.assertReady();
-    const setToggles = () => {
-      if (this.session === undefined) {
-        toggles.forEach((t) => {
-          t.off();
-        });
-      } else {
-        toggles.forEach((t) => {
-          t.on();
-        });
-      }
-    };
-    const listener = this.onDidChangeSessions(setToggles);
-    // Call the function initially to set the correct state.
-    setToggles();
-    return listener;
+    this.register();
   }
 
   /**
@@ -189,13 +186,26 @@ export class GoogleAuthProvider
    */
   async getSessions(
     scopes: readonly string[] | undefined,
-    options: vscode.AuthenticationProviderSessionOptions,
-  ): Promise<vscode.AuthenticationSession[]> {
+    options: AuthenticationProviderSessionOptions,
+  ): Promise<AuthenticationSession[]> {
     this.assertReady();
     if (scopes && !matchesRequiredScopes(scopes)) {
       return [];
     }
-    await this.refreshSessionIfNeeded();
+    try {
+      await this.refreshSessionIfNeeded();
+    } catch (err: unknown) {
+      const { shouldClearSession, reason } =
+        this.shouldClearSessionOnRefreshError(err);
+      if (shouldClearSession) {
+        log.warn(`${reason}. Clearing session.`, err);
+        if (this.session?.id) {
+          await this.removeSession(this.session.id);
+        }
+        return [];
+      }
+      log.error('Unable to refresh access token', err);
+    }
     if (options.account && this.session?.account != options.account) {
       return [];
     }
@@ -210,7 +220,7 @@ export class GoogleAuthProvider
    * @returns The created session.
    * @throws An error if login fails.
    */
-  async createSession(scopes: string[]): Promise<vscode.AuthenticationSession> {
+  async createSession(scopes: string[]): Promise<AuthenticationSession> {
     this.assertReady();
     try {
       const sortedScopes = scopes.sort();
@@ -245,12 +255,14 @@ export class GoogleAuthProvider
           added: [],
           removed: [],
           changed: [this.session],
+          hasValidSession: true,
         });
       } else {
         this.emitter.fire({
           added: [this.session],
           removed: [],
           changed: [],
+          hasValidSession: true,
         });
       }
       this.vs.window.showInformationMessage('Signed in to Google!');
@@ -289,7 +301,52 @@ export class GoogleAuthProvider
       added: [],
       removed: [removedSession],
       changed: [],
+      hasValidSession: false,
     });
+  }
+
+  async signOut() {
+    if (!this.session) {
+      return;
+    }
+    await this.removeSession(this.session.id);
+  }
+
+  private register() {
+    this.authProvider = this.vs.authentication.registerAuthenticationProvider(
+      PROVIDER_ID,
+      PROVIDER_LABEL,
+      this,
+      { supportsMultipleAccounts: false },
+    );
+  }
+
+  private async setSignedInContext() {
+    await this.vs.commands.executeCommand(
+      'setContext',
+      'colab.isSignedIn',
+      !!this.session,
+    );
+  }
+
+  private shouldClearSessionOnRefreshError(err: unknown): {
+    shouldClearSession: boolean;
+    reason: string;
+  } {
+    if (isInvalidGrantError(err)) {
+      return {
+        shouldClearSession: true,
+        reason: 'OAuth app access to Colab was revoked.',
+      };
+    }
+    // This should only ever be the case when developer building from source
+    if (isOAuthClientSwitchedError(err)) {
+      return {
+        shouldClearSession: true,
+        reason: 'The configured OAuth client has changed',
+      };
+    }
+    return { shouldClearSession: false, reason: '' };
   }
 
   private async refreshSessionIfNeeded(): Promise<void> {
@@ -305,6 +362,7 @@ export class GoogleAuthProvider
     if (!accessToken) {
       throw new Error('Failed to refresh Google OAuth token.');
     }
+
     this.session = {
       ...this.session,
       accessToken,
@@ -345,6 +403,18 @@ function matchesRequiredScopes(scopes: readonly string[]): boolean {
     scopes.length === REQUIRED_SCOPES.length &&
     REQUIRED_SCOPES.every((r) => scopes.includes(r))
   );
+}
+
+function isInvalidGrantError(err: unknown): boolean {
+  return (
+    err instanceof GaxiosError &&
+    err.status === 400 &&
+    err.message.includes('invalid_grant')
+  );
+}
+
+function isOAuthClientSwitchedError(err: unknown): boolean {
+  return err instanceof GaxiosError && err.status === 401;
 }
 
 /**

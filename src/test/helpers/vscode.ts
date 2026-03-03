@@ -5,11 +5,19 @@
  */
 
 import * as sinon from 'sinon';
-import vscode from 'vscode';
+import vscode, { ThemeIcon } from 'vscode';
 import { FakeAuthenticationProviderManager } from './authentication';
 import { TestCancellationTokenSource } from './cancellation';
 import { TestEventEmitter } from './events';
+import {
+  NotebookCellKind,
+  TestNotebookCellData,
+  TestNotebookEdit,
+  TestNotebookRange,
+} from './notebook';
+import { TestThemeIcon } from './theme';
 import { TestUri } from './uri';
+import { TestWorkspaceEdit } from './workspace';
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 class TestQuickInputButtons implements vscode.QuickInputButtons {
@@ -23,6 +31,12 @@ class TestQuickInputButtons implements vscode.QuickInputButtons {
 enum UIKind {
   Desktop = 1,
   Web = 2,
+}
+
+export enum ExtensionMode {
+  Production = 1,
+  Development = 2,
+  Test = 3,
 }
 
 enum ProgressLocation {
@@ -41,10 +55,16 @@ export interface VsCodeStub {
    * Returns a stub of the vscode module typed as vscode.
    */
   asVsCode: () => typeof vscode;
+  ThemeIcon: typeof ThemeIcon;
   Uri: typeof TestUri;
   CancellationTokenSource: typeof TestCancellationTokenSource;
   EventEmitter: typeof TestEventEmitter;
   QuickPickItemKind: typeof QuickPickItemKind;
+  NotebookCellKind: typeof NotebookCellKind;
+  NotebookCellData: typeof TestNotebookCellData;
+  NotebookEdit: typeof TestNotebookEdit;
+  NotebookRange: typeof TestNotebookRange;
+  WorkspaceEdit: typeof TestWorkspaceEdit;
   commands: {
     executeCommand: sinon.SinonStubbedMember<
       typeof vscode.commands.executeCommand
@@ -52,10 +72,13 @@ export interface VsCodeStub {
   };
   UIKind: typeof UIKind;
   env: {
+    appName: string;
     uriScheme: string;
     uiKind: vscode.UIKind;
     openExternal: sinon.SinonStubbedMember<typeof vscode.env.openExternal>;
     asExternalUri: sinon.SinonStubbedMember<typeof vscode.env.asExternalUri>;
+    sessionId: string;
+    isTelemetryEnabled: boolean;
   };
   window: {
     withProgress: sinon.SinonStubbedMember<typeof vscode.window.withProgress>;
@@ -69,13 +92,52 @@ export interface VsCodeStub {
       typeof vscode.window.showErrorMessage
     >;
     showQuickPick: sinon.SinonStubbedMember<typeof vscode.window.showQuickPick>;
+    showInputBox: sinon.SinonStubbedMember<typeof vscode.window.showInputBox>;
+    showSaveDialog: sinon.SinonStubbedMember<
+      typeof vscode.window.showSaveDialog
+    >;
+    createOutputChannel: sinon.SinonStubbedMember<
+      typeof vscode.window.createOutputChannel
+    >;
+    createTerminal: sinon.SinonStubbedMember<
+      typeof vscode.window.createTerminal
+    >;
     createInputBox: sinon.SinonStubbedMember<
       typeof vscode.window.createInputBox
     >;
     createQuickPick: sinon.SinonStubbedMember<
       typeof vscode.window.createQuickPick
     >;
+    activeNotebookEditor?: {
+      notebook: {
+        uri: TestUri;
+      };
+      selection: sinon.SinonStubbedMember<TestNotebookRange>;
+    };
   };
+  workspace: {
+    getConfiguration: sinon.SinonStubbedMember<
+      typeof vscode.workspace.getConfiguration
+    >;
+    getWorkspaceFolder: sinon.SinonStubbedMember<
+      typeof vscode.workspace.getWorkspaceFolder
+    >;
+    updateWorkspaceFolders: sinon.SinonStubbedMember<
+      typeof vscode.workspace.updateWorkspaceFolders
+    >;
+    onDidChangeConfiguration: sinon.SinonStubbedMember<
+      typeof vscode.workspace.onDidChangeConfiguration
+    >;
+    onDidChangeWorkspaceFolders: sinon.SinonStubbedMember<
+      typeof vscode.workspace.onDidChangeWorkspaceFolders
+    >;
+    applyEdit: sinon.SinonStubbedMember<typeof vscode.workspace.applyEdit>;
+    workspaceFolders: sinon.SinonStubbedMember<
+      typeof vscode.workspace.workspaceFolders
+    >;
+    textDocuments: vscode.TextDocument[];
+  };
+  ExtensionMode: typeof vscode.ExtensionMode;
   ProgressLocation: typeof ProgressLocation;
   QuickInputButtons: typeof TestQuickInputButtons;
   extensions: {
@@ -88,6 +150,7 @@ export interface VsCodeStub {
     registerAuthenticationProvider: typeof vscode.authentication.registerAuthenticationProvider;
     getSession: typeof vscode.authentication.getSession;
   };
+  version: string;
 }
 
 /**
@@ -106,10 +169,19 @@ export function newVsCodeStub(): VsCodeStub {
         env: { ...this.env } as Partial<typeof vscode.env> as typeof vscode.env,
         window: {
           ...this.window,
-          // The unknown cast is necessary due to the complex overloading.
+          // The unknown casts are necessary due to the complex overloading.
+          /* eslint-disable @/max-len */
+          createOutputChannel: this.window
+            .createOutputChannel as unknown as typeof vscode.window.createOutputChannel,
+          createTerminal: this.window
+            .createTerminal as unknown as typeof vscode.window.createTerminal,
+          /* eslint-enable @/max-len */
           showQuickPick: this.window
             .showQuickPick as unknown as typeof vscode.window.showQuickPick,
         } as Partial<typeof vscode.window> as typeof vscode.window,
+        workspace: this.workspace as Partial<
+          typeof vscode.workspace
+        > as typeof vscode.workspace,
         commands: { ...this.commands } as Partial<
           typeof vscode.commands
         > as typeof vscode.commands,
@@ -119,21 +191,44 @@ export function newVsCodeStub(): VsCodeStub {
         authentication: { ...this.authentication } as Partial<
           typeof vscode.authentication
         > as typeof vscode.authentication,
+        NotebookCellKind: this
+          .NotebookCellKind as typeof vscode.NotebookCellKind,
+        NotebookCellData: this.NotebookCellData as Partial<
+          typeof vscode.NotebookCellData
+        > as typeof vscode.NotebookCellData,
+        NotebookEdit: this.NotebookEdit as Partial<
+          typeof vscode.NotebookEdit
+        > as typeof vscode.NotebookEdit,
+        NotebookRange: this.NotebookRange as Partial<
+          typeof vscode.NotebookRange
+        > as typeof vscode.NotebookRange,
+        WorkspaceEdit: this.WorkspaceEdit as Partial<
+          typeof vscode.WorkspaceEdit
+        > as typeof vscode.WorkspaceEdit,
       } as Partial<typeof vscode> as typeof vscode;
     },
+    ThemeIcon: TestThemeIcon,
     Uri: TestUri,
     CancellationTokenSource: TestCancellationTokenSource,
     EventEmitter: TestEventEmitter,
     QuickPickItemKind: QuickPickItemKind,
+    NotebookCellKind: NotebookCellKind,
+    NotebookCellData: TestNotebookCellData,
+    NotebookEdit: TestNotebookEdit,
+    NotebookRange: TestNotebookRange,
+    WorkspaceEdit: TestWorkspaceEdit,
     commands: {
       executeCommand: sinon.stub(),
     },
     UIKind: UIKind,
     env: {
+      appName: 'VS Code',
       uriScheme: 'vscode',
       uiKind: UIKind.Desktop,
       openExternal: sinon.stub(),
       asExternalUri: sinon.stub(),
+      sessionId: '',
+      isTelemetryEnabled: true,
     },
     window: {
       withProgress: sinon.stub(),
@@ -141,9 +236,24 @@ export function newVsCodeStub(): VsCodeStub {
       showWarningMessage: sinon.stub(),
       showErrorMessage: sinon.stub(),
       showQuickPick: sinon.stub(),
+      showInputBox: sinon.stub(),
+      showSaveDialog: sinon.stub(),
+      createOutputChannel: sinon.stub(),
+      createTerminal: sinon.stub(),
       createInputBox: sinon.stub(),
       createQuickPick: sinon.stub(),
     },
+    workspace: {
+      getConfiguration: sinon.stub(),
+      getWorkspaceFolder: sinon.stub(),
+      updateWorkspaceFolders: sinon.stub(),
+      onDidChangeConfiguration: sinon.stub(),
+      onDidChangeWorkspaceFolders: sinon.stub(),
+      applyEdit: sinon.stub(),
+      workspaceFolders: undefined,
+      textDocuments: [],
+    },
+    ExtensionMode: ExtensionMode,
     ProgressLocation: ProgressLocation,
     QuickInputButtons: TestQuickInputButtons,
     extensions: {
@@ -156,5 +266,6 @@ export function newVsCodeStub(): VsCodeStub {
         ),
       getSession: fakeAuthentication.getSession.bind(fakeAuthentication),
     },
+    version: '',
   };
 }

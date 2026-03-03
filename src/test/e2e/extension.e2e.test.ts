@@ -19,7 +19,7 @@ import {
   VSBrowser,
   until,
 } from 'vscode-extension-tester';
-import { CONFIG } from '../config';
+import { CONFIG } from '../../config';
 
 const ELEMENT_WAIT_MS = 60 * 1000;
 const CELL_EXECUTION_WAIT_MS = 30 * 1000;

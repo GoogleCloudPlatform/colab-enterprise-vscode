@@ -31,6 +31,7 @@ export async function selectProjectCommand(
       let initialItems: vscode.QuickPickItem[] = [];
       try {
         const projects = await withError(
+          vs,
           /* operation= */ () => projectsClient.getProjects(),
           /* defaultValue= */ [],
           /* errorMessage= */ 'Failed to fetch initial projects',
@@ -56,7 +57,7 @@ export async function selectProjectCommand(
           }
           searchTimeout = setTimeout(() => {
             const qp = quickPick as vscode.QuickPick<vscode.QuickPickItem>;
-            void updateProjectList(projectsClient, qp, value).catch(
+            void updateProjectList(vs, projectsClient, qp, value).catch(
               (err: unknown) => {
                 console.error('Unhandled promise rejection in timeout:', err);
               },
@@ -95,6 +96,7 @@ export async function selectProjectCommand(
 }
 
 async function updateProjectList(
+  vs: typeof vscode,
   projectsClient: ProjectsClient,
   quickPick: vscode.QuickPick<vscode.QuickPickItem>,
   value: string,
@@ -102,6 +104,7 @@ async function updateProjectList(
   quickPick.busy = true;
   try {
     const projects = await withError(
+      vs,
       /* operation= */ () => projectsClient.getProjects(value),
       /* defaultValue= */ [],
       /* errorMessage= */ 'Failed to fetch projects',

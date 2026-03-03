@@ -141,10 +141,8 @@ function testSetupOptions(
     ...baseOptions,
     entryPoints: [entrypoint],
     outfile: path.join('out/test', outfile),
-    // Bundle local dependencies into the output.
-    // Local VSCode imports fail at runtime if not compiled individually.
-    // Inlining it ensures the setup file is self-contained.
-    bundle: true,
+    bundle: false, // Do not bundle, just transpile for test setup files.
+    external: undefined, // 'external' cannot be used when 'bundle' is false.
     plugins: [buildReporter(name), nodeExternalsPlugin()],
   };
 }
@@ -160,6 +158,9 @@ async function main(): Promise<void> {
     cpSync('src/auth/media/favicon.ico', 'out/auth/media/favicon.ico');
     if (isTestBuild) {
       cpSync('src/auth/media/favicon.ico', 'out/test/media/favicon.ico');
+      if (existsSync('src/test/e2e/settings.json')) {
+        cpSync('src/test/e2e/settings.json', 'out/test/e2e/settings.json');
+      }
     }
 
     // Determine which build options to use based on 'isTestBuild' flag
@@ -167,22 +168,14 @@ async function main(): Promise<void> {
       ? [
           testSetupOptions(
             'Unit Test Setup',
-            'src/test/unit-test-setup.ts',
-            'test/unit-test-setup.js',
-          ),
-          testSetupOptions(
-            'Integration Test Setup',
-            'src/test/integration-test-runner.ts',
-            'test/integration-test-runner.js',
+            'src/test/test-setup.ts',
+            'test/test-setup.js',
           ),
           testOptions('Unit Tests', 'src/**/*.unit.test.ts'),
-          testOptions('Integration Tests', [
-            'src/**/*.vscode.test.ts',
-            'src/test/suite/**/*.ts',
-          ]),
+          testOptions('Integration Tests', 'src/**/*.vscode.test.ts'),
           testOptions('E2E Tests', [
-            'src/test/*.e2e.test.ts',
-            'src/test/e2e.mocharc.js',
+            'src/**/*.e2e.test.ts',
+            'src/test/e2e/mocharc.js',
           ]),
         ]
       : [extensionOptions];
