@@ -32,3 +32,4 @@ xssi
 nanos
 protos
 jaas
+googlecloudtools
