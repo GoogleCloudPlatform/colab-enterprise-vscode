@@ -212,7 +212,7 @@ describe('Workbench Extension', function () {
   }
 
   /**
-   * Performs the OAuth sign-in flow for the Colab extension.
+   * Performs the OAuth sign-in flow for the Workbench extension.
    */
   async function doOauthSignIn(oauthUrl: string): Promise<void> {
     const oauthDriver = await getOAuthDriver();
