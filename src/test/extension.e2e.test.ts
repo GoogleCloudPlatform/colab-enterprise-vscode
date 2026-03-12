@@ -262,7 +262,9 @@ describe('Workbench Extension', function () {
 
       // Check that the test account's authenticated. Close the browser window.
       await oauthDriver.wait(
-        until.urlContains('https://cloud.google.com/vertex-ai-notebooks'),
+        until.urlContains(
+          'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth',
+        ),
         ELEMENT_WAIT_MS,
       );
       await oauthDriver.quit();
