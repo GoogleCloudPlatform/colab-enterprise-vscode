@@ -11,7 +11,6 @@ import * as path from 'path';
 import { OAuth2Client } from 'google-auth-library';
 import vscode from 'vscode';
 import { LoopbackHandler, LoopbackServer } from '../../common/loopback-server';
-import { getExtension } from '../../config/package-info';
 import { CodeManager } from '../code-manager';
 import {
   DEFAULT_AUTH_URL_OPTS,
@@ -145,7 +144,7 @@ class Handler implements LoopbackHandler {
 
   async redirectSuccessfulAuth(res: http.ServerResponse): Promise<void> {
     const authSuccessUri = await this.vs.env.asExternalUri(
-      this.vs.Uri.parse(`vscode://${getExtension().id}/auth-success`),
+      this.vs.Uri.parse(`vscode://googlecloudtools.workbench/auth-success`),
     );
     const successState = encodeURIComponent(authSuccessUri.toString());
     const redirectUri = `https://cloud.google.com/vertex-ai-notebooks?state=${successState}`;
