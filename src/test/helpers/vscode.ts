@@ -147,7 +147,16 @@ export function newVsCodeStub(): VsCodeStub {
     ProgressLocation: ProgressLocation,
     QuickInputButtons: TestQuickInputButtons,
     extensions: {
-      getExtension: sinon.stub(),
+      getExtension: sinon.stub().returns({
+        id: 'googlecloudtools.workbench',
+        packageJSON: {
+          publisher: 'googlecloudtools',
+          name: 'workbench',
+          version: '0.1.0',
+        },
+      } as unknown as vscode.Extension<unknown>) as sinon.SinonStubbedMember<
+        typeof vscode.extensions.getExtension
+      >,
     },
     authentication: {
       registerAuthenticationProvider:

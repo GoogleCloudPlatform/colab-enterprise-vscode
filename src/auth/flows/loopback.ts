@@ -11,8 +11,8 @@ import * as path from 'path';
 import { OAuth2Client } from 'google-auth-library';
 import vscode from 'vscode';
 import { LoopbackHandler, LoopbackServer } from '../../common/loopback-server';
-import { CodeManager } from '../code-manager';
 import { getExtension } from '../../config/package-info';
+import { CodeManager } from '../code-manager';
 import {
   DEFAULT_AUTH_URL_OPTS,
   OAuth2Flow,

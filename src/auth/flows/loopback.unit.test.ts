@@ -145,7 +145,7 @@ describe('LocalServerFlow', () => {
         return Promise.resolve(true);
       });
     });
-    const authSuccessUri = 'vscode://google.workbench/auth-success';
+    const authSuccessUri = 'vscode://googlecloudtools.workbench/auth-success';
     const externalAuthSuccessUri = `${authSuccessUri}?windowId=1`;
     const state = encodeURIComponent(externalAuthSuccessUri);
     const colabAuthSuccessUrl = `https://cloud.google.com/vertex-ai-notebooks?state=${state}`;
