@@ -41,7 +41,7 @@ export class LocalServerFlow implements OAuth2Flow, vscode.Disposable {
     private readonly serveRoot: string,
     private readonly oAuth2Client: OAuth2Client,
   ) {
-    this.handler = new Handler(vs, this.serveRoot, this.codeManager);
+    this.handler = new Handler(this.serveRoot, this.codeManager);
   }
 
   dispose() {
@@ -93,7 +93,6 @@ export class LocalServerFlow implements OAuth2Flow, vscode.Disposable {
 
 class Handler implements LoopbackHandler {
   constructor(
-    private readonly vs: typeof vscode,
     private readonly serveRoot: string,
     private readonly codeProvider: CodeManager,
   ) {}
@@ -122,10 +121,7 @@ class Handler implements LoopbackHandler {
         }
         this.codeProvider.resolveCode(nonce, code);
 
-        void this.redirectSuccessfulAuth(res).catch((err: unknown) => {
-          const msg = err instanceof Error ? err.message : String(err);
-          console.error(`Issue redirecting loopback request: ${msg}`);
-        });
+        this.redirectSuccessfulAuth(res);
         break;
       }
       case '/favicon.ico': {
@@ -142,12 +138,9 @@ class Handler implements LoopbackHandler {
     }
   }
 
-  async redirectSuccessfulAuth(res: http.ServerResponse): Promise<void> {
-    const authSuccessUri = await this.vs.env.asExternalUri(
-      this.vs.Uri.parse(`vscode://googlecloudtools.workbench/auth-success`),
-    );
-    const successState = encodeURIComponent(authSuccessUri.toString());
-    const redirectUri = `https://cloud.google.com/vertex-ai-notebooks?state=${successState}`;
+  redirectSuccessfulAuth(res: http.ServerResponse): void {
+    const redirectUri =
+      'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth';
     // Since we need to handle the request asynchronously, it's technically
     // possible that the response has already been closed by time we get here.
     // This is not foreseen to ever happen, under normal network conditions. In

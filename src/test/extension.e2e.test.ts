@@ -212,7 +212,7 @@ describe('Workbench Extension', function () {
   }
 
   /**
-   * Performs the OAuth sign-in flow for the Colab extension.
+   * Performs the OAuth sign-in flow for the Workbench extension.
    */
   async function doOauthSignIn(oauthUrl: string): Promise<void> {
     const oauthDriver = await getOAuthDriver();
@@ -262,7 +262,9 @@ describe('Workbench Extension', function () {
 
       // Check that the test account's authenticated. Close the browser window.
       await oauthDriver.wait(
-        until.urlContains('https://cloud.google.com/vertex-ai-notebooks'),
+        until.urlContains(
+          'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth',
+        ),
         ELEMENT_WAIT_MS,
       );
       await oauthDriver.quit();

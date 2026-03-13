@@ -12,7 +12,6 @@ import sinon from 'sinon';
 import { authUriMatch } from '../../test/helpers/authentication';
 import { TestCancellationTokenSource } from '../../test/helpers/cancellation';
 import { createHttpServerMock } from '../../test/helpers/http-server';
-import { matchUri } from '../../test/helpers/uri';
 import { newVsCodeStub, VsCodeStub } from '../../test/helpers/vscode';
 import { OAuth2TriggerOptions } from './flows';
 import { LocalServerFlow } from './loopback';
@@ -145,22 +144,17 @@ describe('LocalServerFlow', () => {
         return Promise.resolve(true);
       });
     });
-    const authSuccessUri = 'vscode://googlecloudtools.workbench/auth-success';
-    const externalAuthSuccessUri = `${authSuccessUri}?windowId=1`;
-    const state = encodeURIComponent(externalAuthSuccessUri);
-    const colabAuthSuccessUrl = `https://cloud.google.com/vertex-ai-notebooks?state=${state}`;
+    const redirectUri =
+      'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth';
     const responseRedirected = new Promise<void>((resolve) => {
       resStub.writeHead
-        .withArgs(302, sinon.match({ Location: colabAuthSuccessUrl }))
+        .withArgs(302, sinon.match({ Location: redirectUri }))
         .callsFake(() => {
           resolve();
           resStub.statusCode = 302;
           return resStub;
         });
     });
-    vs.env.asExternalUri
-      .withArgs(matchUri(authSuccessUri))
-      .resolves(vs.Uri.parse(externalAuthSuccessUri));
     fakeServer.emit('request', req, resStub);
 
     const flowResult = await trigger;
