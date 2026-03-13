@@ -108,18 +108,25 @@ export class WorkbenchJupyterServerProvider
     command: JupyterServerCommand,
     _token: CancellationToken,
   ): Promise<JupyterServer | undefined> {
-    if (command.label === WORKBENCH_COMMAND.label) {
-      // this is needed to open login popup if user doesn't have active session
-      // i.e. first login
-      await GoogleAuthProvider.getOrCreateSession(this.vs);
-      return selectProjectCommand(
-        this.vs,
-        this.projectsClient,
-        this.instanceManager,
-      );
-    }
+    try {
+      if (command.label === WORKBENCH_COMMAND.label) {
+        // this is needed to open login popup if user doesn't
+        // have active session
+        // i.e. first login
+        await GoogleAuthProvider.getOrCreateSession(this.vs);
+        return await selectProjectCommand(
+          this.vs,
+          this.projectsClient,
+          this.instanceManager,
+        );
+      }
 
-    console.error('Unknown command:', command);
-    throw new Error(`Unknown command: ${JSON.stringify(command)}`);
+      console.error('Unknown command:', command);
+      throw new Error(`Unknown command: ${JSON.stringify(command)}`);
+    } catch (err: unknown) {
+      await this.vs.commands.executeCommand('workbench.action.closeQuickOpen');
+      console.error(err);
+      throw err;
+    }
   }
 }

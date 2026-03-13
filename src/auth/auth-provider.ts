@@ -253,7 +253,7 @@ export class GoogleAuthProvider
           changed: [],
         });
       }
-      this.vs.window.showInformationMessage('Signed in to Google!');
+      this.vs.window.showInformationMessage('Signed in to Google Cloud Platform!');
       return this.session;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'unknown error';

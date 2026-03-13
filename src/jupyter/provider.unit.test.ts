@@ -218,6 +218,30 @@ describe('WorkbenchJupyterServerProvider', () => {
       }
     });
 
+    it('closes menu when auth flow is cancelled or error happened', async () => {
+      const getOrCreateSessionStub = sinon.stub(
+        GoogleAuthProvider,
+        'getOrCreateSession',
+      );
+      const error = new Error('Login cancelled');
+      error.name = 'LoginCancellation';
+      getOrCreateSessionStub.rejects(error);
+
+      try {
+        await serverProvider.handleCommand(
+          WORKBENCH_COMMAND,
+          cancellationToken,
+        );
+        expect.fail('Should have thrown');
+      } catch (err: unknown) {
+        expect(err).to.equal(error);
+        sinon.assert.calledWith(
+          vsCodeStub.commands.executeCommand,
+          'workbench.action.closeQuickOpen',
+        );
+      }
+    });
+
     it('ensures GoogleAuthProvider.getOrCreateSession is called', async () => {
       const getOrCreateSessionStub = sinon.stub(
         GoogleAuthProvider,
