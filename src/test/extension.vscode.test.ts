@@ -9,11 +9,13 @@ import vscode from 'vscode';
 
 describe('Extension', () => {
   it('should be present', () => {
-    assert.ok(vscode.extensions.getExtension('google.workbench'));
+    assert.ok(vscode.extensions.getExtension('googlecloudtools.workbench'));
   });
 
   it('should activate', async () => {
-    const extension = vscode.extensions.getExtension('google.workbench');
+    const extension = vscode.extensions.getExtension(
+      'googlecloudtools.workbench',
+    );
 
     await extension?.activate();
 

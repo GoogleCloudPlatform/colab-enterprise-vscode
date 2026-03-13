@@ -54,7 +54,7 @@ describe('NotebooksClient', () => {
 
     (vscode.extensions.getExtension as sinon.SinonStub).returns({
       packageJSON: {
-        publisher: 'google',
+        publisher: 'googlecloudtools',
         name: 'workbench',
         version: '1.2.3',
       },
