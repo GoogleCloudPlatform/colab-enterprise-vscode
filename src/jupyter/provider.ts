@@ -31,10 +31,9 @@ import {
  */
 export class WorkbenchJupyterServerProvider
   implements
-    JupyterServerProvider,
-    JupyterServerCommandProvider,
-    vscode.Disposable
-{
+  JupyterServerProvider,
+  JupyterServerCommandProvider,
+  vscode.Disposable {
   readonly onDidChangeServers: vscode.Event<void>;
 
   private readonly serverCollection: JupyterServerCollection;
@@ -110,9 +109,8 @@ export class WorkbenchJupyterServerProvider
   ): Promise<JupyterServer | undefined> {
     try {
       if (command.label === WORKBENCH_COMMAND.label) {
-        // this is needed to open login popup if user doesn't
-        // have active session
-        // i.e. first login
+        // this is needed to open login popup if user doesn't 
+        // have active session, i.e. first login
         await GoogleAuthProvider.getOrCreateSession(this.vs);
         return await selectProjectCommand(
           this.vs,
