@@ -119,7 +119,6 @@ export class WorkbenchJupyterServerProvider
         );
       }
 
-      console.error('Unknown command:', command);
       throw new Error(`Unknown command: ${JSON.stringify(command)}`);
     } catch (err: unknown) {
       await this.vs.commands.executeCommand('workbench.action.closeQuickOpen');
