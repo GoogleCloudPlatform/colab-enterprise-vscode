@@ -13,7 +13,8 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { SinonStubbedInstance } from 'sinon';
 import vscode from 'vscode';
-import { GoogleAuthProvider } from '../auth/auth-provider';
+import { GoogleAuthProvider, AuthChangeEvent } from '../auth/auth-provider';
+import { TestEventEmitter } from '../test/helpers/events';
 import { newVsCodeStub, VsCodeStub } from '../test/helpers/vscode';
 import { WORKBENCH_COMMAND } from '../workbench/constants';
 import { ProjectsClient } from '../workbench/projects-client';
@@ -35,6 +36,7 @@ describe('WorkbenchJupyterServerProvider', () => {
   let projectsClientStub: SinonStubbedInstance<ProjectsClient>;
   let instanceManagerStub: SinonStubbedInstance<WorkbenchInstanceManager>;
   let serverProvider: WorkbenchJupyterServerProvider;
+  let authEventEmitter: TestEventEmitter<AuthChangeEvent>;
 
   const MOCK_SERVER: WorkbenchJupyterServer = {
     id: 'server-1',
@@ -56,6 +58,7 @@ describe('WorkbenchJupyterServerProvider', () => {
   beforeEach(() => {
     vsCodeStub = newVsCodeStub();
     cancellationToken = new vsCodeStub.CancellationTokenSource().token;
+    authEventEmitter = new TestEventEmitter<AuthChangeEvent>();
     serverCollectionDisposeStub = sinon.stub();
     jupyterStub = {
       createJupyterServerCollection: sinon.stub(),
@@ -81,12 +84,28 @@ describe('WorkbenchJupyterServerProvider', () => {
     projectsClientStub.getProjects.resolves([]);
     instanceManagerStub = sinon.createStubInstance(WorkbenchInstanceManager);
 
+    vsCodeStub.authentication.getSession = sinon.stub().resolves({
+      id: 'mock-session-id',
+      accessToken: 'mock-access-token',
+      account: { id: 'mock-account-id', label: 'Mock Account' },
+      scopes: [],
+    });
+
     serverProvider = new WorkbenchJupyterServerProvider(
       vsCodeStub.asVsCode(),
+      authEventEmitter.event,
       projectsClientStub,
       instanceManagerStub,
       jupyterStub as unknown as Jupyter,
     );
+
+    // Simulate login
+    authEventEmitter.fire({
+      added: [],
+      removed: [],
+      changed: [],
+      hasValidSession: true,
+    });
 
     vsCodeStub.window.withProgress.callsFake(async (_options, task) => {
       // eslint-disable-next-line @typescript-eslint/no-empty-function

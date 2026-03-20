@@ -87,6 +87,7 @@ export interface VsCodeStub {
     // eslint-disable-next-line @/max-len
     registerAuthenticationProvider: typeof vscode.authentication.registerAuthenticationProvider;
     getSession: typeof vscode.authentication.getSession;
+    onDidChangeSessions: typeof vscode.authentication.onDidChangeSessions;
   };
 }
 
@@ -155,6 +156,7 @@ export function newVsCodeStub(): VsCodeStub {
           fakeAuthentication,
         ),
       getSession: fakeAuthentication.getSession.bind(fakeAuthentication),
+      onDidChangeSessions: sinon.stub().returns({ dispose: sinon.stub() }),
     },
   };
 }
