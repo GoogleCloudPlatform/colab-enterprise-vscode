@@ -302,6 +302,10 @@ export class GoogleAuthProvider
     }
     await this.storage.removeSession(sessionId);
 
+    this.vs.window.showInformationMessage(
+      'Signed out of Google Cloud Platform!',
+    );
+
     this.emitter.fire({
       added: [],
       removed: [removedSession],
