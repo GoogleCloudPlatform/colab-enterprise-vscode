@@ -5,6 +5,7 @@
  */
 
 import { Module } from 'module';
+import { expect } from 'chai';
 import * as sinon from 'sinon';
 import vscode from 'vscode';
 import { GoogleAuthProvider } from '../auth/auth-provider';
@@ -104,5 +105,121 @@ describe('selectProjectCommand', () => {
     sinon.assert.calledWith(instanceManagerStub.setProjectId, 'p-id');
     sinon.assert.calledOnce(instanceManagerStub.setShouldRefresh);
     sinon.assert.notCalled(executeCommandStub);
+  });
+
+  it('fetches instances and returns selected server', async () => {
+    getOrCreateSessionStub.resolves({ accessToken: 'token' });
+    const instances = [{ label: 'Instance 1', id: 'i-1' }];
+    instanceManagerStub.getWorkbenchServers.resolves(instances as any);
+
+    multiStepRunStub.callsFake(async (_vs, inputStep) => {
+      const inputStub = {
+        showQuickPick: sinon.stub(),
+      };
+
+      // Step 1: pickProject
+      inputStub.showQuickPick.onFirstCall().resolves({ label: 'Project', detail: 'p-id' });
+      const pickInstanceStep = await inputStep(inputStub as unknown as MultiStepInput);
+
+      expect(pickInstanceStep).to.be.a('function');
+
+      // Step 2: pickInstance
+      let capturedQuickPick: any;
+      inputStub.showQuickPick.onSecondCall().callsFake(async (opts) => {
+          if (opts.onDidCreate) {
+              capturedQuickPick = {
+                  busy: false,
+                  _items: [],
+                  set items(items: any[]) {
+                      this._items = items;
+                  },
+                  get items() {
+                      return this._items;
+                  }
+              };
+              opts.onDidCreate(capturedQuickPick);
+              // Wait for async instances fetch
+              await new Promise(resolve => setTimeout(resolve, 10));
+          }
+          return { label: 'Instance 1' };
+      });
+
+      if (pickInstanceStep) {
+          await pickInstanceStep(inputStub as unknown as MultiStepInput);
+      }
+
+      return undefined;
+    });
+
+    const result = await selectProjectCommand(
+      vsCodeStub,
+      resourceManagerStub,
+      instanceManagerStub,
+    );
+
+    sinon.assert.calledOnce(multiStepRunStub);
+    sinon.assert.calledWith(instanceManagerStub.setProjectId, 'p-id');
+    sinon.assert.calledOnce(instanceManagerStub.setShouldRefresh);
+    sinon.assert.calledOnce(instanceManagerStub.getWorkbenchServers);
+    expect(result).to.deep.equal({ label: 'Instance 1', id: 'i-1' });
+  });
+
+  it('handles empty instance list and opens external URL', async () => {
+    getOrCreateSessionStub.resolves({ accessToken: 'token' });
+    instanceManagerStub.getWorkbenchServers.resolves([]);
+
+    multiStepRunStub.callsFake(async (_vs, inputStep) => {
+      const inputStub = {
+        showQuickPick: sinon.stub(),
+      };
+
+      // Step 1: pickProject
+      inputStub.showQuickPick.onFirstCall().resolves({ label: 'Project', detail: 'p-id' });
+      const pickInstanceStep = await inputStep(inputStub as unknown as MultiStepInput);
+
+      expect(pickInstanceStep).to.be.a('function');
+
+      // Step 2: pickInstance
+      let capturedQuickPick: any;
+      inputStub.showQuickPick.onSecondCall().callsFake(async (opts) => {
+          if (opts.onDidCreate) {
+              capturedQuickPick = {
+                  busy: false,
+                  _items: [],
+                  set items(items: any[]) {
+                      this._items = items;
+                  },
+                  get items() {
+                      return this._items;
+                  }
+              };
+              opts.onDidCreate(capturedQuickPick);
+              await new Promise(resolve => setTimeout(resolve, 10));
+          }
+          return { label: 'No active instance, please enable them' };
+      });
+
+      if (pickInstanceStep) {
+          await pickInstanceStep(inputStub as unknown as MultiStepInput);
+      }
+
+      return undefined;
+    });
+
+    const result = await selectProjectCommand(
+      vsCodeStub,
+      resourceManagerStub,
+      instanceManagerStub,
+    );
+
+    sinon.assert.calledOnce(multiStepRunStub);
+    sinon.assert.calledWith(instanceManagerStub.setProjectId, 'p-id');
+    sinon.assert.calledOnce(instanceManagerStub.setShouldRefresh);
+    sinon.assert.calledOnce(instanceManagerStub.getWorkbenchServers);
+    expect(result).to.be.undefined;
+
+    const openExternalStub = vsCodeStub.env.openExternal as sinon.SinonStub;
+    sinon.assert.calledOnce(openExternalStub);
+    sinon.assert.calledWith(openExternalStub, sinon.match((uri: any) => uri.toString().includes('vertex-ai/workbench/instances?project=p-id')));
   });
 });
