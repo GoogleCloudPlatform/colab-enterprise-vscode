@@ -113,8 +113,6 @@ export async function selectProjectCommand(
           },
         });
 
-
-
         if (result.label === 'No active instance, please enable them') {
           const url = `https://console.cloud.google.com/vertex-ai/workbench/instances?project=${projectId}`;
           void vs.env.openExternal(vs.Uri.parse(url));
