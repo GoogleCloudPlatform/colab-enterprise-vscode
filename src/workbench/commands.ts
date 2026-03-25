@@ -7,10 +7,12 @@
 import { JupyterServer } from '@vscode/jupyter-extension';
 import type vscode from 'vscode';
 import { InputStep, MultiStepInput } from '../common/multi-step-quickpick';
-import { WorkbenchInstanceManager, WorkbenchJupyterServer } from '../jupyter/workbench-instance-manager';
+import {
+  WorkbenchInstanceManager,
+  WorkbenchJupyterServer,
+} from '../jupyter/workbench-instance-manager';
 import { withError } from '../utils/errors';
 import { GCPProject, ProjectsClient } from './projects-client';
-import { protos } from '@google-cloud/notebooks';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -33,8 +35,8 @@ export async function selectProjectCommand(
       let initialItems: vscode.QuickPickItem[] = [];
       try {
         const projects = await withError(
-          /* operation= */() => projectsClient.getProjects(),
-          /* defaultValue= */[],
+          /* operation= */ () => projectsClient.getProjects(),
+          /* defaultValue= */ [],
           /* errorMessage= */ 'Failed to fetch initial projects',
         );
         initialItems = projects.map((p: GCPProject) => ({
@@ -66,7 +68,7 @@ export async function selectProjectCommand(
         },
       });
 
-      if (selectedProject?.detail) {
+      if (selectedProject.detail) {
         instanceManager.setProjectId(selectedProject.detail);
         instanceManager.setShouldRefresh();
         return pickInstance(selectedProject.detail);
@@ -77,65 +79,55 @@ export async function selectProjectCommand(
 
     const pickInstance = (projectId: string): InputStep => {
       return async (input) => {
-        let instances: protos.google.cloud.notebooks.v2.IInstance[] = [];
+        let instances: WorkbenchJupyterServer[] = [];
 
-        await input.showQuickPick<vscode.QuickPickItem>({
+        const result = await input.showQuickPick<vscode.QuickPickItem>({
           title: 'Select Jupyter Instance',
           placeholder: 'Fetching instances...',
           items: [],
           onDidCreate: (quickPick) => {
             quickPick.busy = true;
-            withError(
-              () => instanceManager.getWorkbenchServers(),
-              [],
-              'Failed to list instances',
-            ).then((fetchedInstances) => {
-              instances = fetchedInstances;
-              quickPick.busy = false;
+            void (async () => {
+              instances = await withError(
+                () => instanceManager.getWorkbenchServers(),
+                [],
+                'Failed to list instances',
+              );
+
               if (instances.length === 0) {
-                quickPick.items = [{
-                  label: 'No active instance, please enable them',
-                  detail: `Link to project: ${projectId}`,
-                }];
+                quickPick.items = [
+                  {
+                    label: 'No active instance, please enable them',
+                    detail: `Link to project: ${projectId}`,
+                  },
+                ];
               } else {
                 quickPick.items = instances.map((instance) => {
-                  const name = instance.name?.split('/').pop() || 'Unknown';
                   return {
-                    label: `${name} (${projectId})`,
-                    description: instance.id || 'Unknown',
-                    detail: instance.proxyUri || undefined,
+                    label: instance.label,
                   };
                 });
               }
-            }).catch((err: unknown) => {
-              console.error('Failed to fetch instances:', err);
               quickPick.busy = false;
-              quickPick.items = [{
-                label: 'Failed to fetch instances',
-                detail: err instanceof Error ? err.message : String(err),
-              }];
-            });
-          }
-        }).then((result) => {
-          if (result) {
-            if (result.label === 'No active instance, please enable them') {
-              const url = `https://console.cloud.google.com/vertex-ai/workbench/instances?project=${projectId}`;
-              void vs.env.openExternal(vs.Uri.parse(url));
-              return;
-            }
-            const selectedItem = instances.find(i => i.id === result.description || i.name?.split('/').pop() === result.label.split(' ')[0]);
-            if (selectedItem) {
-              const name = selectedItem.name?.split('/').pop() || 'Unknown';
-              selectedServer = {
-                id: selectedItem.id || 'Unknown',
-                label: `${name} (${projectId})`,
-                name: name,
-                projectId: projectId,
-                proxyUri: selectedItem.proxyUri || '',
-              } as WorkbenchJupyterServer;
-            }
-          }
+            })();
+          },
         });
+
+
+
+        if (result.label === 'No active instance, please enable them') {
+          const url = `https://console.cloud.google.com/vertex-ai/workbench/instances?project=${projectId}`;
+          void vs.env.openExternal(vs.Uri.parse(url));
+          return;
+        }
+
+        const selectedItem = instances.find(
+          (i) => i.id === result.description || i.label === result.label,
+        );
+        if (selectedItem) {
+          selectedServer = selectedItem;
+        }
+
         return undefined;
       };
     };
@@ -171,13 +163,13 @@ async function updateProjectList(
   quickPick.busy = true;
   try {
     const projects = await withError(
-      /* operation= */() => projectsClient.getProjects(value),
-      /* defaultValue= */[],
+      /* operation= */ () => projectsClient.getProjects(value),
+      /* defaultValue= */ [],
       /* errorMessage= */ 'Failed to fetch projects',
     );
     quickPick.items = projects.map((p) => ({
       label: p.name || p.id,
-      detail: p.id
+      detail: p.id,
     }));
   } catch (error: unknown) {
     console.error('Failed to fetch projects:', error);
