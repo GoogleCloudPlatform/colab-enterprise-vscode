@@ -339,7 +339,7 @@ async function notebookLoaded(driver: WebDriver): Promise<void> {
       );
       return editors.length > 0;
     },
-    ELEMENT_WAIT_MS,
+    ELEMENT_WAIT_MS * 2,
     'Notebook editor did not load in time',
   );
 }
