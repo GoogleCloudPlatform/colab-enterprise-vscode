@@ -85,31 +85,29 @@ export async function selectProjectCommand(
           title: 'Select Jupyter Instance',
           placeholder: 'Fetching instances...',
           items: [],
-          onDidCreate: (quickPick) => {
+          onDidCreate: async (quickPick) => {
             quickPick.busy = true;
-            void (async () => {
-              instances = await withError(
-                () => instanceManager.getWorkbenchServers(),
-                [],
-                'Failed to list instances',
-              );
+            instances = await withError(
+              () => instanceManager.getWorkbenchServers(),
+              [],
+              'Failed to list instances',
+            );
 
-              if (instances.length === 0) {
-                quickPick.items = [
-                  {
-                    label: 'No active instance, please enable them',
-                    detail: `Link to project: ${projectId}`,
-                  },
-                ];
-              } else {
-                quickPick.items = instances.map((instance) => {
-                  return {
-                    label: instance.label,
-                  };
-                });
-              }
-              quickPick.busy = false;
-            })();
+            if (instances.length === 0) {
+              quickPick.items = [
+                {
+                  label: 'No active instance, please enable them',
+                  detail: `Link to project: ${projectId}`,
+                },
+              ];
+            } else {
+              quickPick.items = instances.map((instance) => {
+                return {
+                  label: instance.label,
+                };
+              });
+            }
+            quickPick.busy = false;
           },
         });
 

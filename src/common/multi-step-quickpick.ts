@@ -67,7 +67,7 @@ export interface QuickPickOptions<T extends QuickPickItem>
   /**
    * Called when the quick pick is created.
    */
-  onDidCreate?: (quickPick: vscode.QuickPick<T>) => void;
+  onDidCreate?: (quickPick: vscode.QuickPick<T>) => void | Promise<void>;
 }
 
 /**
@@ -197,7 +197,7 @@ export class MultiStepInput {
         this.current?.dispose();
         this.current = input;
         if (opts.onDidCreate) {
-          opts.onDidCreate(input);
+          void opts.onDidCreate(input);
         }
         this.current.show();
       });

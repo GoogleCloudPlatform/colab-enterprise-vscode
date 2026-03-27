@@ -158,7 +158,7 @@ describe('selectProjectCommand', () => {
                   return this._items;
                 },
               };
-              opts.onDidCreate(
+              void opts.onDidCreate(
                 capturedQuickPick as unknown as vscode.QuickPick<vscode.QuickPickItem>,
               );
               // Wait for async instances fetch
@@ -230,7 +230,7 @@ describe('selectProjectCommand', () => {
                   return this._items;
                 },
               };
-              opts.onDidCreate(
+              void opts.onDidCreate(
                 capturedQuickPick as unknown as vscode.QuickPick<vscode.QuickPickItem>,
               );
               await new Promise((resolve) => setTimeout(resolve, 10));
