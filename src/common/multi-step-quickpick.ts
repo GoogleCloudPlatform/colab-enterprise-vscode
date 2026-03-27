@@ -194,11 +194,12 @@ export class MultiStepInput {
           );
         }
 
-        this.current?.dispose();
-        this.current = input;
         if (opts.onDidCreate) {
           void opts.onDidCreate(input);
         }
+
+        this.current?.dispose();
+        this.current = input;
         this.current.show();
       });
     } finally {
