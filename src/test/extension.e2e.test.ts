@@ -37,7 +37,7 @@ describe('Workbench Extension', function () {
     testTitle = this.currentTest?.fullTitle() ?? '';
   });
 
-  before(async () => {
+  before(() => {
     assert.ok(CONFIG.ClientId, 'ClientId is not set');
     assert.ok(CONFIG.ClientNotSoSecret, 'ClientNotSoSecret is not set');
     assert.ok(process.env.TEST_ACCOUNT_EMAIL, 'TEST_ACCOUNT_EMAIL is not set');
