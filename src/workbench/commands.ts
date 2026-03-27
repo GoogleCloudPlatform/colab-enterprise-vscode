@@ -35,8 +35,8 @@ export async function selectProjectCommand(
       let initialItems: vscode.QuickPickItem[] = [];
       try {
         const projects = await withError(
-          /* operation= */ () => projectsClient.getProjects(),
-          /* defaultValue= */ [],
+          /* operation= */() => projectsClient.getProjects(),
+          /* defaultValue= */[],
           /* errorMessage= */ 'Failed to fetch initial projects',
         );
         initialItems = projects.map((p: GCPProject) => ({
@@ -87,8 +87,8 @@ export async function selectProjectCommand(
           onDidCreate: async (quickPick) => {
             quickPick.busy = true;
             instances = await withError(
-              /* operation= */ () => instanceManager.getWorkbenchServers(),
-              /* defaultValue= */ [],
+              /* operation= */() => instanceManager.getWorkbenchServers(),
+              /* defaultValue= */[],
               /* errorMessage= */ 'Failed to list instances',
             );
 
@@ -158,8 +158,8 @@ async function updateProjectList(
   quickPick.busy = true;
   try {
     const projects = await withError(
-      /* operation= */ () => projectsClient.getProjects(value),
-      /* defaultValue= */ [],
+      /* operation= */() => projectsClient.getProjects(value),
+      /* defaultValue= */[],
       /* errorMessage= */ 'Failed to fetch projects',
     );
     quickPick.items = projects.map((p) => ({

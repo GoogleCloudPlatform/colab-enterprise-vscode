@@ -49,16 +49,16 @@ export function buildQuickPickStub(
     onDidHideDisposeStub: sinon.SinonStubbedInstance<Disposable>;
     onDidAcceptDisposeStub: sinon.SinonStubbedInstance<Disposable>;
   } = {
-    onDidTriggerButtonDisposeStub: {
-      dispose: sinon.stub(),
+      onDidTriggerButtonDisposeStub: {
+        dispose: sinon.stub(),
+      },
+      onDidHideDisposeStub: {
+        dispose: sinon.stub(),
+      },
+      onDidAcceptDisposeStub: {
+        dispose: sinon.stub(),
+      },
     },
-    onDidHideDisposeStub: {
-      dispose: sinon.stub(),
-    },
-    onDidAcceptDisposeStub: {
-      dispose: sinon.stub(),
-    },
-  },
 ): QuickPickStub & { nextShow: () => Promise<void> } {
   const showStub: sinon.SinonStub<[], void> = sinon.stub();
   const onDidAccept = sinon
@@ -82,8 +82,12 @@ export function buildQuickPickStub(
       .stub<Listener, Disposable>()
       .returns(opts.onDidHideDisposeStub),
     onDidAccept,
-    onDidChangeValue: sinon.stub<Listener, Disposable>(),
-    onDidChangeSelection: sinon.stub<Listener, Disposable>(),
+    onDidChangeValue: sinon
+      .stub<Listener, Disposable>()
+      .returns({ dispose: sinon.stub() }),
+    onDidChangeSelection: sinon
+      .stub<Listener, Disposable>()
+      .returns({ dispose: sinon.stub() }),
     show: showStub,
     dispose: sinon.stub(),
     /**
@@ -137,19 +141,19 @@ export function buildInputBoxStub(
     onDidAcceptDisposeStub: sinon.SinonStubbedInstance<Disposable>;
     onDidChangeValueDisposeStub: sinon.SinonStubbedInstance<Disposable>;
   } = {
-    onDidTriggerButtonDisposeStub: {
-      dispose: sinon.stub(),
+      onDidTriggerButtonDisposeStub: {
+        dispose: sinon.stub(),
+      },
+      onDidHideDisposeStub: {
+        dispose: sinon.stub(),
+      },
+      onDidAcceptDisposeStub: {
+        dispose: sinon.stub(),
+      },
+      onDidChangeValueDisposeStub: {
+        dispose: sinon.stub(),
+      },
     },
-    onDidHideDisposeStub: {
-      dispose: sinon.stub(),
-    },
-    onDidAcceptDisposeStub: {
-      dispose: sinon.stub(),
-    },
-    onDidChangeValueDisposeStub: {
-      dispose: sinon.stub(),
-    },
-  },
 ): InputBoxStub & { nextShow: () => Promise<void> } {
   const showStub: sinon.SinonStub<[], void> = sinon.stub();
   return {

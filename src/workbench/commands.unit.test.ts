@@ -9,10 +9,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import vscode from 'vscode';
 import { GoogleAuthProvider } from '../auth/auth-provider';
-import {
-  MultiStepInput,
-  QuickPickOptions,
-} from '../common/multi-step-quickpick';
+import { MultiStepInput } from '../common/multi-step-quickpick';
 import { InputStep } from '../common/multi-step-quickpick';
 import {
   WorkbenchInstanceManager,
@@ -114,85 +111,96 @@ describe('selectProjectCommand', () => {
   });
 
   it('renders instances or opens external URL when empty', async () => {
+    if (multiStepRunStub) {
+      multiStepRunStub.restore();
+    }
     getOrCreateSessionStub.resolves({ accessToken: 'token' });
 
-    const runTestScenario = async (
-      instances: WorkbenchJupyterServer[],
-      userSelectionLabel: string,
-    ) => {
-      instanceManagerStub.getWorkbenchServers.resolves(instances);
+    let quickPicks: any[] = [];
+    const createQuickPickStub = vsCodeStub.window
+      .createQuickPick as sinon.SinonStub;
+    createQuickPickStub.callsFake(() => {
+      const { buildQuickPickStub } = require('../test/helpers/quick-input') as typeof import('../test/helpers/quick-input');
+      const qp = buildQuickPickStub();
+      quickPicks.push(qp);
+      return qp;
+    });
 
-      const fakeQuickPick = {
-        items: [] as vscode.QuickPickItem[],
-        busy: false,
-      };
+    instanceManagerStub.getWorkbenchServers.resolves([
+      { label: 'Instance 1', id: 'i-1' } as unknown as WorkbenchJupyterServer,
+    ]);
 
-      multiStepRunStub.callsFake(
-        async (_vs: typeof vscode, inputStep: InputStep) => {
-          const inputStub = {
-            showQuickPick: sinon.stub(),
-          };
+    // Start the command but do NOT await it immediately, let it run in background!
+    let commandPromise = selectProjectCommand(
+      vsCodeStub,
+      resourceManagerStub,
+      instanceManagerStub,
+    );
 
-          // Step 1: pickProject
-          inputStub.showQuickPick
-            .onFirstCall()
-            .resolves({ label: 'Project', detail: 'p-id' });
-          const pickInstanceStep = await inputStep(
-            inputStub as unknown as MultiStepInput,
-          );
+    // Give the command time to hit the first quickPick
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
-          // Step 2: pickInstance
-          inputStub.showQuickPick
-            .onSecondCall()
-            .callsFake(async (opts: QuickPickOptions<vscode.QuickPickItem>) => {
-              if (opts.onDidCreate) {
-                void opts.onDidCreate(
-                  fakeQuickPick as unknown as vscode.QuickPick<vscode.QuickPickItem>,
-                );
-                // Yield to allow onDidCreate to populate the instances array
-                await new Promise((resolve) => setTimeout(resolve, 10));
-              }
-              return { label: userSelectionLabel };
-            });
+    expect(quickPicks.length).to.equal(1);
+    let qp = quickPicks[0];
 
-          if (pickInstanceStep) {
-            await pickInstanceStep(inputStub as unknown as MultiStepInput);
-          }
-        },
-      );
+    // Simulate user selecting a project
+    qp.selectedItems = [{ label: 'Project', detail: 'p-id' }];
+    qp.onDidAccept.getCall(0).args[0]();
 
-      const result = await selectProjectCommand(
-        vsCodeStub,
-        resourceManagerStub,
-        instanceManagerStub,
-      );
+    // Give the command time to process Project selection and hit the Instance QuickPick
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
-      return { result, items: fakeQuickPick.items };
-    };
+    expect(quickPicks.length).to.equal(2);
+    qp = quickPicks[1];
 
-    // Case 1: Instances available
-    const { result: instancesResult, items: instancesItems } =
-      await runTestScenario(
-        [
-          {
-            label: 'Instance 1',
-            id: 'i-1',
-          } as unknown as WorkbenchJupyterServer,
-        ],
-        'Instance 1',
-      );
-    expect(instancesItems).to.deep.equal([{ label: 'Instance 1' }]);
-    expect(instancesResult).to.deep.equal({ label: 'Instance 1', id: 'i-1' });
+    // Assert items were populated correctly from the mock data (withError has had time to resolve)
+    expect(qp.items).to.deep.equal([{ label: 'Instance 1' }]);
 
+    // Select the instance & accept
+    qp.selectedItems = [{ label: 'Instance 1', description: 'i-1' }];
+    qp.onDidAccept.getCall(0).args[0]();
+
+    let result = await commandPromise;
+    expect(result).to.deep.equal({ label: 'Instance 1', id: 'i-1' });
+
+    // ==========================================
     // Case 2: No instances -> Redirect
-    const openExternalStub = vsCodeStub.env.openExternal as sinon.SinonStub;
-    const { result: noInstancesResult, items: noInstancesItems } =
-      await runTestScenario([], 'No active instance, please enable them');
-    expect(noInstancesItems[0].label).to.equal(
+    // ==========================================
+    quickPicks = [];
+    instanceManagerStub.getWorkbenchServers.resolves([]);
+
+    commandPromise = selectProjectCommand(
+      vsCodeStub,
+      resourceManagerStub,
+      instanceManagerStub,
+    );
+
+    // Wait for Project QuickPick
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(quickPicks.length).to.equal(1);
+    qp = quickPicks[0];
+
+    // Select project & accept
+    qp.selectedItems = [{ label: 'Project', detail: 'p-id' }];
+    qp.onDidAccept.getCall(0).args[0]();
+
+    // Wait for Instance QuickPick
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(quickPicks.length).to.equal(2);
+    qp = quickPicks[1];
+
+    expect(qp.items[0].label).to.equal(
       'No active instance, please enable them',
     );
-    expect(noInstancesResult).to.be.undefined;
 
+    // Select redirect message & accept
+    qp.selectedItems = [{ label: 'No active instance, please enable them' }];
+    qp.onDidAccept.getCall(0).args[0]();
+
+    result = await commandPromise;
+    expect(result).to.be.undefined;
+
+    const openExternalStub = vsCodeStub.env.openExternal as sinon.SinonStub;
     sinon.assert.calledOnce(openExternalStub);
     sinon.assert.calledWith(
       openExternalStub,
