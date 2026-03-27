@@ -87,9 +87,9 @@ export async function selectProjectCommand(
           onDidCreate: async (quickPick) => {
             quickPick.busy = true;
             instances = await withError(
-              () => instanceManager.getWorkbenchServers(),
-              [],
-              'Failed to list instances',
+              /* operation= */() => instanceManager.getWorkbenchServers(),
+              /* defaultValue= */[],
+              /* errorMessage= */ 'Failed to list instances',
             );
 
             if (instances.length === 0) {
