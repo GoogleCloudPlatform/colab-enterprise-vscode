@@ -41,8 +41,7 @@ export async function selectProjectCommand(
         );
         initialItems = projects.map((p: GCPProject) => ({
           label: p.name || p.id,
-          detail: p.id,
-          // description: p.id !== p.name ? p.id : undefined,
+          detail: p.id
         }));
       } catch (error: unknown) {
         console.error('Failed to fetch initial projects:', error);
