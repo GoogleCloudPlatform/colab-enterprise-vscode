@@ -48,7 +48,6 @@ describe('Workbench Extension', function () {
     // Wait for VS Code UI to settle before running tests.
     workbench = new Workbench();
     driver = workbench.getDriver();
-    await driver.sleep(ELEMENT_WAIT_MS);
   });
 
   describe('with a notebook', () => {
