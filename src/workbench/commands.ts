@@ -41,7 +41,7 @@ export async function selectProjectCommand(
         );
         initialItems = projects.map((p: GCPProject) => ({
           label: p.name || p.id,
-          detail: p.id
+          detail: p.id,
         }));
       } catch (error: unknown) {
         console.error('Failed to fetch initial projects:', error);
@@ -87,8 +87,8 @@ export async function selectProjectCommand(
           onDidCreate: async (quickPick) => {
             quickPick.busy = true;
             instances = await withError(
-              /* operation= */() => instanceManager.getWorkbenchServers(),
-              /* defaultValue= */[],
+              /* operation= */ () => instanceManager.getWorkbenchServers(),
+              /* defaultValue= */ [],
               /* errorMessage= */ 'Failed to list instances',
             );
 
