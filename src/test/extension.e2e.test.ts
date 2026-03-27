@@ -170,212 +170,212 @@ describe('Workbench Extension', function () {
         return element.length > 0;
       });
     });
-
-    async function selectAnyQuickPickItem({
-      items,
-      quickPick,
-    }: {
-      items: string[];
-      quickPick: string;
-    }): Promise<string> {
-      return driver.wait(
-        async () => {
-          const inputBox = await InputBox.create();
-          const picks = await inputBox.getQuickPicks();
-          for (const pick of picks) {
-            const text = await pick.getText();
-            for (const item of items) {
-              if (text.includes(item)) {
-                await pick.select();
-                console.log(
-                  `Selection of "${item}" completed (promise resolved).`,
-                );
-                return item;
-              }
-            }
-          }
-          return '';
-        },
-        ELEMENT_WAIT_MS,
-        `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`,
-      );
-    }
-
-    /**
-     * Selects the QuickPick option.
-     */
-    async function selectQuickPickItem({
-      item,
-      quickPick,
-    }: {
-      item: string;
-      quickPick: string;
-    }): Promise<string> {
-      return selectAnyQuickPickItem({ items: [item], quickPick });
-    }
-    /**
-     * Pushes a button in a modal dialog and waits for the action to complete.
-     */
-    async function pushDialogButton({
-      button,
-      dialog,
-    }: {
-      button: string;
-      dialog: string;
-    }) {
-      // ModalDialog.pushButton will throw if the dialog is not found; to reduce
-      // flakes we attempt this until it succeeds or times out.
-      return driver.wait(
-        async () => {
-          try {
-            const dialog = new ModalDialog();
-            await dialog.pushButton(button);
-            return true;
-          } catch (_) {
-            // Fail when the timeout's reached.
-            return false;
-          }
-        },
-        ELEMENT_WAIT_MS,
-        `Push "${button}" button for dialog "${dialog}" failed`,
-      );
-    }
-
-    /**
-     * Performs the OAuth sign-in flow for the Workbench extension.
-     */
-    async function doOauthSignIn(oauthUrl: string): Promise<void> {
-      const oauthDriver = await getOAuthDriver();
-
-      try {
-        await oauthDriver.get(oauthUrl);
-
-        // Input the test account email address.
-        const emailInput = await oauthDriver.findElement(
-          By.css("input[type='email']"),
-        );
-        await emailInput.sendKeys(process.env.TEST_ACCOUNT_EMAIL ?? '');
-        await emailInput.sendKeys(Key.ENTER);
-
-        // Input the test account password. Note that we wait for the page to
-        // settle to avoid getting a stale element reference.
-        await oauthDriver.wait(
-          until.urlContains('accounts.google.com/v3/signin/challenge'),
-          ELEMENT_WAIT_MS,
-        );
-        await oauthDriver.sleep(1000);
-        const passwordInput = await oauthDriver.findElement(
-          By.css("input[type='password']"),
-        );
-        await passwordInput.sendKeys(process.env.TEST_ACCOUNT_PASSWORD ?? '');
-        await passwordInput.sendKeys(Key.ENTER);
-
-        // Click Continue to sign in to Workbench.
-        await oauthDriver.wait(
-          until.urlContains('accounts.google.com/signin/oauth/id'),
-          ELEMENT_WAIT_MS,
-        );
-        await waitAndClick(
-          oauthDriver,
-          By.xpath("//span[text()='Continue']"),
-          '"Continue" button not visible on ID screen',
-        );
-
-        // Click Allow or Continue to authorize the scope
-        // (handles both v1 and v2 consent screens).
-        await oauthDriver.wait(until.urlContains('consent'), ELEMENT_WAIT_MS);
-        await waitAndClick(
-          oauthDriver,
-          By.xpath("//span[text()='Allow' or text()='Continue']"),
-          '"Allow" or "Continue" button not visible on consent screen',
-        );
-
-        // Check that the test account's authenticated.
-        // Close the browser window.
-        await oauthDriver.wait(
-          until.urlContains(
-            'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth',
-          ),
-          ELEMENT_WAIT_MS,
-        );
-        await oauthDriver.quit();
-      } catch (_) {
-        // If the OAuth flow fails, ensure we grab a screenshot for debugging.
-        const screenshotsDir = VSBrowser.instance.getScreenshotsDir();
-        if (!fs.existsSync(screenshotsDir)) {
-          fs.mkdirSync(screenshotsDir, { recursive: true });
-        }
-        fs.writeFileSync(
-          `${screenshotsDir}/${testTitle} (oauth window).png`,
-          await oauthDriver.takeScreenshot(),
-          'base64',
-        );
-        throw _;
-      }
-    }
   });
 
-  /**
-   * Creates a new WebDriver instance for the OAuth flow.
-   */
-  function getOAuthDriver(): Promise<WebDriver> {
-    const authDriverArgsPrefix = '--auth-driver:';
-    const authDriverArgs = process.argv
-      .filter((a) => a.startsWith(authDriverArgsPrefix))
-      .map((a) => a.substring(authDriverArgsPrefix.length));
-    return new Builder()
-      .forBrowser('chrome')
-      .setChromeOptions(
-        new chrome.Options().addArguments(...authDriverArgs) as chrome.Options,
-      )
-      .build();
-  }
-
-  async function notebookLoaded(driver: WebDriver): Promise<void> {
-    await driver.wait(
+  async function selectAnyQuickPickItem({
+    items,
+    quickPick,
+  }: {
+    items: string[];
+    quickPick: string;
+  }): Promise<string> {
+    return driver.wait(
       async () => {
-        const editors = await driver.findElements(
-          By.className('notebook-editor'),
-        );
-        return editors.length > 0;
+        const inputBox = await InputBox.create();
+        const picks = await inputBox.getQuickPicks();
+        for (const pick of picks) {
+          const text = await pick.getText();
+          for (const item of items) {
+            if (text.includes(item)) {
+              await pick.select();
+              console.log(
+                `Selection of "${item}" completed (promise resolved).`,
+              );
+              return item;
+            }
+          }
+        }
+        return '';
       },
       ELEMENT_WAIT_MS,
-      'Notebook editor did not load in time',
+      `Selecting any of "${items.join(', ')}" for QuickPick "${quickPick}" failed`,
     );
   }
 
   /**
-   * Waits for an element to be visible and clicks it.
+   * Selects the QuickPick option.
    */
-  async function waitAndClick(
-    driver: WebDriver,
-    locator: By,
-    errorMsg: string,
-  ): Promise<void> {
-    await driver.wait(
+  async function selectQuickPickItem({
+    item,
+    quickPick,
+  }: {
+    item: string;
+    quickPick: string;
+  }): Promise<string> {
+    return selectAnyQuickPickItem({ items: [item], quickPick });
+  }
+  /**
+   * Pushes a button in a modal dialog and waits for the action to complete.
+   */
+  async function pushDialogButton({
+    button,
+    dialog,
+  }: {
+    button: string;
+    dialog: string;
+  }) {
+    // ModalDialog.pushButton will throw if the dialog is not found; to reduce
+    // flakes we attempt this until it succeeds or times out.
+    return driver.wait(
       async () => {
         try {
-          const element = await driver.findElement(locator);
-          await driver.wait(
-            until.elementIsVisible(element),
-            ELEMENT_WAIT_MS,
-            `Element located but not visible: ${errorMsg}`,
-          );
-          await element.click();
+          const dialog = new ModalDialog();
+          await dialog.pushButton(button);
           return true;
-        } catch (e: unknown) {
-          if (
-            e instanceof Error &&
-            (e.name === 'StaleElementReferenceError' ||
-              e.name === 'ElementClickInterceptedError')
-          ) {
-            return false;
-          }
-          throw e;
+        } catch (_) {
+          // Fail when the timeout's reached.
+          return false;
         }
       },
       ELEMENT_WAIT_MS,
-      errorMsg,
+      `Push "${button}" button for dialog "${dialog}" failed`,
     );
   }
+
+  /**
+   * Performs the OAuth sign-in flow for the Workbench extension.
+   */
+  async function doOauthSignIn(oauthUrl: string): Promise<void> {
+    const oauthDriver = await getOAuthDriver();
+
+    try {
+      await oauthDriver.get(oauthUrl);
+
+      // Input the test account email address.
+      const emailInput = await oauthDriver.findElement(
+        By.css("input[type='email']"),
+      );
+      await emailInput.sendKeys(process.env.TEST_ACCOUNT_EMAIL ?? '');
+      await emailInput.sendKeys(Key.ENTER);
+
+      // Input the test account password. Note that we wait for the page to
+      // settle to avoid getting a stale element reference.
+      await oauthDriver.wait(
+        until.urlContains('accounts.google.com/v3/signin/challenge'),
+        ELEMENT_WAIT_MS,
+      );
+      await oauthDriver.sleep(1000);
+      const passwordInput = await oauthDriver.findElement(
+        By.css("input[type='password']"),
+      );
+      await passwordInput.sendKeys(process.env.TEST_ACCOUNT_PASSWORD ?? '');
+      await passwordInput.sendKeys(Key.ENTER);
+
+      // Click Continue to sign in to Workbench.
+      await oauthDriver.wait(
+        until.urlContains('accounts.google.com/signin/oauth/id'),
+        ELEMENT_WAIT_MS,
+      );
+      await waitAndClick(
+        oauthDriver,
+        By.xpath("//span[text()='Continue']"),
+        '"Continue" button not visible on ID screen',
+      );
+
+      // Click Allow or Continue to authorize the scope
+      // (handles both v1 and v2 consent screens).
+      await oauthDriver.wait(until.urlContains('consent'), ELEMENT_WAIT_MS);
+      await waitAndClick(
+        oauthDriver,
+        By.xpath("//span[text()='Allow' or text()='Continue']"),
+        '"Allow" or "Continue" button not visible on consent screen',
+      );
+
+      // Check that the test account's authenticated.
+      // Close the browser window.
+      await oauthDriver.wait(
+        until.urlContains(
+          'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth',
+        ),
+        ELEMENT_WAIT_MS,
+      );
+      await oauthDriver.quit();
+    } catch (_) {
+      // If the OAuth flow fails, ensure we grab a screenshot for debugging.
+      const screenshotsDir = VSBrowser.instance.getScreenshotsDir();
+      if (!fs.existsSync(screenshotsDir)) {
+        fs.mkdirSync(screenshotsDir, { recursive: true });
+      }
+      fs.writeFileSync(
+        `${screenshotsDir}/${testTitle} (oauth window).png`,
+        await oauthDriver.takeScreenshot(),
+        'base64',
+      );
+      throw _;
+    }
+  }
 });
+
+/**
+ * Creates a new WebDriver instance for the OAuth flow.
+ */
+function getOAuthDriver(): Promise<WebDriver> {
+  const authDriverArgsPrefix = '--auth-driver:';
+  const authDriverArgs = process.argv
+    .filter((a) => a.startsWith(authDriverArgsPrefix))
+    .map((a) => a.substring(authDriverArgsPrefix.length));
+  return new Builder()
+    .forBrowser('chrome')
+    .setChromeOptions(
+      new chrome.Options().addArguments(...authDriverArgs) as chrome.Options,
+    )
+    .build();
+}
+
+async function notebookLoaded(driver: WebDriver): Promise<void> {
+  await driver.wait(
+    async () => {
+      const editors = await driver.findElements(
+        By.className('notebook-editor'),
+      );
+      return editors.length > 0;
+    },
+    ELEMENT_WAIT_MS,
+    'Notebook editor did not load in time',
+  );
+}
+
+/**
+ * Waits for an element to be visible and clicks it.
+ */
+async function waitAndClick(
+  driver: WebDriver,
+  locator: By,
+  errorMsg: string,
+): Promise<void> {
+  await driver.wait(
+    async () => {
+      try {
+        const element = await driver.findElement(locator);
+        await driver.wait(
+          until.elementIsVisible(element),
+          ELEMENT_WAIT_MS,
+          `Element located but not visible: ${errorMsg}`,
+        );
+        await element.click();
+        return true;
+      } catch (e: unknown) {
+        if (
+          e instanceof Error &&
+          (e.name === 'StaleElementReferenceError' ||
+            e.name === 'ElementClickInterceptedError')
+        ) {
+          return false;
+        }
+        throw e;
+      }
+    },
+    ELEMENT_WAIT_MS,
+    errorMsg,
+  );
+}
