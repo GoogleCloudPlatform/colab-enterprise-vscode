@@ -5,7 +5,6 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
 import { assert } from 'chai';
 import dotenv from 'dotenv';
 import * as chrome from 'selenium-webdriver/chrome';
@@ -37,7 +36,7 @@ describe('Workbench Extension', function () {
     testTitle = this.currentTest?.fullTitle() ?? '';
   });
 
-  before(() => {
+  before(async () => {
     assert.ok(CONFIG.ClientId, 'ClientId is not set');
     assert.ok(CONFIG.ClientNotSoSecret, 'ClientNotSoSecret is not set');
     assert.ok(process.env.TEST_ACCOUNT_EMAIL, 'TEST_ACCOUNT_EMAIL is not set');
@@ -48,20 +47,20 @@ describe('Workbench Extension', function () {
     // Wait for VS Code UI to settle before running tests.
     workbench = new Workbench();
     driver = workbench.getDriver();
+    await driver.sleep(ELEMENT_WAIT_MS);
   });
 
   describe('with a notebook', () => {
     beforeEach(async () => {
-      const testNotebookPath = path.resolve(
-        __dirname,
-        '../../src/test/notebooks/test.notebook.ipynb',
-      );
-
-      await VSBrowser.instance.openResources(testNotebookPath);
-
+      // Create an executable notebook. Note that it's created with a single
+      // code cell by default.
+      await workbench.executeCommand('Create: New Jupyter Notebook');
       // Wait for the notebook editor to finish loading before we interact with
       // it.
       await notebookLoaded(driver);
+      await workbench.executeCommand('Notebook: Edit Cell');
+      const cell = await driver.switchTo().activeElement();
+      await cell.sendKeys('1 + 1');
     });
 
     it('authenticates and executes the notebook on a Workbench server', async () => {
@@ -339,7 +338,7 @@ async function notebookLoaded(driver: WebDriver): Promise<void> {
       );
       return editors.length > 0;
     },
-    ELEMENT_WAIT_MS * 2,
+    ELEMENT_WAIT_MS,
     'Notebook editor did not load in time',
   );
 }
