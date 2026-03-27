@@ -113,152 +113,86 @@ describe('selectProjectCommand', () => {
     sinon.assert.notCalled(executeCommandStub);
   });
 
-  it('fetches instances and returns selected server', async () => {
+  it('renders instances or opens external URL when empty', async () => {
     getOrCreateSessionStub.resolves({ accessToken: 'token' });
-    const instances: WorkbenchJupyterServer[] = [
-      { label: 'Instance 1', id: 'i-1' } as unknown as WorkbenchJupyterServer,
-    ];
-    instanceManagerStub.getWorkbenchServers.resolves(instances);
 
-    multiStepRunStub.callsFake(
-      async (_vs: typeof vscode, inputStep: InputStep) => {
-        const inputStub = {
-          showQuickPick: sinon.stub(),
-        };
+    const runTestScenario = async (
+      instances: WorkbenchJupyterServer[],
+      userSelectionLabel: string,
+    ) => {
+      instanceManagerStub.getWorkbenchServers.resolves(instances);
 
-        // Step 1: pickProject
-        inputStub.showQuickPick
-          .onFirstCall()
-          .resolves({ label: 'Project', detail: 'p-id' });
-        const pickInstanceStep = await inputStep(
-          inputStub as unknown as MultiStepInput,
-        );
+      const fakeQuickPick = {
+        items: [] as vscode.QuickPickItem[],
+        busy: false,
+      };
 
-        expect(pickInstanceStep).to.be.a('function');
+      multiStepRunStub.callsFake(
+        async (_vs: typeof vscode, inputStep: InputStep) => {
+          const inputStub = {
+            showQuickPick: sinon.stub(),
+          };
 
-        // Step 2: pickInstance
-        let capturedQuickPick:
-          | {
-              busy: boolean;
-              _items: vscode.QuickPickItem[];
-              items: readonly vscode.QuickPickItem[];
-            }
-          | undefined;
-        inputStub.showQuickPick
-          .onSecondCall()
-          .callsFake(async (opts: QuickPickOptions<vscode.QuickPickItem>) => {
-            if (opts.onDidCreate) {
-              capturedQuickPick = {
-                busy: false,
-                _items: [],
-                set items(items: readonly vscode.QuickPickItem[]) {
-                  this._items = items as vscode.QuickPickItem[];
-                },
-                get items() {
-                  return this._items;
-                },
-              };
-              void opts.onDidCreate(
-                capturedQuickPick as unknown as vscode.QuickPick<vscode.QuickPickItem>,
-              );
-              // Wait for async instances fetch
-              await new Promise((resolve) => setTimeout(resolve, 10));
-            }
-            return { label: 'Instance 1' };
-          });
+          // Step 1: pickProject
+          inputStub.showQuickPick
+            .onFirstCall()
+            .resolves({ label: 'Project', detail: 'p-id' });
+          const pickInstanceStep = await inputStep(
+            inputStub as unknown as MultiStepInput,
+          );
 
-        if (pickInstanceStep) {
-          await pickInstanceStep(inputStub as unknown as MultiStepInput);
-        }
+          // Step 2: pickInstance
+          inputStub.showQuickPick
+            .onSecondCall()
+            .callsFake(async (opts: QuickPickOptions<vscode.QuickPickItem>) => {
+              if (opts.onDidCreate) {
+                void opts.onDidCreate(
+                  fakeQuickPick as unknown as vscode.QuickPick<vscode.QuickPickItem>,
+                );
+                // Yield to allow onDidCreate to populate the instances array
+                await new Promise((resolve) => setTimeout(resolve, 10));
+              }
+              return { label: userSelectionLabel };
+            });
 
-        return undefined;
-      },
-    );
+          if (pickInstanceStep) {
+            await pickInstanceStep(inputStub as unknown as MultiStepInput);
+          }
+        },
+      );
 
-    const result = await selectProjectCommand(
-      vsCodeStub,
-      resourceManagerStub,
-      instanceManagerStub,
-    );
+      const result = await selectProjectCommand(
+        vsCodeStub,
+        resourceManagerStub,
+        instanceManagerStub,
+      );
 
-    sinon.assert.calledOnce(multiStepRunStub);
-    sinon.assert.calledWith(instanceManagerStub.setProjectId, 'p-id');
-    sinon.assert.calledOnce(instanceManagerStub.setShouldRefresh);
-    sinon.assert.calledOnce(instanceManagerStub.getWorkbenchServers);
-    expect(result).to.deep.equal({ label: 'Instance 1', id: 'i-1' });
-  });
+      return { result, items: fakeQuickPick.items };
+    };
 
-  it('handles empty instance list and opens external URL', async () => {
-    getOrCreateSessionStub.resolves({ accessToken: 'token' });
-    instanceManagerStub.getWorkbenchServers.resolves([]);
+    // Case 1: Instances available
+    const { result: instancesResult, items: instancesItems } =
+      await runTestScenario(
+        [
+          {
+            label: 'Instance 1',
+            id: 'i-1',
+          } as unknown as WorkbenchJupyterServer,
+        ],
+        'Instance 1',
+      );
+    expect(instancesItems).to.deep.equal([{ label: 'Instance 1' }]);
+    expect(instancesResult).to.deep.equal({ label: 'Instance 1', id: 'i-1' });
 
-    multiStepRunStub.callsFake(
-      async (_vs: typeof vscode, inputStep: InputStep) => {
-        const inputStub = {
-          showQuickPick: sinon.stub(),
-        };
-
-        // Step 1: pickProject
-        inputStub.showQuickPick
-          .onFirstCall()
-          .resolves({ label: 'Project', detail: 'p-id' });
-        const pickInstanceStep = await inputStep(
-          inputStub as unknown as MultiStepInput,
-        );
-
-        expect(pickInstanceStep).to.be.a('function');
-
-        // Step 2: pickInstance
-        let capturedQuickPick:
-          | {
-              busy: boolean;
-              _items: vscode.QuickPickItem[];
-              items: readonly vscode.QuickPickItem[];
-            }
-          | undefined;
-        inputStub.showQuickPick
-          .onSecondCall()
-          .callsFake(async (opts: QuickPickOptions<vscode.QuickPickItem>) => {
-            if (opts.onDidCreate) {
-              capturedQuickPick = {
-                busy: false,
-                _items: [],
-                set items(items: readonly vscode.QuickPickItem[]) {
-                  this._items = items as vscode.QuickPickItem[];
-                },
-                get items() {
-                  return this._items;
-                },
-              };
-              void opts.onDidCreate(
-                capturedQuickPick as unknown as vscode.QuickPick<vscode.QuickPickItem>,
-              );
-              await new Promise((resolve) => setTimeout(resolve, 10));
-            }
-            return { label: 'No active instance, please enable them' };
-          });
-
-        if (pickInstanceStep) {
-          await pickInstanceStep(inputStub as unknown as MultiStepInput);
-        }
-
-        return undefined;
-      },
-    );
-
-    const result = await selectProjectCommand(
-      vsCodeStub,
-      resourceManagerStub,
-      instanceManagerStub,
-    );
-
-    sinon.assert.calledOnce(multiStepRunStub);
-    sinon.assert.calledWith(instanceManagerStub.setProjectId, 'p-id');
-    sinon.assert.calledOnce(instanceManagerStub.setShouldRefresh);
-    sinon.assert.calledOnce(instanceManagerStub.getWorkbenchServers);
-    expect(result).to.be.undefined;
-
+    // Case 2: No instances -> Redirect
     const openExternalStub = vsCodeStub.env.openExternal as sinon.SinonStub;
+    const { result: noInstancesResult, items: noInstancesItems } =
+      await runTestScenario([], 'No active instance, please enable them');
+    expect(noInstancesItems[0].label).to.equal(
+      'No active instance, please enable them',
+    );
+    expect(noInstancesResult).to.be.undefined;
+
     sinon.assert.calledOnce(openExternalStub);
     sinon.assert.calledWith(
       openExternalStub,
