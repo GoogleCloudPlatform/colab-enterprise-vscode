@@ -139,10 +139,10 @@ describe('selectProjectCommand', () => {
         // Step 2: pickInstance
         let capturedQuickPick:
           | {
-            busy: boolean;
-            _items: vscode.QuickPickItem[];
-            items: readonly vscode.QuickPickItem[];
-          }
+              busy: boolean;
+              _items: vscode.QuickPickItem[];
+              items: readonly vscode.QuickPickItem[];
+            }
           | undefined;
         inputStub.showQuickPick
           .onSecondCall()
@@ -210,11 +210,11 @@ describe('selectProjectCommand', () => {
 
         // Step 2: pickInstance
         let capturedQuickPick:
-          {
-            busy: boolean;
-            _items: vscode.QuickPickItem[];
-            items: readonly vscode.QuickPickItem[];
-          }
+          | {
+              busy: boolean;
+              _items: vscode.QuickPickItem[];
+              items: readonly vscode.QuickPickItem[];
+            }
           | undefined;
         inputStub.showQuickPick
           .onSecondCall()
