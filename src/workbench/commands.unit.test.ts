@@ -17,6 +17,7 @@ import {
 } from '../jupyter/workbench-instance-manager';
 import { buildQuickPickStub, QuickPickStub } from '../test/helpers/quick-input';
 import { newVsCodeStub } from '../test/helpers/vscode';
+import { NO_ACTIVE_INSTANCE_LABEL } from './constants';
 import { ProjectsClient } from './projects-client';
 
 describe('selectProjectCommand', () => {
@@ -181,14 +182,11 @@ describe('selectProjectCommand', () => {
       expect(quickPicks.length).to.equal(2);
       const instanceQp = quickPicks[1];
 
-      expect(instanceQp.items[0].label).to.equal(
-        'No active Workbench instances found in the project, enable them by visiting',
-      );
+      expect(instanceQp.items[0].label).to.equal(NO_ACTIVE_INSTANCE_LABEL);
 
       instanceQp.selectedItems = [
         {
-          label:
-            'No active Workbench instances found in the project, enable them by visiting',
+          label: NO_ACTIVE_INSTANCE_LABEL,
         },
       ];
       instanceQp.onDidAccept.getCall(0).args[0]();

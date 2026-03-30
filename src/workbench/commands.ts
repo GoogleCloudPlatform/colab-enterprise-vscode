@@ -12,6 +12,7 @@ import {
   WorkbenchJupyterServer,
 } from '../jupyter/workbench-instance-manager';
 import { withError } from '../utils/errors';
+import { NO_ACTIVE_INSTANCE_LABEL } from './constants';
 import { GCPProject, ProjectsClient } from './projects-client';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -95,8 +96,7 @@ export async function selectProjectCommand(
             if (instances.length === 0) {
               quickPick.items = [
                 {
-                  label:
-                    'No active Workbench instances found in the project, enable them by visiting',
+                  label: NO_ACTIVE_INSTANCE_LABEL,
                   detail: `Link to project: ${projectId}`,
                 },
               ];
@@ -111,10 +111,7 @@ export async function selectProjectCommand(
           },
         });
 
-        if (
-          result.label ===
-          'No active Workbench instances found in the project, enable them by visiting'
-        ) {
+        if (result.label === NO_ACTIVE_INSTANCE_LABEL) {
           const url = `https://console.cloud.google.com/vertex-ai/workbench/instances?project=${projectId}`;
           void vs.env.openExternal(vs.Uri.parse(url));
           return;
