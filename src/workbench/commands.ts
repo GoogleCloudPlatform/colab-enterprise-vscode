@@ -35,8 +35,8 @@ export async function selectProjectCommand(
       let initialItems: vscode.QuickPickItem[] = [];
       try {
         const projects = await withError(
-          /* operation= */() => projectsClient.getProjects(),
-          /* defaultValue= */[],
+          /* operation= */ () => projectsClient.getProjects(),
+          /* defaultValue= */ [],
           /* errorMessage= */ 'Failed to fetch initial projects',
         );
         initialItems = projects.map((p: GCPProject) => ({
@@ -87,15 +87,16 @@ export async function selectProjectCommand(
           onDidCreate: async (quickPick) => {
             quickPick.busy = true;
             instances = await withError(
-              /* operation= */() => instanceManager.getWorkbenchServers(),
-              /* defaultValue= */[],
+              /* operation= */ () => instanceManager.getWorkbenchServers(),
+              /* defaultValue= */ [],
               /* errorMessage= */ 'Failed to list instances',
             );
 
             if (instances.length === 0) {
               quickPick.items = [
                 {
-                  label: 'No active instance, please enable them',
+                  label:
+                    'No active Workbench instances found in the project, enable them by visiting',
                   detail: `Link to project: ${projectId}`,
                 },
               ];
@@ -110,7 +111,10 @@ export async function selectProjectCommand(
           },
         });
 
-        if (result.label === 'No active instance, please enable them') {
+        if (
+          result.label ===
+          'No active Workbench instances found in the project, enable them by visiting'
+        ) {
           const url = `https://console.cloud.google.com/vertex-ai/workbench/instances?project=${projectId}`;
           void vs.env.openExternal(vs.Uri.parse(url));
           return;
@@ -158,8 +162,8 @@ async function updateProjectList(
   quickPick.busy = true;
   try {
     const projects = await withError(
-      /* operation= */() => projectsClient.getProjects(value),
-      /* defaultValue= */[],
+      /* operation= */ () => projectsClient.getProjects(value),
+      /* defaultValue= */ [],
       /* errorMessage= */ 'Failed to fetch projects',
     );
     quickPick.items = projects.map((p) => ({

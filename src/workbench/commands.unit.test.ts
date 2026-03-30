@@ -15,6 +15,7 @@ import {
   WorkbenchInstanceManager,
   WorkbenchJupyterServer,
 } from '../jupyter/workbench-instance-manager';
+import { buildQuickPickStub, QuickPickStub } from '../test/helpers/quick-input';
 import { newVsCodeStub } from '../test/helpers/vscode';
 import { ProjectsClient } from './projects-client';
 
@@ -110,103 +111,99 @@ describe('selectProjectCommand', () => {
     sinon.assert.notCalled(executeCommandStub);
   });
 
-  it('renders instances or opens external URL when empty', async () => {
-    if (multiStepRunStub) {
-      multiStepRunStub.restore();
-    }
-    getOrCreateSessionStub.resolves({ accessToken: 'token' });
+  describe('instance selection flow', () => {
+    let quickPicks: QuickPickStub[] = [];
 
-    let quickPicks: any[] = [];
-    const createQuickPickStub = vsCodeStub.window
-      .createQuickPick as sinon.SinonStub;
-    createQuickPickStub.callsFake(() => {
-      const { buildQuickPickStub } = require('../test/helpers/quick-input') as typeof import('../test/helpers/quick-input');
-      const qp = buildQuickPickStub();
-      quickPicks.push(qp);
-      return qp;
+    beforeEach(() => {
+      multiStepRunStub.restore();
+      getOrCreateSessionStub.resolves({ accessToken: 'token' });
+
+      quickPicks = [];
+      const createQuickPickStub = vsCodeStub.window
+        .createQuickPick as sinon.SinonStub;
+      createQuickPickStub.callsFake(() => {
+        const qp = buildQuickPickStub();
+        quickPicks.push(qp as unknown as QuickPickStub);
+        return qp;
+      });
     });
 
-    instanceManagerStub.getWorkbenchServers.resolves([
-      { label: 'Instance 1', id: 'i-1' } as unknown as WorkbenchJupyterServer,
-    ]);
+    it('renders instances when project has them', async () => {
+      instanceManagerStub.getWorkbenchServers.resolves([
+        { label: 'Instance 1', id: 'i-1' } as unknown as WorkbenchJupyterServer,
+      ]);
 
-    // Start the command but do NOT await it immediately, let it run in background!
-    let commandPromise = selectProjectCommand(
-      vsCodeStub,
-      resourceManagerStub,
-      instanceManagerStub,
-    );
+      const commandPromise = selectProjectCommand(
+        vsCodeStub,
+        resourceManagerStub,
+        instanceManagerStub,
+      );
 
-    // Give the command time to hit the first quickPick
-    await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => setImmediate(resolve));
 
-    expect(quickPicks.length).to.equal(1);
-    let qp = quickPicks[0];
+      expect(quickPicks.length).to.equal(1);
+      const qp = quickPicks[0];
 
-    // Simulate user selecting a project
-    qp.selectedItems = [{ label: 'Project', detail: 'p-id' }];
-    qp.onDidAccept.getCall(0).args[0]();
+      qp.selectedItems = [{ label: 'Project', detail: 'p-id' }];
+      qp.onDidAccept.getCall(0).args[0]();
 
-    // Give the command time to process Project selection and hit the Instance QuickPick
-    await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => setImmediate(resolve));
 
-    expect(quickPicks.length).to.equal(2);
-    qp = quickPicks[1];
+      expect(quickPicks.length).to.equal(2);
+      const instanceQp = quickPicks[1];
 
-    // Assert items were populated correctly from the mock data (withError has had time to resolve)
-    expect(qp.items).to.deep.equal([{ label: 'Instance 1' }]);
+      expect(instanceQp.items).to.deep.equal([{ label: 'Instance 1' }]);
 
-    // Select the instance & accept
-    qp.selectedItems = [{ label: 'Instance 1', description: 'i-1' }];
-    qp.onDidAccept.getCall(0).args[0]();
+      instanceQp.selectedItems = [{ label: 'Instance 1', description: 'i-1' }];
+      instanceQp.onDidAccept.getCall(0).args[0]();
 
-    let result = await commandPromise;
-    expect(result).to.deep.equal({ label: 'Instance 1', id: 'i-1' });
+      const result = await commandPromise;
+      expect(result).to.deep.equal({ label: 'Instance 1', id: 'i-1' });
+    });
 
-    // ==========================================
-    // Case 2: No instances -> Redirect
-    // ==========================================
-    quickPicks = [];
-    instanceManagerStub.getWorkbenchServers.resolves([]);
+    it('opens external URL when project has no instances', async () => {
+      instanceManagerStub.getWorkbenchServers.resolves([]);
 
-    commandPromise = selectProjectCommand(
-      vsCodeStub,
-      resourceManagerStub,
-      instanceManagerStub,
-    );
+      const commandPromise = selectProjectCommand(
+        vsCodeStub,
+        resourceManagerStub,
+        instanceManagerStub,
+      );
 
-    // Wait for Project QuickPick
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(quickPicks.length).to.equal(1);
-    qp = quickPicks[0];
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(quickPicks.length).to.equal(1);
+      const qp = quickPicks[0];
 
-    // Select project & accept
-    qp.selectedItems = [{ label: 'Project', detail: 'p-id' }];
-    qp.onDidAccept.getCall(0).args[0]();
+      qp.selectedItems = [{ label: 'Project', detail: 'p-id' }];
+      qp.onDidAccept.getCall(0).args[0]();
 
-    // Wait for Instance QuickPick
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(quickPicks.length).to.equal(2);
-    qp = quickPicks[1];
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(quickPicks.length).to.equal(2);
+      const instanceQp = quickPicks[1];
 
-    expect(qp.items[0].label).to.equal(
-      'No active instance, please enable them',
-    );
+      expect(instanceQp.items[0].label).to.equal(
+        'No active Workbench instances found in the project, enable them by visiting',
+      );
 
-    // Select redirect message & accept
-    qp.selectedItems = [{ label: 'No active instance, please enable them' }];
-    qp.onDidAccept.getCall(0).args[0]();
+      instanceQp.selectedItems = [
+        {
+          label:
+            'No active Workbench instances found in the project, enable them by visiting',
+        },
+      ];
+      instanceQp.onDidAccept.getCall(0).args[0]();
 
-    result = await commandPromise;
-    expect(result).to.be.undefined;
+      const result = await commandPromise;
+      expect(result).to.be.undefined;
 
-    const openExternalStub = vsCodeStub.env.openExternal as sinon.SinonStub;
-    sinon.assert.calledOnce(openExternalStub);
-    sinon.assert.calledWith(
-      openExternalStub,
-      sinon.match((uri: vscode.Uri) =>
-        uri.toString().includes('vertex-ai/workbench/instances?project=p-id'),
-      ),
-    );
+      const openExternalStub = vsCodeStub.env.openExternal as sinon.SinonStub;
+      sinon.assert.calledOnce(openExternalStub);
+      sinon.assert.calledWith(
+        openExternalStub,
+        sinon.match((uri: vscode.Uri) =>
+          uri.toString().includes('vertex-ai/workbench/instances?project=p-id'),
+        ),
+      );
+    });
   });
 });
