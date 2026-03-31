@@ -50,7 +50,7 @@ export async function selectProjectCommand(
 
       selectedProject = await input.showQuickPick<vscode.QuickPickItem>({
         title: 'Select a Google Cloud Project',
-
+        ignoreFocusOut: true,
         placeholder: 'Select a Google Cloud Project',
         items: initialItems,
         onDidChangeValue: (value, quickPick) => {
@@ -83,6 +83,7 @@ export async function selectProjectCommand(
 
         const result = await input.showQuickPick<vscode.QuickPickItem>({
           title: 'Select Jupyter Instance',
+          ignoreFocusOut: true,
           placeholder: 'Fetching instances...',
           items: [],
           onDidCreate: async (quickPick) => {

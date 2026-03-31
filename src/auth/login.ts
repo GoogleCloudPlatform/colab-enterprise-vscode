@@ -74,7 +74,7 @@ export async function login(
       const innerMsg = err instanceof Error ? err.message : 'unknown error';
       const msg = `Sign-in attempt failed: ${innerMsg}.`;
       // Notify this attempt failed, but try other methods 🤞.
-      vs.window.showErrorMessage(msg);
+      console.error(msg, err);
     }
   }
 
