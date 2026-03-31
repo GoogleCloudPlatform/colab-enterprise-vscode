@@ -87,7 +87,11 @@ export class WorkbenchJupyterServerProvider
     _token: CancellationToken,
   ): Promise<WorkbenchJupyterServer> {
     if (!this.isAuthorized) {
-      throw new Error('Not authorized');
+      const message = 'Unauthorized: unable to resolve Jupyter server'
+      // Logging the error because Jupyter extension swallows it
+      console.error(message) 
+
+      throw new Error(message);
     }
     return await this.instanceManager.refreshConnection(workbenchServer);
   }
@@ -144,6 +148,7 @@ export class WorkbenchJupyterServerProvider
       return;
     }
     this.isAuthorized = e.hasValidSession;
+    this.instanceManager.setProjectId(undefined);
     this.serverChangeEmitter.fire();
   }
 }
