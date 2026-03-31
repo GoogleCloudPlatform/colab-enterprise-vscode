@@ -17,7 +17,11 @@ import {
   AUTHORIZATION_HEADER,
   CONTENT_TYPE_JSON_HEADER,
 } from '../workbench/headers';
-import { GoogleAuthProvider, REQUIRED_SCOPES, AuthChangeEvent } from './auth-provider';
+import {
+  GoogleAuthProvider,
+  REQUIRED_SCOPES,
+  AuthChangeEvent,
+} from './auth-provider';
 import { Credentials } from './login';
 import { AuthStorage, RefreshableAuthenticationSession } from './storage';
 

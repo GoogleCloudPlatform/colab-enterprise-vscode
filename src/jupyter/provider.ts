@@ -87,9 +87,9 @@ export class WorkbenchJupyterServerProvider
     _token: CancellationToken,
   ): Promise<WorkbenchJupyterServer> {
     if (!this.isAuthorized) {
-      const message = 'Unauthorized: unable to resolve Jupyter server'
+      const message = 'Unauthorized: unable to resolve Jupyter server';
       // Logging the error because Jupyter extension swallows it
-      console.error(message) 
+      console.error(message);
 
       throw new Error(message);
     }
