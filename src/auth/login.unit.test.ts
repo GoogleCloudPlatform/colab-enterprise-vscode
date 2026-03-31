@@ -51,11 +51,13 @@ function buildStubFlow(): sinon.SinonStubbedInstance<OAuth2Flow> {
 describe('login', () => {
   let vs: VsCodeStub;
   let oauth2Client: OAuth2Client;
+  let consoleErrorStub: sinon.SinonStub;
   const flowCancellationSources: vscode.CancellationTokenSource[] = [];
 
   beforeEach(() => {
     vs = newVsCodeStub();
     oauth2Client = new OAuth2Client('testClientId', 'testClientSecret');
+    consoleErrorStub = sinon.stub(console, 'error');
 
     vs.window.withProgress
       .withArgs(
@@ -119,7 +121,7 @@ describe('login', () => {
       ).to.be.rejectedWith('Authentication failed.');
 
       sinon.assert.calledOnceWithMatch(
-        vs.window.showErrorMessage,
+        consoleErrorStub,
         sinon.match(/Flow failed/),
       );
     });
@@ -139,7 +141,7 @@ describe('login', () => {
       ).to.be.rejectedWith('Authentication failed');
 
       sinon.assert.calledOnceWithMatch(
-        vs.window.showErrorMessage,
+        consoleErrorStub,
         sinon.match(/get token/),
       );
     });
@@ -159,7 +161,7 @@ describe('login', () => {
       ).to.be.rejectedWith('Authentication failed');
 
       sinon.assert.calledOnceWithMatch(
-        vs.window.showErrorMessage,
+        consoleErrorStub,
         sinon.match(/credential information/),
       );
     });
@@ -209,15 +211,9 @@ describe('login', () => {
         login(vs.asVsCode(), [flow1, flow2], oauth2Client, SCOPES),
       ).to.be.rejectedWith(/All .+ failed/);
 
-      sinon.assert.calledThrice(vs.window.showErrorMessage);
-      sinon.assert.calledWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/Barf/),
-      );
-      sinon.assert.calledWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/Yack/),
-      );
+      sinon.assert.calledOnce(vs.window.showErrorMessage);
+      sinon.assert.calledWithMatch(consoleErrorStub, sinon.match(/Barf/));
+      sinon.assert.calledWithMatch(consoleErrorStub, sinon.match(/Yack/));
     });
 
     it('successfully completes a flow after failing a first attempt', async () => {
@@ -240,10 +236,7 @@ describe('login', () => {
         login(vs.asVsCode(), [flow1, flow2], oauth2Client, SCOPES),
       ).to.eventually.deep.equal(CREDENTIALS);
 
-      sinon.assert.calledWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/Burp/),
-      );
+      sinon.assert.calledWithMatch(consoleErrorStub, sinon.match(/Burp/));
     });
   });
 });
