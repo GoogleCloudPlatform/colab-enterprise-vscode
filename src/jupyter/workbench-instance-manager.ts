@@ -140,7 +140,7 @@ export class WorkbenchInstanceManager {
 
     if (this.cachedServers.length === 0) {
       this.vs.window.showInformationMessage(
-        `No Workbench instances found in project: ${projectId}.`,
+        `No active Workbench instances found in project: ${projectId}.`,
       );
     }
 

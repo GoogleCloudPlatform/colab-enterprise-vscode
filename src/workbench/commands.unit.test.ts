@@ -5,13 +5,19 @@
  */
 
 import { Module } from 'module';
+import { expect } from 'chai';
 import * as sinon from 'sinon';
 import vscode from 'vscode';
 import { GoogleAuthProvider } from '../auth/auth-provider';
 import { MultiStepInput } from '../common/multi-step-quickpick';
 import { InputStep } from '../common/multi-step-quickpick';
-import { WorkbenchInstanceManager } from '../jupyter/workbench-instance-manager';
+import {
+  WorkbenchInstanceManager,
+  WorkbenchJupyterServer,
+} from '../jupyter/workbench-instance-manager';
+import { buildQuickPickStub, QuickPickStub } from '../test/helpers/quick-input';
 import { newVsCodeStub } from '../test/helpers/vscode';
+import { NO_ACTIVE_INSTANCE_LABEL } from './constants';
 import { ProjectsClient } from './projects-client';
 
 describe('selectProjectCommand', () => {
@@ -104,5 +110,98 @@ describe('selectProjectCommand', () => {
     sinon.assert.calledWith(instanceManagerStub.setProjectId, 'p-id');
     sinon.assert.calledOnce(instanceManagerStub.setShouldRefresh);
     sinon.assert.notCalled(executeCommandStub);
+  });
+
+  describe('instance selection flow', () => {
+    let quickPicks: QuickPickStub[] = [];
+
+    beforeEach(() => {
+      multiStepRunStub.restore();
+      getOrCreateSessionStub.resolves({ accessToken: 'token' });
+
+      quickPicks = [];
+      const createQuickPickStub = vsCodeStub.window
+        .createQuickPick as sinon.SinonStub;
+      createQuickPickStub.callsFake(() => {
+        const qp = buildQuickPickStub();
+        quickPicks.push(qp as unknown as QuickPickStub);
+        return qp;
+      });
+    });
+
+    it('renders instances when project has them', async () => {
+      instanceManagerStub.getWorkbenchServers.resolves([
+        { label: 'Instance 1', id: 'i-1' } as unknown as WorkbenchJupyterServer,
+      ]);
+
+      const commandPromise = selectProjectCommand(
+        vsCodeStub,
+        resourceManagerStub,
+        instanceManagerStub,
+      );
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(quickPicks.length).to.equal(1);
+      const qp = quickPicks[0];
+
+      qp.selectedItems = [{ label: 'Project', detail: 'p-id' }];
+      qp.onDidAccept.getCall(0).args[0]();
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(quickPicks.length).to.equal(2);
+      const instanceQp = quickPicks[1];
+
+      expect(instanceQp.items).to.deep.equal([{ label: 'Instance 1' }]);
+
+      instanceQp.selectedItems = [{ label: 'Instance 1', description: 'i-1' }];
+      instanceQp.onDidAccept.getCall(0).args[0]();
+
+      const result = await commandPromise;
+      expect(result).to.deep.equal({ label: 'Instance 1', id: 'i-1' });
+    });
+
+    it('opens external URL when project has no instances', async () => {
+      instanceManagerStub.getWorkbenchServers.resolves([]);
+
+      const commandPromise = selectProjectCommand(
+        vsCodeStub,
+        resourceManagerStub,
+        instanceManagerStub,
+      );
+
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(quickPicks.length).to.equal(1);
+      const qp = quickPicks[0];
+
+      qp.selectedItems = [{ label: 'Project', detail: 'p-id' }];
+      qp.onDidAccept.getCall(0).args[0]();
+
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(quickPicks.length).to.equal(2);
+      const instanceQp = quickPicks[1];
+
+      expect(instanceQp.items[0].label).to.equal(NO_ACTIVE_INSTANCE_LABEL);
+
+      instanceQp.selectedItems = [
+        {
+          label: NO_ACTIVE_INSTANCE_LABEL,
+        },
+      ];
+      instanceQp.onDidAccept.getCall(0).args[0]();
+
+      const result = await commandPromise;
+      expect(result).to.be.undefined;
+
+      const openExternalStub = vsCodeStub.env.openExternal as sinon.SinonStub;
+      sinon.assert.calledOnce(openExternalStub);
+      sinon.assert.calledWith(
+        openExternalStub,
+        sinon.match((uri: vscode.Uri) =>
+          uri.toString().includes('vertex-ai/workbench/instances?project=p-id'),
+        ),
+      );
+    });
   });
 });

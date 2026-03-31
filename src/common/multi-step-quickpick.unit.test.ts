@@ -256,6 +256,33 @@ describe('MultiStepQuickPick', () => {
         sinon.assert.calledOnce(disposable.dispose);
       }
     });
+
+    it('calls onDidCreate when quick pick is created', async () => {
+      const onDidCreateSpy = sinon.spy();
+      const opts: QuickPickOptions<QuickPickItem> = {
+        title: 'Select foo',
+        step: 1,
+        totalSteps: 1,
+        items: [{ label: 'foo' }],
+        onDidCreate: onDidCreateSpy,
+      };
+      const step: InputStep = async (input: MultiStepInput) => {
+        await input.showQuickPick(opts);
+        return undefined;
+      };
+
+      const inputShown = quickPickStub.nextShow();
+      const input = MultiStepInput.run(vsCodeStub.asVsCode(), step);
+      await inputShown;
+
+      sinon.assert.calledOnce(onDidCreateSpy);
+      sinon.assert.calledWith(onDidCreateSpy, quickPickStub);
+
+      // Clean up/resolve to finish the test
+      quickPickStub.selectedItems = [{ label: 'foo' }];
+      quickPickStub.onDidAccept.yield();
+      await input;
+    });
   });
 
   describe('showInputBox', () => {

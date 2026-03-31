@@ -7,8 +7,12 @@
 import { JupyterServer } from '@vscode/jupyter-extension';
 import type vscode from 'vscode';
 import { InputStep, MultiStepInput } from '../common/multi-step-quickpick';
-import { WorkbenchInstanceManager } from '../jupyter/workbench-instance-manager';
+import {
+  WorkbenchInstanceManager,
+  WorkbenchJupyterServer,
+} from '../jupyter/workbench-instance-manager';
 import { withError } from '../utils/errors';
+import { NO_ACTIVE_INSTANCE_LABEL } from './constants';
 import { GCPProject, ProjectsClient } from './projects-client';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -23,6 +27,7 @@ export async function selectProjectCommand(
 ): Promise<JupyterServer | undefined> {
   try {
     let selectedProject: vscode.QuickPickItem | undefined;
+    let selectedServer: JupyterServer | undefined;
 
     const pickProject: InputStep = async (input) => {
       let searchTimeout: NodeJS.Timeout | undefined;
@@ -36,9 +41,8 @@ export async function selectProjectCommand(
           /* errorMessage= */ 'Failed to fetch initial projects',
         );
         initialItems = projects.map((p: GCPProject) => ({
-          label: p.name,
+          label: p.name || p.id,
           detail: p.id,
-          description: p.id !== p.name ? p.id : undefined,
         }));
       } catch (error: unknown) {
         console.error('Failed to fetch initial projects:', error);
@@ -46,8 +50,7 @@ export async function selectProjectCommand(
 
       selectedProject = await input.showQuickPick<vscode.QuickPickItem>({
         title: 'Select a Google Cloud Project',
-        step: 1,
-        totalSteps: 2,
+
         placeholder: 'Select a Google Cloud Project',
         items: initialItems,
         onDidChangeValue: (value, quickPick) => {
@@ -65,14 +68,68 @@ export async function selectProjectCommand(
         },
       });
 
+      if (selectedProject.detail) {
+        instanceManager.setProjectId(selectedProject.detail);
+        instanceManager.setShouldRefresh();
+        return pickInstance(selectedProject.detail);
+      }
+
       return undefined;
     };
 
+    const pickInstance = (projectId: string): InputStep => {
+      return async (input) => {
+        let instances: WorkbenchJupyterServer[] = [];
+
+        const result = await input.showQuickPick<vscode.QuickPickItem>({
+          title: 'Select Jupyter Instance',
+          placeholder: 'Fetching instances...',
+          items: [],
+          onDidCreate: async (quickPick) => {
+            quickPick.busy = true;
+            instances = await withError(
+              /* operation= */ () => instanceManager.getWorkbenchServers(),
+              /* defaultValue= */ [],
+              /* errorMessage= */ 'Failed to list instances',
+            );
+
+            if (instances.length === 0) {
+              quickPick.items = [
+                {
+                  label: NO_ACTIVE_INSTANCE_LABEL,
+                  detail: `Link to project: ${projectId}`,
+                },
+              ];
+            } else {
+              quickPick.items = instances.map((instance) => {
+                return {
+                  label: instance.label,
+                };
+              });
+            }
+            quickPick.busy = false;
+          },
+        });
+
+        if (result.label === NO_ACTIVE_INSTANCE_LABEL) {
+          const url = `https://console.cloud.google.com/vertex-ai/workbench/instances?project=${projectId}`;
+          void vs.env.openExternal(vs.Uri.parse(url));
+          return;
+        }
+
+        const selectedItem = instances.find(
+          (i) => i.id === result.description || i.label === result.label,
+        );
+        if (selectedItem) {
+          selectedServer = selectedItem;
+        }
+
+        return undefined;
+      };
+    };
+
     await MultiStepInput.run(vs, pickProject);
-    if (selectedProject?.detail) {
-      instanceManager.setProjectId(selectedProject.detail);
-      instanceManager.setShouldRefresh();
-    }
+    return selectedServer;
   } catch (error: unknown) {
     // If the user cancelled, MultiStepInput throws InputFlowAction.cancel
     // Actually MultiStepInput swallows cancel and returns normally.
@@ -107,9 +164,8 @@ async function updateProjectList(
       /* errorMessage= */ 'Failed to fetch projects',
     );
     quickPick.items = projects.map((p) => ({
-      label: p.name,
+      label: p.name || p.id,
       detail: p.id,
-      description: p.id !== p.name ? p.id : undefined,
     }));
   } catch (error: unknown) {
     console.error('Failed to fetch projects:', error);

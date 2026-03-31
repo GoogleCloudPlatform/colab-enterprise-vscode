@@ -108,15 +108,12 @@ describe('Workbench Extension', function () {
       // the Workbench notebook server.
       await selectQuickPickItem({
         item: 'jaas-test-notebooks-host',
-        quickPick: 'Select a Google Cloud Project (1/2)',
+        quickPick: 'Select a Google Cloud Project',
       });
 
-      // Alias the server with the default name.
-      const inputBox = await InputBox.create();
-      await inputBox.sendKeys(Key.ENTER);
       await selectQuickPickItem({
-        item: 'workbench-vs-code-plugin (jaas-test-notebooks-host)',
-        quickPick: 'Select a Jupyter Server',
+        item: 'workbench-vs-code-plugin',
+        quickPick: 'Select Jupyter Instance',
       });
 
       await selectQuickPickItem({
@@ -124,7 +121,6 @@ describe('Workbench Extension', function () {
         quickPick: 'Select a Kernel',
       });
 
-      await driver.sleep(ELEMENT_WAIT_MS);
       // Execute the notebook and poll for the success indicator (green check).
       // Why not the cell output? Because the output is rendered in a webview.
       await workbench.executeCommand('Notebook: Run All');
@@ -138,6 +134,39 @@ describe('Workbench Extension', function () {
         CELL_EXECUTION_WAIT_MS,
         'Notebook: Run All failed',
       );
+    });
+
+    it('selects the instance directly from the native UI menu', async () => {
+      await workbench.executeCommand('Notebook: Select Notebook Kernel');
+
+      await selectQuickPickItem({
+        item: 'Select Another Kernel...',
+        quickPick: 'Select Another Kernel...',
+      });
+
+      await selectQuickPickItem({
+        item: 'Google Cloud',
+        quickPick: 'Select Another Kernel...',
+      });
+
+      await selectQuickPickItem({
+        item: 'workbench-vs-code-plugin',
+        quickPick: 'Select Jupyter Instance',
+      });
+
+      await selectQuickPickItem({
+        item: 'TensorFlow 2-11',
+        quickPick: 'Select a Kernel',
+      });
+
+      // Execute the notebook and poll for the success indicator (green check).
+      await workbench.executeCommand('Notebook: Run All');
+      await driver.wait(async () => {
+        const element = await workbench
+          .getEnclosingElement()
+          .findElements(By.className('codicon-notebook-state-success'));
+        return element.length > 0;
+      });
     });
   });
 
@@ -202,7 +231,7 @@ describe('Workbench Extension', function () {
           await dialog.pushButton(button);
           return true;
         } catch (_) {
-          // Swallow the error since we want to fail when the timeout's reached.
+          // Fail when the timeout's reached.
           return false;
         }
       },
@@ -251,8 +280,8 @@ describe('Workbench Extension', function () {
         '"Continue" button not visible on ID screen',
       );
 
-      // Click Allow or Continue to authorize the scope (handles both v1 and v2
-      // consent screens).
+      // Click Allow or Continue to authorize the scope
+      // (handles both v1 and v2 consent screens).
       await oauthDriver.wait(until.urlContains('consent'), ELEMENT_WAIT_MS);
       await waitAndClick(
         oauthDriver,
@@ -260,7 +289,8 @@ describe('Workbench Extension', function () {
         '"Allow" or "Continue" button not visible on consent screen',
       );
 
-      // Check that the test account's authenticated. Close the browser window.
+      // Check that the test account's authenticated.
+      // Close the browser window.
       await oauthDriver.wait(
         until.urlContains(
           'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth',

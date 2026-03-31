@@ -64,6 +64,10 @@ export interface QuickPickOptions<T extends QuickPickItem>
    * Called when the value of the quick pick changes.
    */
   onDidChangeValue?: (value: string, input: QuickInput) => void;
+  /**
+   * Called when the quick pick is created.
+   */
+  onDidCreate?: (quickPick: vscode.QuickPick<T>) => void | Promise<void>;
 }
 
 /**
@@ -188,6 +192,10 @@ export class MultiStepInput {
               onDidChangeValue(value, input);
             }),
           );
+        }
+
+        if (opts.onDidCreate) {
+          void opts.onDidCreate(input);
         }
 
         this.current?.dispose();
