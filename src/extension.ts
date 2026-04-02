@@ -50,6 +50,6 @@ export async function activate(context: vscode.ExtensionContext) {
     jupyter,
   );
 
-  await authProvider.initialize()
+  await authProvider.initialize();
   context.subscriptions.push(authFlow, authProvider, workbenchServerProvider);
 }
