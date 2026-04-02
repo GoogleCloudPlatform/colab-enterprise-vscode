@@ -39,8 +39,11 @@ export async function activate(context: vscode.ExtensionContext) {
   const notebooksClient = new NotebooksClient(authClient);
   const projectsClient = new ProjectsClient(authClient);
 
+  const serverChangeEmitter = new vscode.EventEmitter<void>();
+
   const connectionManager = new ConnectionManager(
     authProvider.onDidChangeSessions,
+    serverChangeEmitter,
   );
 
   const workbenchServerProvider = new WorkbenchJupyterServerProvider(
@@ -54,6 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
     ),
     jupyter,
     connectionManager,
+    serverChangeEmitter,
   );
 
   await authProvider.initialize();

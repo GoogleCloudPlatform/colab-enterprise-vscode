@@ -39,7 +39,6 @@ export class WorkbenchJupyterServerProvider
   readonly onDidChangeServers: vscode.Event<void>;
 
   private readonly serverCollection: JupyterServerCollection;
-  private readonly serverChangeEmitter: vscode.EventEmitter<void>;
   private isAuthorized = false;
   private readonly authListener: vscode.Disposable;
 
@@ -50,8 +49,8 @@ export class WorkbenchJupyterServerProvider
     private readonly instanceManager: WorkbenchInstanceManager,
     jupyter: Jupyter,
     private readonly connectionManager: ConnectionManager,
+    private readonly serverChangeEmitter: vscode.EventEmitter<void>,
   ) {
-    this.serverChangeEmitter = new this.vs.EventEmitter<void>();
     this.onDidChangeServers = this.serverChangeEmitter.event;
 
     this.serverCollection = jupyter.createJupyterServerCollection(
@@ -77,9 +76,7 @@ export class WorkbenchJupyterServerProvider
     _token: CancellationToken,
   ): Promise<JupyterServer[]> {
     if (!this.isAuthorized) {
-      this.connectionManager.preventReconnectionAttempt(() => {
-        this.serverChangeEmitter.fire();
-      });
+      this.connectionManager.preventReconnectionAttempt();
 
       return [];
     }

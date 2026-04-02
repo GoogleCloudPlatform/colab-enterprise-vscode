@@ -30,7 +30,10 @@ export class ConnectionManager implements vscode.Disposable {
   private ignoreNext = false;
   private readonly authListener: vscode.Disposable;
 
-  constructor(authEvent: vscode.Event<AuthChangeEvent>) {
+  constructor(
+    authEvent: vscode.Event<AuthChangeEvent>,
+    private readonly serverChangeEmitter: vscode.EventEmitter<void>,
+  ) {
     this.authListener = authEvent(this.handleAuthChange.bind(this));
   }
 
@@ -54,7 +57,7 @@ export class ConnectionManager implements vscode.Disposable {
    * To prevent infinite loops of self-triggering events, it alternates between
    * scheduling a duplicate event and ignoring the next incoming event.
    */
-  preventReconnectionAttempt(fireEventCallback: () => void) {
+  preventReconnectionAttempt() {
     if (Date.now() > this.activeUntil) {
       return;
     }
@@ -65,6 +68,8 @@ export class ConnectionManager implements vscode.Disposable {
     }
 
     this.ignoreNext = true;
-    setTimeout(fireEventCallback, 0);
+    setTimeout(() => {
+      this.serverChangeEmitter.fire();
+    }, 0);
   }
 }
