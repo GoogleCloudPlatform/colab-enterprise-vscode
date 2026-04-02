@@ -53,5 +53,9 @@ export function getOAuth2Flow(
   vs: typeof vscode,
   oAuth2Client: OAuth2Client,
 ): OAuth2Flow {
-  return new LocalServerFlow(vs, path.join(__dirname, 'auth/media'), oAuth2Client);
+  return new LocalServerFlow(
+    vs,
+    path.join(__dirname, 'auth/media'),
+    oAuth2Client,
+  );
 }

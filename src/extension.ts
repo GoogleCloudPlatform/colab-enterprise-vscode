@@ -28,10 +28,7 @@ export async function activate(context: vscode.ExtensionContext) {
     CONFIG.ClientId,
     CONFIG.ClientNotSoSecret,
   );
-  const authFlow = getOAuth2Flow(
-    vscode,
-    authClient
-  );
+  const authFlow = getOAuth2Flow(vscode, authClient);
   const authProvider = new GoogleAuthProvider(
     vscode,
     new AuthStorage(context.secrets),
@@ -54,9 +51,5 @@ export async function activate(context: vscode.ExtensionContext) {
     jupyter,
   );
 
-  context.subscriptions.push(
-    authFlow,
-    authProvider,
-    workbenchServerProvider,
-  );
+  context.subscriptions.push(authFlow, authProvider, workbenchServerProvider);
 }

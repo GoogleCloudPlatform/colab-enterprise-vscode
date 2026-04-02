@@ -24,7 +24,7 @@ describe('getOAuth2Flow', () => {
   it('returns the local server flow', () => {
     const flow = getOAuth2Flow(
       vs.asVsCode(),
-      sinon.createStubInstance(OAuth2Client)
+      sinon.createStubInstance(OAuth2Client),
     );
 
     expect(flow.constructor.name).to.equal('LocalServerFlow');
