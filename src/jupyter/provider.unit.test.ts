@@ -94,6 +94,13 @@ describe('WorkbenchJupyterServerProvider', () => {
       scopes: [],
     });
 
+    vsCodeStub.authentication.getSession = sinon.stub().resolves({
+      id: 'mock-session-id',
+      accessToken: 'mock-access-token',
+      account: { id: 'mock-account-id', label: 'Mock Account' },
+      scopes: [],
+    });
+
     serverProvider = new WorkbenchJupyterServerProvider(
       vsCodeStub.asVsCode(),
       authEventEmitter.event,
