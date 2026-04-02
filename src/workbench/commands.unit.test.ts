@@ -144,6 +144,7 @@ describe('selectProjectCommand', () => {
 
       expect(quickPicks.length).to.equal(1);
       const qp = quickPicks[0];
+      expect(qp.ignoreFocusOut).to.be.true;
 
       qp.selectedItems = [{ label: 'Project', detail: 'p-id' }];
       qp.onDidAccept.getCall(0).args[0]();
@@ -152,6 +153,7 @@ describe('selectProjectCommand', () => {
 
       expect(quickPicks.length).to.equal(2);
       const instanceQp = quickPicks[1];
+      expect(instanceQp.ignoreFocusOut).to.be.true;
 
       expect(instanceQp.items).to.deep.equal([{ label: 'Instance 1' }]);
 

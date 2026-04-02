@@ -45,6 +45,7 @@ const GET_TOKEN_RESPONSE: GetTokenResponse = {
 function buildStubFlow(): sinon.SinonStubbedInstance<OAuth2Flow> {
   return {
     trigger: sinon.stub(),
+    dispose: sinon.stub(),
   };
 }
 
@@ -81,12 +82,6 @@ describe('login', () => {
     sinon.restore();
   });
 
-  it('throws an error if no flows are available', async () => {
-    await expect(
-      login(vs.asVsCode(), [], oauth2Client, SCOPES),
-    ).to.be.rejectedWith('No authentication flows available.');
-  });
-
   describe('with a flow', () => {
     let flow: sinon.SinonStubbedInstance<OAuth2Flow>;
     beforeEach(() => {
@@ -106,8 +101,8 @@ describe('login', () => {
       });
 
       await expect(
-        login(vs.asVsCode(), [flow], oauth2Client, SCOPES),
-      ).to.be.rejectedWith('Authentication failed.');
+        login(vs.asVsCode(), flow, oauth2Client, SCOPES),
+      ).to.be.rejectedWith('Cancellation signaled to flow');
       expect(cancelCalled).to.be.true;
     });
 
@@ -115,13 +110,8 @@ describe('login', () => {
       flow.trigger.rejects(new Error('Flow failed'));
 
       await expect(
-        login(vs.asVsCode(), [flow], oauth2Client, SCOPES),
-      ).to.be.rejectedWith('Authentication failed.');
-
-      sinon.assert.calledOnceWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/Flow failed/),
-      );
+        login(vs.asVsCode(), flow, oauth2Client, SCOPES),
+      ).to.be.rejectedWith('Flow failed');
     });
 
     it('throws an error if a token cannot be obtained', async () => {
@@ -130,18 +120,13 @@ describe('login', () => {
         redirectUri: REDIRECT,
       });
       sinon.stub(oauth2Client, 'getToken').resolves({
-        res: { status: 500 },
+        res: { status: 500, statusText: 'Bad Request' },
         tokens: {},
       } as GetTokenResponse);
 
       await expect(
-        login(vs.asVsCode(), [flow], oauth2Client, SCOPES),
-      ).to.be.rejectedWith('Authentication failed');
-
-      sinon.assert.calledOnceWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/get token/),
-      );
+        login(vs.asVsCode(), flow, oauth2Client, SCOPES),
+      ).to.be.rejectedWith(/get token: Bad Request/);
     });
 
     it('throws an error if the token is missing credential information', async () => {
@@ -155,13 +140,8 @@ describe('login', () => {
       } as GetTokenResponse);
 
       await expect(
-        login(vs.asVsCode(), [flow], oauth2Client, SCOPES),
-      ).to.be.rejectedWith('Authentication failed');
-
-      sinon.assert.calledOnceWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/credential information/),
-      );
+        login(vs.asVsCode(), flow, oauth2Client, SCOPES),
+      ).to.be.rejectedWith(/credential information/);
     });
 
     it('returns credentials from a successful login flow', async () => {
@@ -179,71 +159,8 @@ describe('login', () => {
         .resolves(GET_TOKEN_RESPONSE);
 
       await expect(
-        login(vs.asVsCode(), [flow], oauth2Client, SCOPES),
+        login(vs.asVsCode(), flow, oauth2Client, SCOPES),
       ).to.eventually.deep.equal(CREDENTIALS);
-    });
-  });
-
-  describe('with multiple flows', () => {
-    let flow1: sinon.SinonStubbedInstance<OAuth2Flow>;
-    let flow2: sinon.SinonStubbedInstance<OAuth2Flow>;
-
-    function stubTryAnotherFlow() {
-      // Type assertion needed due to overloading on showErrorMessage.
-      (vs.window.showErrorMessage as sinon.SinonStub)
-        .withArgs(sinon.match(/try a different/))
-        .resolves('Yes');
-    }
-
-    beforeEach(() => {
-      flow1 = buildStubFlow();
-      flow2 = buildStubFlow();
-    });
-
-    it('throws an error if multiple flows fail', async () => {
-      flow1.trigger.rejects(new Error('Barf'));
-      flow2.trigger.rejects(new Error('Yack'));
-      stubTryAnotherFlow();
-
-      await expect(
-        login(vs.asVsCode(), [flow1, flow2], oauth2Client, SCOPES),
-      ).to.be.rejectedWith(/All .+ failed/);
-
-      sinon.assert.calledThrice(vs.window.showErrorMessage);
-      sinon.assert.calledWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/Barf/),
-      );
-      sinon.assert.calledWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/Yack/),
-      );
-    });
-
-    it('successfully completes a flow after failing a first attempt', async () => {
-      flow1.trigger.rejects(new Error('Burp'));
-      stubTryAnotherFlow();
-      flow2.trigger.resolves({
-        code: CODE,
-        redirectUri: REDIRECT,
-      });
-      sinon
-        .stub(oauth2Client, 'getToken')
-        .withArgs({
-          code: CODE,
-          codeVerifier: sinon.match.string,
-          redirect_uri: REDIRECT,
-        })
-        .resolves(GET_TOKEN_RESPONSE);
-
-      await expect(
-        login(vs.asVsCode(), [flow1, flow2], oauth2Client, SCOPES),
-      ).to.eventually.deep.equal(CREDENTIALS);
-
-      sinon.assert.calledWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/Burp/),
-      );
     });
   });
 });
