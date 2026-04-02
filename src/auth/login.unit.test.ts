@@ -102,7 +102,7 @@ describe('login', () => {
 
       await expect(
         login(vs.asVsCode(), flow, oauth2Client, SCOPES),
-      ).to.be.rejectedWith('Authentication failed.');
+      ).to.be.rejectedWith('Cancellation signaled to flow');
       expect(cancelCalled).to.be.true;
     });
 
@@ -111,12 +111,7 @@ describe('login', () => {
 
       await expect(
         login(vs.asVsCode(), flow, oauth2Client, SCOPES),
-      ).to.be.rejectedWith('Authentication failed.');
-
-      sinon.assert.calledOnceWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/Flow failed/),
-      );
+      ).to.be.rejectedWith('Flow failed');
     });
 
     it('throws an error if a token cannot be obtained', async () => {
@@ -125,18 +120,13 @@ describe('login', () => {
         redirectUri: REDIRECT,
       });
       sinon.stub(oauth2Client, 'getToken').resolves({
-        res: { status: 500 },
+        res: { status: 500, statusText: 'Bad Request' },
         tokens: {},
       } as GetTokenResponse);
 
       await expect(
         login(vs.asVsCode(), flow, oauth2Client, SCOPES),
-      ).to.be.rejectedWith('Authentication failed');
-
-      sinon.assert.calledOnceWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/get token/),
-      );
+      ).to.be.rejectedWith(/get token: Bad Request/);
     });
 
     it('throws an error if the token is missing credential information', async () => {
@@ -151,12 +141,7 @@ describe('login', () => {
 
       await expect(
         login(vs.asVsCode(), flow, oauth2Client, SCOPES),
-      ).to.be.rejectedWith('Authentication failed');
-
-      sinon.assert.calledOnceWithMatch(
-        vs.window.showErrorMessage,
-        sinon.match(/credential information/),
-      );
+      ).to.be.rejectedWith(/credential information/);
     });
 
     it('returns credentials from a successful login flow', async () => {

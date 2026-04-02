@@ -36,39 +36,31 @@ export async function login(
   client: OAuth2Client,
   scopes: string[],
 ): Promise<Credentials> {
-  try {
-    return await vs.window.withProgress<Credentials>(
-      {
-        location: vs.ProgressLocation.Notification,
-        title: 'Signing in to Google...',
-        cancellable: true,
-      },
-      async (_, cancel: vscode.CancellationToken) => {
-        const nonce = uuid();
-        const pkce = await client.generateCodeVerifierAsync();
-        const triggerOptions: OAuth2TriggerOptions = {
-          cancel,
-          nonce,
-          scopes,
-          pkceChallenge: pkce.codeChallenge,
-        };
-        const flowResult = await flow.trigger(triggerOptions);
-        const res = await exchangeCodeForCredentials(
-          client,
-          flowResult,
-          pkce.codeVerifier,
-        );
+  return await vs.window.withProgress<Credentials>(
+    {
+      location: vs.ProgressLocation.Notification,
+      title: 'Signing in to Google...',
+      cancellable: true,
+    },
+    async (_, cancel: vscode.CancellationToken) => {
+      const nonce = uuid();
+      const pkce = await client.generateCodeVerifierAsync();
+      const triggerOptions: OAuth2TriggerOptions = {
+        cancel,
+        nonce,
+        scopes,
+        pkceChallenge: pkce.codeChallenge,
+      };
+      const flowResult = await flow.trigger(triggerOptions);
+      const res = await exchangeCodeForCredentials(
+        client,
+        flowResult,
+        pkce.codeVerifier,
+      );
 
-        return res;
-      },
-    );
-  } catch (err) {
-    const innerMsg = err instanceof Error ? err.message : 'unknown error';
-    const msg = `Sign-in attempt failed: ${innerMsg}.`;
-    vs.window.showErrorMessage(msg);
-  }
-
-  throw new Error('Authentication failed.');
+      return res;
+    },
+  );
 }
 
 async function exchangeCodeForCredentials(
