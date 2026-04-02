@@ -61,5 +61,10 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   await authProvider.initialize();
-  context.subscriptions.push(authFlow, authProvider, workbenchServerProvider);
+  context.subscriptions.push(
+    authFlow, 
+    authProvider, 
+    workbenchServerProvider, 
+    serverChangeEmitter
+  );
 }
