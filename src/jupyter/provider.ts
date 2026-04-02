@@ -18,6 +18,7 @@ import { GoogleAuthProvider, AuthChangeEvent } from '../auth/auth-provider';
 import { selectProjectCommand } from '../workbench/commands';
 import { WORKBENCH_COMMAND } from '../workbench/constants';
 import { ProjectsClient } from '../workbench/projects-client';
+import { ConnectionManager } from './connection-manager';
 import {
   WorkbenchInstanceManager,
   WorkbenchJupyterServer,
@@ -48,6 +49,7 @@ export class WorkbenchJupyterServerProvider
     private readonly projectsClient: ProjectsClient,
     private readonly instanceManager: WorkbenchInstanceManager,
     jupyter: Jupyter,
+    private readonly connectionManager: ConnectionManager,
   ) {
     this.serverChangeEmitter = new this.vs.EventEmitter<void>();
     this.onDidChangeServers = this.serverChangeEmitter.event;
@@ -65,6 +67,7 @@ export class WorkbenchJupyterServerProvider
   dispose() {
     this.authListener.dispose();
     this.serverCollection.dispose();
+    this.connectionManager.dispose();
   }
 
   /**
@@ -74,6 +77,10 @@ export class WorkbenchJupyterServerProvider
     _token: CancellationToken,
   ): Promise<JupyterServer[]> {
     if (!this.isAuthorized) {
+      this.connectionManager.preventReconnectionAttempt(() => {
+        this.serverChangeEmitter.fire();
+      });
+
       return [];
     }
     return await this.instanceManager.getWorkbenchServers();
