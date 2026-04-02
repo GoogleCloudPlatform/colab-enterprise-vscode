@@ -14,7 +14,7 @@ import {
 } from '@vscode/jupyter-extension';
 import type { CancellationToken } from 'vscode';
 import vscode from 'vscode';
-import { GoogleAuthProvider } from '../auth/auth-provider';
+import { GoogleAuthProvider, AuthChangeEvent } from '../auth/auth-provider';
 import { selectProjectCommand } from '../workbench/commands';
 import { WORKBENCH_COMMAND } from '../workbench/constants';
 import { ProjectsClient } from '../workbench/projects-client';
@@ -39,9 +39,12 @@ export class WorkbenchJupyterServerProvider
 
   private readonly serverCollection: JupyterServerCollection;
   private readonly serverChangeEmitter: vscode.EventEmitter<void>;
+  private isAuthorized = false;
+  private readonly authListener: vscode.Disposable;
 
   constructor(
     private readonly vs: typeof vscode,
+    authEvent: vscode.Event<AuthChangeEvent>,
     private readonly projectsClient: ProjectsClient,
     private readonly instanceManager: WorkbenchInstanceManager,
     jupyter: Jupyter,
@@ -55,9 +58,12 @@ export class WorkbenchJupyterServerProvider
       this,
     );
     this.serverCollection.commandProvider = this;
+
+    this.authListener = authEvent(this.handleAuthChange.bind(this));
   }
 
   dispose() {
+    this.authListener.dispose();
     this.serverCollection.dispose();
   }
 
@@ -67,6 +73,9 @@ export class WorkbenchJupyterServerProvider
   async provideJupyterServers(
     _token: CancellationToken,
   ): Promise<JupyterServer[]> {
+    if (!this.isAuthorized) {
+      return [];
+    }
     return await this.instanceManager.getWorkbenchServers();
   }
 
@@ -77,6 +86,13 @@ export class WorkbenchJupyterServerProvider
     workbenchServer: WorkbenchJupyterServer,
     _token: CancellationToken,
   ): Promise<WorkbenchJupyterServer> {
+    if (!this.isAuthorized) {
+      const message = 'Unauthorized: unable to resolve Jupyter server';
+      // Logging the error because Jupyter extension swallows it
+      console.error(message);
+
+      throw new Error(message);
+    }
     return await this.instanceManager.refreshConnection(workbenchServer);
   }
 
@@ -125,5 +141,14 @@ export class WorkbenchJupyterServerProvider
       console.error(err);
       throw err;
     }
+  }
+
+  private handleAuthChange(e: AuthChangeEvent): void {
+    if (this.isAuthorized === e.hasValidSession) {
+      return;
+    }
+    this.isAuthorized = e.hasValidSession;
+    this.instanceManager.setProjectId(undefined);
+    this.serverChangeEmitter.fire();
   }
 }

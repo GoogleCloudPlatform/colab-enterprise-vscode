@@ -24,6 +24,19 @@ const PROVIDER_LABEL = 'Google Cloud Platform';
 const REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
+ * An {@link vscode.Event} which fires when an authentication session is added,
+ * removed, or changed.
+ */
+export interface AuthChangeEvent
+  extends vscode.AuthenticationProviderAuthenticationSessionsChangeEvent {
+  /**
+   * True when there is a valid {@link vscode.AuthenticationSession} for the
+   * {@link vscode.AuthenticationProvider}.
+   */
+  hasValidSession: boolean;
+}
+
+/**
  * Provides authentication using Google OAuth2.
  *
  * Registers itself with the VS Code authentication API and emits events when
@@ -35,10 +48,10 @@ const REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes
 export class GoogleAuthProvider
   implements vscode.AuthenticationProvider, vscode.Disposable
 {
-  readonly onDidChangeSessions: vscode.Event<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>;
+  readonly onDidChangeSessions: vscode.Event<AuthChangeEvent>;
   private isInitialized = false;
   private readonly authProvider: vscode.Disposable;
-  private readonly emitter: vscode.EventEmitter<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>;
+  private readonly emitter: vscode.EventEmitter<AuthChangeEvent>;
   private session?: Readonly<AuthenticationSession>;
   private readonly disposeController = new AbortController();
   private readonly disposeSignal: AbortSignal = this.disposeController.signal;
@@ -60,8 +73,7 @@ export class GoogleAuthProvider
     private readonly oAuth2Client: OAuth2Client,
     private readonly login: (scopes: string[]) => Promise<Credentials>,
   ) {
-    this.emitter =
-      new vs.EventEmitter<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>();
+    this.emitter = new vs.EventEmitter<AuthChangeEvent>();
     this.onDidChangeSessions = this.emitter.event;
 
     this.authProvider = this.vs.authentication.registerAuthenticationProvider(
@@ -147,6 +159,7 @@ export class GoogleAuthProvider
       added: [],
       removed: [],
       changed: [this.session],
+      hasValidSession: true,
     });
   }
 
@@ -245,12 +258,14 @@ export class GoogleAuthProvider
           added: [],
           removed: [],
           changed: [this.session],
+          hasValidSession: true,
         });
       } else {
         this.emitter.fire({
           added: [this.session],
           removed: [],
           changed: [],
+          hasValidSession: true,
         });
       }
       this.vs.window.showInformationMessage(
@@ -287,10 +302,15 @@ export class GoogleAuthProvider
     }
     await this.storage.removeSession(sessionId);
 
+    this.vs.window.showInformationMessage(
+      'Signed out of Google Cloud Platform!',
+    );
+
     this.emitter.fire({
       added: [],
       removed: [removedSession],
       changed: [],
+      hasValidSession: false,
     });
   }
 

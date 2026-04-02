@@ -82,7 +82,7 @@ export class WorkbenchInstanceManager {
    *
    * @param projectId - The ID of the GCP project.
    */
-  setProjectId(projectId: string) {
+  setProjectId(projectId?: string) {
     this.projectId = projectId;
   }
 
@@ -142,6 +142,7 @@ export class WorkbenchInstanceManager {
       this.vs.window.showInformationMessage(
         `No active Workbench instances found in project: ${projectId}.`,
       );
+      this.projectId = undefined;
     }
 
     return this.cachedServers;

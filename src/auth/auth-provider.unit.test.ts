@@ -17,7 +17,11 @@ import {
   AUTHORIZATION_HEADER,
   CONTENT_TYPE_JSON_HEADER,
 } from '../workbench/headers';
-import { GoogleAuthProvider, REQUIRED_SCOPES } from './auth-provider';
+import {
+  GoogleAuthProvider,
+  REQUIRED_SCOPES,
+  AuthChangeEvent,
+} from './auth-provider';
 import { Credentials } from './login';
 import { AuthStorage, RefreshableAuthenticationSession } from './storage';
 
@@ -79,9 +83,7 @@ describe('GoogleAuthProvider', () => {
    * compromise, but it seems like the best middle ground.
    */
   let oauth2Client: OAuth2Client;
-  let onDidChangeSessionsStub: sinon.SinonStub<
-    [vscode.AuthenticationProviderAuthenticationSessionsChangeEvent]
-  >;
+  let onDidChangeSessionsStub: sinon.SinonStub<[AuthChangeEvent]>;
   let authProvider: GoogleAuthProvider;
 
   beforeEach(() => {
@@ -217,6 +219,7 @@ describe('GoogleAuthProvider', () => {
             added: [],
             removed: [],
             changed: [DEFAULT_AUTH_SESSION],
+            hasValidSession: true,
           });
         });
         it('handles "Invalid grant" error by clearing session', async () => {
@@ -551,6 +554,7 @@ describe('GoogleAuthProvider', () => {
           added: [newSession],
           removed: [],
           changed: [],
+          hasValidSession: true,
         });
       });
 
@@ -567,6 +571,7 @@ describe('GoogleAuthProvider', () => {
           added: [],
           removed: [],
           changed: [session],
+          hasValidSession: true,
         });
       });
     });
@@ -648,6 +653,7 @@ describe('GoogleAuthProvider', () => {
           added: [],
           removed: [session[0]],
           changed: [],
+          hasValidSession: false,
         });
       });
     });

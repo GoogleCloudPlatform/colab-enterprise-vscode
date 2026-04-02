@@ -35,13 +35,12 @@ export async function activate(context: vscode.ExtensionContext) {
     authClient,
     (scopes: string[]) => login(vscode, authFlow, authClient, scopes),
   );
-  await authProvider.initialize();
-
   const notebooksClient = new NotebooksClient(authClient);
   const projectsClient = new ProjectsClient(authClient);
 
   const workbenchServerProvider = new WorkbenchJupyterServerProvider(
     vscode,
+    authProvider.onDidChangeSessions,
     projectsClient,
     new WorkbenchInstanceManager(vscode, notebooksClient, () =>
       GoogleAuthProvider.getOrCreateSession(vscode).then(
@@ -51,5 +50,6 @@ export async function activate(context: vscode.ExtensionContext) {
     jupyter,
   );
 
+  await authProvider.initialize()
   context.subscriptions.push(authFlow, authProvider, workbenchServerProvider);
 }
