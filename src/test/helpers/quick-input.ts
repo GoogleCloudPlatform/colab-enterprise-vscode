@@ -31,6 +31,7 @@ export type QuickPickStub = sinon.SinonStubbedInstance<
     | 'placeholder'
     | 'items'
     | 'activeItems'
+    | 'matchOnDetail'
     | 'selectedItems'
     | 'buttons'
     | 'onDidTriggerButton'
@@ -71,6 +72,7 @@ export function buildQuickPickStub(
     totalSteps: undefined,
     ignoreFocusOut: false,
     placeholder: undefined,
+    matchOnDetail: false,
     items: [],
     activeItems: [],
     selectedItems: [],
