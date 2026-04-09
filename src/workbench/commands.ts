@@ -53,6 +53,9 @@ export async function selectProjectCommand(
         ignoreFocusOut: true,
         placeholder: 'Select a Google Cloud Project',
         items: initialItems,
+        onDidCreate: (quickPick) => {
+          quickPick.matchOnDetail = true;
+        },
         onDidChangeValue: (value, quickPick) => {
           if (searchTimeout) {
             clearTimeout(searchTimeout);
