@@ -7,7 +7,7 @@
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
-import { Logger, initializeLogger } from './logger';
+import { log, initializeLogger } from './logging/logger';
 
 describe('Logger', () => {
   let sandbox: sinon.SinonSandbox;
@@ -18,7 +18,7 @@ describe('Logger', () => {
     dispose: sinon.SinonStub;
     show: sinon.SinonStub;
   };
-  let consoleLogStub: sinon.SinonStub;
+  let consoleInfoStub: sinon.SinonStub;
   let loggerDisposable: vscode.Disposable | undefined;
 
   const mockContext = {
@@ -55,8 +55,11 @@ describe('Logger', () => {
       dispose: sandbox.stub(),
     });
 
-    // Mock console.log
-    consoleLogStub = sandbox.stub(console, 'log');
+    // Mock console methods
+    sandbox.stub(console, 'log');
+    consoleInfoStub = sandbox.stub(console, 'info');
+    sandbox.stub(console, 'warn');
+    sandbox.stub(console, 'error');
   });
 
   afterEach(() => {
@@ -110,10 +113,10 @@ describe('Logger', () => {
       loggerDisposable = initializeLogger(vscode, devContext);
 
       // Verify console logger is active
-      Logger.info('test message');
+      log.info('test message');
       sinon.assert.calledWith(
-        consoleLogStub,
-        sinon.match(/\[INFO\] test message/),
+        consoleInfoStub,
+        sinon.match(/\[INFO\].*test message/),
       );
 
       // Verify output channel is shown
@@ -123,8 +126,8 @@ describe('Logger', () => {
     it('does not add ConsoleLogger in Production mode', () => {
       loggerDisposable = initializeLogger(vscode, mockContext);
 
-      Logger.info('test message');
-      sinon.assert.notCalled(consoleLogStub);
+      log.info('test message');
+      sinon.assert.notCalled(consoleInfoStub);
     });
   });
 
@@ -137,7 +140,7 @@ describe('Logger', () => {
 
     it('logs info message when level is info', () => {
       loggerDisposable = initializeLogger(vscode, mockContext);
-      Logger.info('test message');
+      log.info('test message');
       sinon.assert.calledWith(
         outputChannelMock.appendLine,
         sinon.match(/\[INFO\].*test message/),
@@ -146,7 +149,7 @@ describe('Logger', () => {
 
     it('logs error message when level is info', () => {
       loggerDisposable = initializeLogger(vscode, mockContext);
-      Logger.error('error message');
+      log.error('error message');
       sinon.assert.calledWith(
         outputChannelMock.appendLine,
         sinon.match(/\[ERROR\].*error message/),
@@ -155,7 +158,7 @@ describe('Logger', () => {
 
     it('does not log debug message when level is info', () => {
       loggerDisposable = initializeLogger(vscode, mockContext);
-      Logger.debug('debug message');
+      log.debug('debug message');
       // note: appendLine is called for env logs, so we check specifically for debug message
       sinon.assert.neverCalledWith(
         outputChannelMock.appendLine,
@@ -171,7 +174,7 @@ describe('Logger', () => {
 
       loggerDisposable = initializeLogger(vscode, mockContext);
 
-      Logger.debug('debug message');
+      log.debug('debug message');
       sinon.assert.calledWith(
         outputChannelMock.appendLine,
         sinon.match(/\[DEBUG\].*debug message/),
@@ -186,7 +189,7 @@ describe('Logger', () => {
 
       loggerDisposable = initializeLogger(vscode, mockContext);
 
-      Logger.info('info message');
+      log.info('info message');
       sinon.assert.neverCalledWith(
         outputChannelMock.appendLine,
         sinon.match(/\[INFO\].*info message/),
@@ -195,7 +198,7 @@ describe('Logger', () => {
 
     it('handles Error objects in error log', () => {
       loggerDisposable = initializeLogger(vscode, mockContext);
-      Logger.error(new Error('error object message'));
+      log.error(new Error('error object message') as any);
       sinon.assert.calledWith(
         outputChannelMock.appendLine,
         sinon.match(/\[ERROR\].*error object message/),
@@ -209,13 +212,13 @@ describe('Logger', () => {
 
       loggerDisposable = initializeLogger(vscode, mockContext);
 
-      Logger.info('info message');
+      log.info('info message');
       sinon.assert.calledWith(
         outputChannelMock.appendLine,
         sinon.match(/\[INFO\].*info message/),
       );
 
-      Logger.debug('debug message');
+      log.debug('debug message');
       sinon.assert.neverCalledWith(
         outputChannelMock.appendLine,
         sinon.match(/\[DEBUG\].*debug message/),

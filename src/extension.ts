@@ -10,7 +10,7 @@ import { GoogleAuthProvider } from './auth/auth-provider';
 import { getOAuth2Flow } from './auth/flows/flows';
 import { login } from './auth/login';
 import { AuthStorage } from './auth/storage';
-import { initializeLogger } from './common/logger';
+import { initializeLogger } from './common/logging/logger';
 import { CONFIG } from './config';
 import { ConnectionManager } from './jupyter/connection-manager';
 import { getJupyterApi } from './jupyter/jupyter-extension';
