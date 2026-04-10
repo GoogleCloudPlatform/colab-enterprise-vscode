@@ -82,8 +82,12 @@ export function buildQuickPickStub(
       .stub<Listener, Disposable>()
       .returns(opts.onDidHideDisposeStub),
     onDidAccept,
-    onDidChangeValue: sinon.stub<Listener, Disposable>(),
-    onDidChangeSelection: sinon.stub<Listener, Disposable>(),
+    onDidChangeValue: sinon
+      .stub<Listener, Disposable>()
+      .returns({ dispose: sinon.stub() }),
+    onDidChangeSelection: sinon
+      .stub<Listener, Disposable>()
+      .returns({ dispose: sinon.stub() }),
     show: showStub,
     dispose: sinon.stub(),
     /**

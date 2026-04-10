@@ -1,39 +1,33 @@
-# Google Colab VS Code Extension
+# Vertex AI Workbench VS Code Extension
 
-Colab is a hosted Jupyter Notebook service that requires no setup to use and
-provides free access to computing resources, including GPUs and TPUs. Built atop
+[Vertex AI Workbench](https://cloud.google.com/vertex-ai/docs/workbench/introduction) instances are Jupyter notebook-based development environments for the entire data science workflow. You can interact with Vertex AI and other Google Cloud services from within a Vertex AI Workbench instance's Jupyter notebook. Built atop
 the [Jupyter
 extension](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter),
-this extension exposes Colab servers directly in VS Code!
+this extension exposes Workbench Jupyter servers directly in VS Code!
 
 - 👾 [Bug
-  report](https://github.com/googlecolab/colab-vscode/issues/new?template=bug_report.md)
+  report](https://github.com/GoogleCloudPlatform/colab-enterprise-vscode/issues/new?template=bug_report.md)
 - ✨ [Feature
-  request](https://github.com/googlecolab/colab-vscode/issues/new?template=feature_request.md)
-- 💬 [Discussions](https://github.com/googlecolab/colab-vscode/discussions)
+  request](https://github.com/GoogleCloudPlatform/colab-enterprise-vscode/issues/new?template=feature_request.md)
+- 💬 [Discussions](https://github.com/GoogleCloudPlatform/colab-enterprise-vscode/discussions)
 
 ## Quick Start
 
 1. Install [VS Code](https://code.visualstudio.com).
-1. Install the [Colab
-   extension](https://marketplace.visualstudio.com/items?itemName=google.colab)
-   (and Jupyter if not already installed).
+1. Install the Workbench extension from either the [Visual Studio
+   Marketplace](https://marketplace.visualstudio.com/items?itemName=google.workbench)
+   or [Open VSX](https://open-vsx.org/extension/Google/workbench).
+1. Install the [Jupyter
+   extension](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter) if not already installed.
 1. Open or create a notebook file.
+1. Click `Select Kernel` > `Google Cloud` > `Workbench`.
 1. When prompted, sign in.
-1. Click `Select Kernel` > `Colab` > `New Colab Server`.
+1. Search and select a GCP project.
+1. Select an active Workbench instance.
 1. 😎 Enjoy!
 
-![Connecting to a new Colab server and executing a code
+![Connecting to an active Workbench instance and executing a code
 cell](./docs/assets/hello-world.gif)
-
-## Commands
-
-Activate the command palette with `Ctrl+Shift+P` or `Cmd+Shift+P` on Mac.
-
-| Command                      | Description                                                                  |
-| ---------------------------- | ---------------------------------------------------------------------------- |
-| `Colab: Rename server alias` | Select and rename the local alias used to identify an assigned Colab server. |
-| `Colab: Remove server`       | Select an assigned Colab server to remove.                                   |
 
 ## Contributing
 
@@ -43,12 +37,15 @@ guide](./docs/contributing.md) for more info.
 ## Data and Telemetry
 
 The extension does not collect any client-side usage data within VS Code. See
-Colab's [Terms of Service](https://research.google.com/colaboratory/tos_v5.html)
-and the [Google Privacy Policy](https://policies.google.com/privacy), which
-apply to usage of this extension.
+the [Google Cloud Terms of Service](https://cloud.google.com/terms) and the
+[Google Cloud Privacy](https://cloud.google.com/privacy)
+for more information.
 
-## Security Disclosures
+## Security
+
+To mitigate the risk of malicious extensions accessing your OAuth credentials, ensure the extension is installed from a trusted source (such as the [Visual Studio
+Marketplace](https://marketplace.visualstudio.com) or [Open VSX](https://open-vsx.org)) and is authored by the **verified publisher (Google)**.
 
 Please see our [security disclosure process](./SECURITY.md). All [security
-advisories](https://github.com/googlecolab/colab-vscode/security/advisories) are
+advisories](https://github.com/GoogleCloudPlatform/colab-enterprise-vscode/security/advisories) are
 managed on GitHub.

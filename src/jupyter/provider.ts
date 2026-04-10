@@ -14,10 +14,11 @@ import {
 } from '@vscode/jupyter-extension';
 import type { CancellationToken } from 'vscode';
 import vscode from 'vscode';
-import { GoogleAuthProvider } from '../auth/auth-provider';
+import { GoogleAuthProvider, AuthChangeEvent } from '../auth/auth-provider';
 import { selectProjectCommand } from '../workbench/commands';
 import { WORKBENCH_COMMAND } from '../workbench/constants';
 import { ProjectsClient } from '../workbench/projects-client';
+import { ConnectionManager } from './connection-manager';
 import {
   WorkbenchInstanceManager,
   WorkbenchJupyterServer,
@@ -38,27 +39,34 @@ export class WorkbenchJupyterServerProvider
   readonly onDidChangeServers: vscode.Event<void>;
 
   private readonly serverCollection: JupyterServerCollection;
-  private readonly serverChangeEmitter: vscode.EventEmitter<void>;
+  private isAuthorized = false;
+  private readonly authListener: vscode.Disposable;
 
   constructor(
     private readonly vs: typeof vscode,
+    authEvent: vscode.Event<AuthChangeEvent>,
     private readonly projectsClient: ProjectsClient,
     private readonly instanceManager: WorkbenchInstanceManager,
     jupyter: Jupyter,
+    private readonly connectionManager: ConnectionManager,
+    private readonly serverChangeEmitter: vscode.EventEmitter<void>,
   ) {
-    this.serverChangeEmitter = new this.vs.EventEmitter<void>();
     this.onDidChangeServers = this.serverChangeEmitter.event;
 
     this.serverCollection = jupyter.createJupyterServerCollection(
-      'google-cloud-workbench',
-      'Google Cloud Workbench',
+      'google-cloud',
+      'Google Cloud',
       this,
     );
     this.serverCollection.commandProvider = this;
+
+    this.authListener = authEvent(this.handleAuthChange.bind(this));
   }
 
   dispose() {
+    this.authListener.dispose();
     this.serverCollection.dispose();
+    this.connectionManager.dispose();
   }
 
   /**
@@ -67,6 +75,11 @@ export class WorkbenchJupyterServerProvider
   async provideJupyterServers(
     _token: CancellationToken,
   ): Promise<JupyterServer[]> {
+    if (!this.isAuthorized) {
+      this.connectionManager.preventReconnectionAttempt();
+
+      return [];
+    }
     return await this.instanceManager.getWorkbenchServers();
   }
 
@@ -77,6 +90,13 @@ export class WorkbenchJupyterServerProvider
     workbenchServer: WorkbenchJupyterServer,
     _token: CancellationToken,
   ): Promise<WorkbenchJupyterServer> {
+    if (!this.isAuthorized) {
+      const message = 'Unauthorized: unable to resolve Jupyter server';
+      // Logging the error because Jupyter extension swallows it
+      console.error(message);
+
+      throw new Error(message);
+    }
     return await this.instanceManager.refreshConnection(workbenchServer);
   }
 
@@ -108,18 +128,31 @@ export class WorkbenchJupyterServerProvider
     command: JupyterServerCommand,
     _token: CancellationToken,
   ): Promise<JupyterServer | undefined> {
-    if (command.label === WORKBENCH_COMMAND.label) {
-      // this is needed to open login popup if user doesn't have active session
-      // i.e. first login
-      await GoogleAuthProvider.getOrCreateSession(this.vs);
-      return selectProjectCommand(
-        this.vs,
-        this.projectsClient,
-        this.instanceManager,
-      );
-    }
+    try {
+      if (command.label === WORKBENCH_COMMAND.label) {
+        // Opens login popup if no active session.
+        await GoogleAuthProvider.getOrCreateSession(this.vs);
+        return await selectProjectCommand(
+          this.vs,
+          this.projectsClient,
+          this.instanceManager,
+        );
+      }
 
-    console.error('Unknown command:', command);
-    throw new Error(`Unknown command: ${JSON.stringify(command)}`);
+      throw new Error(`Unknown command: ${JSON.stringify(command)}`);
+    } catch (err: unknown) {
+      await this.vs.commands.executeCommand('workbench.action.closeQuickOpen');
+      console.error(err);
+      throw err;
+    }
+  }
+
+  private handleAuthChange(e: AuthChangeEvent): void {
+    if (this.isAuthorized === e.hasValidSession) {
+      return;
+    }
+    this.isAuthorized = e.hasValidSession;
+    this.instanceManager.setProjectId(undefined);
+    this.serverChangeEmitter.fire();
   }
 }

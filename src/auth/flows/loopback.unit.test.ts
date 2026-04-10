@@ -12,7 +12,6 @@ import sinon from 'sinon';
 import { authUriMatch } from '../../test/helpers/authentication';
 import { TestCancellationTokenSource } from '../../test/helpers/cancellation';
 import { createHttpServerMock } from '../../test/helpers/http-server';
-import { matchUri } from '../../test/helpers/uri';
 import { newVsCodeStub, VsCodeStub } from '../../test/helpers/vscode';
 import { OAuth2TriggerOptions } from './flows';
 import { LocalServerFlow } from './loopback';
@@ -145,22 +144,17 @@ describe('LocalServerFlow', () => {
         return Promise.resolve(true);
       });
     });
-    const authSuccessUri = 'vscode://google.workbench/auth-success';
-    const externalAuthSuccessUri = `${authSuccessUri}?windowId=1`;
-    const state = encodeURIComponent(externalAuthSuccessUri);
-    const colabAuthSuccessUrl = `https://cloud.google.com/vertex-ai-notebooks?state=${state}`;
+    const redirectUri =
+      'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth';
     const responseRedirected = new Promise<void>((resolve) => {
       resStub.writeHead
-        .withArgs(302, sinon.match({ Location: colabAuthSuccessUrl }))
+        .withArgs(302, sinon.match({ Location: redirectUri }))
         .callsFake(() => {
           resolve();
           resStub.statusCode = 302;
           return resStub;
         });
     });
-    vs.env.asExternalUri
-      .withArgs(matchUri(authSuccessUri))
-      .resolves(vs.Uri.parse(externalAuthSuccessUri));
     fakeServer.emit('request', req, resStub);
 
     const flowResult = await trigger;
@@ -176,25 +170,4 @@ describe('LocalServerFlow', () => {
     expect(resStub.statusCode).to.equal(302);
     sinon.assert.calledOnce(resStub.end);
   });
-
-  // TODO: This SUT and test read from disk, we should add the following test as
-  // an integration test to keep the UTs zippy ⚡.
-  //
-  // Commenting out for now to avoid unnecessary test bloat. It's also
-  // non-critical user functionality.
-  /*
-  it("serves the favicon throughout the flow", async () => {
-    void flow.trigger(defaultTriggerOpts);
-    const faviconReq = {
-      method: "GET",
-      url: "/favicon.ico",
-      headers: { host: DEFAULT_HOST },
-    } as http.IncomingMessage;
-
-    fakeServer.emit("request", faviconReq, resStub);
-
-    const favicon = await fs.readFile(path.join("out/test/media/favicon.ico"));
-    sinon.assert.calledOnceWithMatch(resStub.end, favicon);
-  });
-  */
 });

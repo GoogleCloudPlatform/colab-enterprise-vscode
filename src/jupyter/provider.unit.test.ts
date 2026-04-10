@@ -13,10 +13,12 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { SinonStubbedInstance } from 'sinon';
 import vscode from 'vscode';
-import { GoogleAuthProvider } from '../auth/auth-provider';
+import { GoogleAuthProvider, AuthChangeEvent } from '../auth/auth-provider';
+import { TestEventEmitter } from '../test/helpers/events';
 import { newVsCodeStub, VsCodeStub } from '../test/helpers/vscode';
 import { WORKBENCH_COMMAND } from '../workbench/constants';
 import { ProjectsClient } from '../workbench/projects-client';
+import { ConnectionManager } from './connection-manager';
 import { WorkbenchJupyterServerProvider } from './provider';
 import {
   WorkbenchInstanceManager,
@@ -34,7 +36,10 @@ describe('WorkbenchJupyterServerProvider', () => {
 
   let projectsClientStub: SinonStubbedInstance<ProjectsClient>;
   let instanceManagerStub: SinonStubbedInstance<WorkbenchInstanceManager>;
+  let connectionManagerStub: SinonStubbedInstance<ConnectionManager>;
+  let serverChangeEmitter: vscode.EventEmitter<void>;
   let serverProvider: WorkbenchJupyterServerProvider;
+  let authEventEmitter: TestEventEmitter<AuthChangeEvent>;
 
   const MOCK_SERVER: WorkbenchJupyterServer = {
     id: 'server-1',
@@ -56,6 +61,7 @@ describe('WorkbenchJupyterServerProvider', () => {
   beforeEach(() => {
     vsCodeStub = newVsCodeStub();
     cancellationToken = new vsCodeStub.CancellationTokenSource().token;
+    authEventEmitter = new TestEventEmitter<AuthChangeEvent>();
     serverCollectionDisposeStub = sinon.stub();
     jupyterStub = {
       createJupyterServerCollection: sinon.stub(),
@@ -80,13 +86,40 @@ describe('WorkbenchJupyterServerProvider', () => {
     projectsClientStub = sinon.createStubInstance(ProjectsClient);
     projectsClientStub.getProjects.resolves([]);
     instanceManagerStub = sinon.createStubInstance(WorkbenchInstanceManager);
+    connectionManagerStub = sinon.createStubInstance(ConnectionManager);
+    serverChangeEmitter = new TestEventEmitter<void>();
+
+    vsCodeStub.authentication.getSession = sinon.stub().resolves({
+      id: 'mock-session-id',
+      accessToken: 'mock-access-token',
+      account: { id: 'mock-account-id', label: 'Mock Account' },
+      scopes: [],
+    });
+
+    vsCodeStub.authentication.getSession = sinon.stub().resolves({
+      id: 'mock-session-id',
+      accessToken: 'mock-access-token',
+      account: { id: 'mock-account-id', label: 'Mock Account' },
+      scopes: [],
+    });
 
     serverProvider = new WorkbenchJupyterServerProvider(
       vsCodeStub.asVsCode(),
+      authEventEmitter.event,
       projectsClientStub,
       instanceManagerStub,
       jupyterStub as unknown as Jupyter,
+      connectionManagerStub as unknown as ConnectionManager,
+      serverChangeEmitter,
     );
+
+    // Simulate login
+    authEventEmitter.fire({
+      added: [],
+      removed: [],
+      changed: [],
+      hasValidSession: true,
+    });
 
     vsCodeStub.window.withProgress.callsFake(async (_options, task) => {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -103,8 +136,8 @@ describe('WorkbenchJupyterServerProvider', () => {
     it('registers the "Workbench" Jupyter server collection', () => {
       sinon.assert.calledOnceWithExactly(
         jupyterStub.createJupyterServerCollection,
-        'google-cloud-workbench',
-        'Google Cloud Workbench',
+        'google-cloud',
+        'Google Cloud',
         serverProvider,
       );
     });
@@ -134,6 +167,22 @@ describe('WorkbenchJupyterServerProvider', () => {
       const result =
         await serverProvider.provideJupyterServers(cancellationToken);
       expect(result).to.deep.equal([]);
+    });
+
+    it('calls preventReconnectionAttempt when not authorized', async () => {
+      // Simulate logout
+      authEventEmitter.fire({
+        added: [],
+        removed: [],
+        changed: [],
+        hasValidSession: false,
+      });
+
+      const result =
+        await serverProvider.provideJupyterServers(cancellationToken);
+
+      expect(result).to.deep.equal([]);
+      sinon.assert.calledOnce(connectionManagerStub.preventReconnectionAttempt);
     });
   });
 
@@ -215,6 +264,30 @@ describe('WorkbenchJupyterServerProvider', () => {
         expect.fail('Should have thrown');
       } catch (err: unknown) {
         expect((err as Error).message).to.match(/Unknown command/);
+      }
+    });
+
+    it('closes menu when auth flow is cancelled or error happened', async () => {
+      const getOrCreateSessionStub = sinon.stub(
+        GoogleAuthProvider,
+        'getOrCreateSession',
+      );
+      const error = new Error('Login cancelled');
+      error.name = 'LoginCancellation';
+      getOrCreateSessionStub.rejects(error);
+
+      try {
+        await serverProvider.handleCommand(
+          WORKBENCH_COMMAND,
+          cancellationToken,
+        );
+        expect.fail('Should have thrown');
+      } catch (err: unknown) {
+        expect(err).to.equal(error);
+        sinon.assert.calledWith(
+          vsCodeStub.commands.executeCommand,
+          'workbench.action.closeQuickOpen',
+        );
       }
     });
 

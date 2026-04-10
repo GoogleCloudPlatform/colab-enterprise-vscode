@@ -50,12 +50,38 @@ describe('ProjectsClient', () => {
   beforeEach(() => {
     mockAuthClient = new OAuth2Client();
 
-    client = new ProjectsClient(mockAuthClient);
     searchProjectsStub = sinon.createStubInstance(v3.ProjectsClient);
+
+    (vscode.extensions.getExtension as sinon.SinonStub).returns({
+      packageJSON: {
+        publisher: 'googlecloudtools',
+        name: 'workbench',
+        version: '1.2.3',
+      },
+    } as vscode.Extension<undefined>);
+
+    client = new ProjectsClient(mockAuthClient);
   });
 
   afterEach(() => {
     sinon.restore();
+  });
+
+  it('sets the correct client agent header', () => {
+    const fakeConstructor = sinon.stub();
+    sinon.stub(v3, 'ProjectsClient').get(() => fakeConstructor);
+
+    new ProjectsClient(mockAuthClient);
+
+    sinon.assert.calledOnce(fakeConstructor);
+    const args = fakeConstructor.firstCall.args[0] as {
+      otherArgs: {
+        headers: Record<string, string>;
+      };
+    };
+    expect(args.otherArgs.headers['X-Goog-Api-Client']).to.match(
+      /^vertex-ai-workbench-vscode-ext\//,
+    );
   });
 
   describe('getProjects', () => {

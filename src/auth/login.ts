@@ -32,68 +32,35 @@ export type Credentials = OAuth2Credentials & {
  */
 export async function login(
   vs: typeof vscode,
-  flows: OAuth2Flow[],
+  flow: OAuth2Flow,
   client: OAuth2Client,
   scopes: string[],
 ): Promise<Credentials> {
-  if (flows.length === 0) {
-    throw new Error('No authentication flows available.');
-  }
-
-  for (const flow of flows) {
-    try {
-      if (flow !== flows[0] && !(await promptIfFallback(vs))) {
-        break;
-      }
-      return await vs.window.withProgress<Credentials>(
-        {
-          location: vs.ProgressLocation.Notification,
-          title: 'Signing in to Google...',
-          cancellable: true,
-        },
-        async (_, cancel: vscode.CancellationToken) => {
-          const nonce = uuid();
-          const pkce = await client.generateCodeVerifierAsync();
-          const triggerOptions: OAuth2TriggerOptions = {
-            cancel,
-            nonce,
-            scopes,
-            pkceChallenge: pkce.codeChallenge,
-          };
-          const flowResult = await flow.trigger(triggerOptions);
-          const res = await exchangeCodeForCredentials(
-            client,
-            flowResult,
-            pkce.codeVerifier,
-          );
-
-          return res;
-        },
+  return await vs.window.withProgress<Credentials>(
+    {
+      location: vs.ProgressLocation.Notification,
+      title: 'Signing in to Google...',
+      cancellable: true,
+    },
+    async (_, cancel: vscode.CancellationToken) => {
+      const nonce = uuid();
+      const pkce = await client.generateCodeVerifierAsync();
+      const triggerOptions: OAuth2TriggerOptions = {
+        cancel,
+        nonce,
+        scopes,
+        pkceChallenge: pkce.codeChallenge,
+      };
+      const flowResult = await flow.trigger(triggerOptions);
+      const res = await exchangeCodeForCredentials(
+        client,
+        flowResult,
+        pkce.codeVerifier,
       );
-    } catch (err) {
-      const innerMsg = err instanceof Error ? err.message : 'unknown error';
-      const msg = `Sign-in attempt failed: ${innerMsg}.`;
-      // Notify this attempt failed, but try other methods 🤞.
-      vs.window.showErrorMessage(msg);
-    }
-  }
 
-  const msg =
-    flows.length > 1
-      ? 'All authentication methods failed.'
-      : 'Authentication failed.';
-  throw new Error(msg);
-}
-
-async function promptIfFallback(vs: typeof vscode): Promise<boolean> {
-  const yes = 'Yes';
-  const no = 'No';
-  const result = await vs.window.showErrorMessage(
-    'Failed to authenticate with Google. Would you like to try a different authentication method?',
-    yes,
-    no,
+      return res;
+    },
   );
-  return result === yes;
 }
 
 async function exchangeCodeForCredentials(

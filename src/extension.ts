@@ -5,13 +5,14 @@
  */
 
 import { OAuth2Client } from 'google-auth-library';
-import vscode, { Disposable } from 'vscode';
+import vscode from 'vscode';
 import { GoogleAuthProvider } from './auth/auth-provider';
-import { getOAuth2Flows } from './auth/flows/flows';
+import { getOAuth2Flow } from './auth/flows/flows';
 import { login } from './auth/login';
 import { AuthStorage } from './auth/storage';
 import { initializeLogger } from './common/logger';
 import { CONFIG } from './config';
+import { ConnectionManager } from './jupyter/connection-manager';
 import { getJupyterApi } from './jupyter/jupyter-extension';
 import { WorkbenchJupyterServerProvider } from './jupyter/provider';
 import { WorkbenchInstanceManager } from './jupyter/workbench-instance-manager';
@@ -30,20 +31,26 @@ export async function activate(context: vscode.ExtensionContext) {
     CONFIG.ClientId,
     CONFIG.ClientNotSoSecret,
   );
-  const authFlows = getOAuth2Flows(vscode, authClient);
+  const authFlow = getOAuth2Flow(vscode, authClient);
   const authProvider = new GoogleAuthProvider(
     vscode,
     new AuthStorage(context.secrets),
     authClient,
-    (scopes: string[]) => login(vscode, authFlows, authClient, scopes),
+    (scopes: string[]) => login(vscode, authFlow, authClient, scopes),
   );
-  await authProvider.initialize();
-
   const notebooksClient = new NotebooksClient(authClient);
   const projectsClient = new ProjectsClient(authClient);
 
+  const serverChangeEmitter = new vscode.EventEmitter<void>();
+
+  const connectionManager = new ConnectionManager(
+    authProvider.onDidChangeSessions,
+    serverChangeEmitter,
+  );
+
   const workbenchServerProvider = new WorkbenchJupyterServerProvider(
     vscode,
+    authProvider.onDidChangeSessions,
     projectsClient,
     new WorkbenchInstanceManager(vscode, notebooksClient, () =>
       GoogleAuthProvider.getOrCreateSession(vscode).then(
@@ -51,24 +58,16 @@ export async function activate(context: vscode.ExtensionContext) {
       ),
     ),
     jupyter,
+    connectionManager,
+    serverChangeEmitter,
   );
 
+  await authProvider.initialize();
   context.subscriptions.push(
-    disposeAll(authFlows),
+    authFlow,
     authProvider,
     workbenchServerProvider,
-    logger
+    logger,
+    serverChangeEmitter,
   );
-}
-
-/**
- * Returns a Disposable that calls dispose on all items in the array which are
- * disposable.
- */
-function disposeAll(items: { dispose?: () => void }[]): Disposable {
-  return {
-    dispose: () => {
-      items.forEach((item) => item.dispose?.());
-    },
-  };
 }

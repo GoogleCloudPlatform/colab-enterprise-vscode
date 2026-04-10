@@ -10,6 +10,8 @@ googlers
 grayscale
 highmem
 ipykernel
+ipynb
+Kallaur
 KHTML
 milli
 mocharc
@@ -30,3 +32,4 @@ xssi
 nanos
 protos
 jaas
+googlecloudtools

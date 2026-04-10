@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Extension } from 'vscode';
+import { Extension, extensions } from 'vscode';
 import { z } from 'zod';
 
 /**
@@ -25,4 +25,12 @@ export type PackageInfo = z.infer<typeof PackageInfoSchema>;
 
 export function getPackageInfo(ext: Extension<unknown>): PackageInfo {
   return PackageInfoSchema.parse(ext.packageJSON);
+}
+
+export function getExtension(): Extension<unknown> {
+  const ext = extensions.getExtension('googlecloudtools.workbench');
+  if (!ext) {
+    throw new Error('Extension googlecloudtools.workbench not found');
+  }
+  return ext;
 }

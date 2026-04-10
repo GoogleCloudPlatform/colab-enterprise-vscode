@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 #
-# This script is used to run end-to-end tests for the Colab VS Code extension.
+# This script is used to run end-to-end tests for the Workbench VS Code extension.
 #
 # Usage:
 #   ./scripts/test_e2e.sh [--headless] [--vsix=<path_to_vsix_file>] [--auth-driver:<args>...]

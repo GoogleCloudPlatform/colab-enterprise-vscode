@@ -34,11 +34,9 @@ export interface FlowResult {
 /**
  * An OAuth2 flow that can be triggered to obtain an authorization code.
  */
-export interface OAuth2Flow {
+export interface OAuth2Flow extends vscode.Disposable {
   /** Triggers the OAuth2 flow. */
   trigger(options: OAuth2TriggerOptions): Promise<FlowResult>;
-  /** Disposes of the flow and cleans up owned resources. */
-  dispose?(): void;
 }
 
 export const DEFAULT_AUTH_URL_OPTS: GenerateAuthUrlOpts = {
@@ -49,18 +47,15 @@ export const DEFAULT_AUTH_URL_OPTS: GenerateAuthUrlOpts = {
 };
 
 /**
- * Returns the supported OAuth2 flows based on the environment in which the
- * extension is running.
+ * Returns the supported OAuth2 flow.
  */
-export function getOAuth2Flows(
+export function getOAuth2Flow(
   vs: typeof vscode,
   oAuth2Client: OAuth2Client,
-): OAuth2Flow[] {
-  const flows: OAuth2Flow[] = [];
-  if (vs.env.uiKind === vs.UIKind.Desktop) {
-    flows.push(
-      new LocalServerFlow(vs, path.join(__dirname, 'auth/media'), oAuth2Client),
-    );
-  }
-  return flows;
+): OAuth2Flow {
+  return new LocalServerFlow(
+    vs,
+    path.join(__dirname, 'auth/media'),
+    oAuth2Client,
+  );
 }

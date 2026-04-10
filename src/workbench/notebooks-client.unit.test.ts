@@ -51,6 +51,15 @@ describe('NotebooksClient', () => {
   beforeEach(() => {
     mockAuthClient = new OAuth2Client();
     listInstancesStub = sinon.createStubInstance(v2.NotebookServiceClient);
+
+    (vscode.extensions.getExtension as sinon.SinonStub).returns({
+      packageJSON: {
+        publisher: 'googlecloudtools',
+        name: 'workbench',
+        version: '1.2.3',
+      },
+    } as vscode.Extension<undefined>);
+
     client = new NotebooksClient(mockAuthClient);
 
     // Inject the stub into the client instance since it creates its own
@@ -65,6 +74,23 @@ describe('NotebooksClient', () => {
 
   afterEach(() => {
     sinon.restore();
+  });
+
+  it('sets the correct client agent header', () => {
+    const fakeConstructor = sinon.stub();
+    sinon.stub(v2, 'NotebookServiceClient').get(() => fakeConstructor);
+
+    new NotebooksClient(mockAuthClient);
+
+    sinon.assert.calledOnce(fakeConstructor);
+    const args = fakeConstructor.firstCall.args[0] as {
+      otherArgs: {
+        headers: Record<string, string>;
+      };
+    };
+    expect(args.otherArgs.headers['X-Goog-Api-Client']).to.match(
+      /^vertex-ai-workbench-vscode-ext\//,
+    );
   });
 
   describe('listInstances', () => {

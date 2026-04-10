@@ -6,7 +6,7 @@
 
 import { v2, protos } from '@google-cloud/notebooks';
 import { OAuth2Client } from 'google-auth-library';
-import { WORKBENCH_CLIENT_AGENT_HEADER } from './headers';
+import { getWorkbenchClientHeaderWithVersion } from './headers';
 
 /**
  * Client for interacting with the Google Cloud Notebooks API.
@@ -22,8 +22,8 @@ export class NotebooksClient {
       authClient,
       otherArgs: {
         headers: {
-          [WORKBENCH_CLIENT_AGENT_HEADER.key]:
-            WORKBENCH_CLIENT_AGENT_HEADER.value,
+          [getWorkbenchClientHeaderWithVersion().key]:
+            getWorkbenchClientHeaderWithVersion().value,
         },
       },
     });
