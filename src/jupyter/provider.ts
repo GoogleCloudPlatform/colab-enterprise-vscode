@@ -14,6 +14,7 @@ import {
 } from '@vscode/jupyter-extension';
 import type { CancellationToken } from 'vscode';
 import vscode from 'vscode';
+import { log } from '../common/logging/logger';
 import { GoogleAuthProvider, AuthChangeEvent } from '../auth/auth-provider';
 import { selectProjectCommand } from '../workbench/commands';
 import { WORKBENCH_COMMAND } from '../workbench/constants';
@@ -93,7 +94,7 @@ export class WorkbenchJupyterServerProvider
     if (!this.isAuthorized) {
       const message = 'Unauthorized: unable to resolve Jupyter server';
       // Logging the error because Jupyter extension swallows it
-      console.error(message);
+      log.error(message);
 
       throw new Error(message);
     }
@@ -142,7 +143,7 @@ export class WorkbenchJupyterServerProvider
       throw new Error(`Unknown command: ${JSON.stringify(command)}`);
     } catch (err: unknown) {
       await this.vs.commands.executeCommand('workbench.action.closeQuickOpen');
-      console.error(err);
+      log.error('Error handling command', err);
       throw err;
     }
   }

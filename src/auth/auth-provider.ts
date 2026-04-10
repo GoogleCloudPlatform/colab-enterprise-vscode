@@ -9,6 +9,7 @@ import fetch from 'node-fetch';
 import { v4 as uuid } from 'uuid';
 import vscode, { AuthenticationSession, Disposable } from 'vscode';
 import { z } from 'zod';
+import { log } from '../common/logging/logger';
 import { Toggleable } from '../common/toggleable';
 import { AUTHORIZATION_HEADER } from '../workbench/headers';
 import { Credentials } from './login';
@@ -135,7 +136,7 @@ export class GoogleAuthProvider
     try {
       await this.oAuth2Client.refreshAccessToken();
     } catch (err: unknown) {
-      console.warn(
+      log.warn(
         `Failed to refresh token during initialization: ${String(err)}`,
       );
       // The refresh token is likely invalid or revoked.
