@@ -5,8 +5,8 @@
  */
 
 import { OutputChannel } from 'vscode';
-import { buildTimestampLevelPrefix } from './util';
 import { ActionableLogLevel, Logger, LogLevel } from './logger';
+import { buildTimestampLevelPrefix } from './util';
 
 /**
  * A logger that appends to the provided VS Code {@link OutputChannel}.

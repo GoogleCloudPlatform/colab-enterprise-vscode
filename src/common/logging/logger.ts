@@ -117,8 +117,10 @@ export function initializeLogger(
 
   // Log environment info as expected by tests
   log.info(`Visual Studio Code: ${vs.version}`);
-  log.info(`Remote: ${vs.env.remoteName || 'local'}`);
-  log.info(`Workbench extension version: ${context.extension.packageJSON.version}`);
+  log.info(`Remote: ${vs.env.remoteName ?? 'local'}`);
+  log.info(
+    `Workbench extension version: ${(context.extension.packageJSON as { version: string }).version}`,
+  );
 
   return {
     dispose: () => {
@@ -195,5 +197,6 @@ function getConfiguredLogLevel(vs: typeof vscode): LogLevel {
     .getConfiguration('workbench.logging')
     .get<Lowercase<keyof typeof LogLevel>>('level', 'info');
 
-  return LOG_CONFIG_TO_LEVEL[configLevel] ?? LogLevel.Info;
+  const level = LOG_CONFIG_TO_LEVEL[configLevel] as LogLevel | undefined;
+  return level ?? LogLevel.Info;
 }

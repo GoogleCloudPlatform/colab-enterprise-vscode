@@ -14,8 +14,8 @@ import {
 } from '@vscode/jupyter-extension';
 import type { CancellationToken } from 'vscode';
 import vscode from 'vscode';
-import { log } from '../common/logging/logger';
 import { GoogleAuthProvider, AuthChangeEvent } from '../auth/auth-provider';
+import { log } from '../common/logging/logger';
 import { selectProjectCommand } from '../workbench/commands';
 import { WORKBENCH_COMMAND } from '../workbench/constants';
 import { ProjectsClient } from '../workbench/projects-client';

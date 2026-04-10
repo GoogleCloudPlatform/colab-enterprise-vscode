@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { buildTimestampLevelPrefix } from './util';
 import { ActionableLogLevel, Logger, LogLevel } from './logger';
+import { buildTimestampLevelPrefix } from './util';
 
 /**
  * A logger that emits to the global {@link console}.

@@ -159,7 +159,8 @@ describe('Logger', () => {
     it('does not log debug message when level is info', () => {
       loggerDisposable = initializeLogger(vscode, mockContext);
       log.debug('debug message');
-      // note: appendLine is called for env logs, so we check specifically for debug message
+      // note: appendLine is called for env logs, so we check specifically for
+      // debug message
       sinon.assert.neverCalledWith(
         outputChannelMock.appendLine,
         sinon.match(/\[DEBUG\].*debug message/),
@@ -198,7 +199,7 @@ describe('Logger', () => {
 
     it('handles Error objects in error log', () => {
       loggerDisposable = initializeLogger(vscode, mockContext);
-      log.error(new Error('error object message') as any);
+      log.error(new Error('error object message') as unknown as string);
       sinon.assert.calledWith(
         outputChannelMock.appendLine,
         sinon.match(/\[ERROR\].*error object message/),
