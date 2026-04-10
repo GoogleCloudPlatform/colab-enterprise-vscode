@@ -74,16 +74,14 @@ export async function login(
  * See https://github.com/microsoft/vscode/issues/277300 for context.
  *
  * @param vs - The VS Code API.
- * @param context - The extension context.
  * @returns A callback function that handles the error.
  */
 export function createCertificateErrorHandler(
   vs: typeof vscode,
-  context: vscode.ExtensionContext,
 ): (err: unknown) => Promise<void> {
   return async (err: unknown) => {
     if (isCertificateError(err)) {
-      await checkAndPromptSystemCertificates(vs, context);
+      await checkAndPromptSystemCertificates(vs);
     }
   };
 }
@@ -133,10 +131,7 @@ function isCertificateError(err: unknown): boolean {
   return false;
 }
 
-async function checkAndPromptSystemCertificates(
-  vs: typeof vscode,
-  context: vscode.ExtensionContext,
-) {
+async function checkAndPromptSystemCertificates(vs: typeof vscode) {
   const config = vs.workspace.getConfiguration('http');
   const systemCertificatesNode = config.get<boolean>('systemCertificatesNode');
 
@@ -144,23 +139,11 @@ async function checkAndPromptSystemCertificates(
     return;
   }
 
-  const dismissKey = 'dismissSystemCertificatesPrompt';
-  const isDismissed = context.globalState.get<boolean>(dismissKey, false);
-
-  if (isDismissed) {
-    return;
-  }
-
   const message =
     'Unable to get issuer certificate. Please enable "http.systemCertificatesNode" in VS Code settings. This allows VS Code to use the system\'s trusted SSL certificates.';
   const enableAction = 'Enable';
-  const dismissAction = "Don't Show Again";
 
-  const result = await vs.window.showInformationMessage(
-    message,
-    enableAction,
-    dismissAction,
-  );
+  const result = await vs.window.showInformationMessage(message, enableAction);
 
   if (result === enableAction) {
     await config.update(
@@ -176,7 +159,5 @@ async function checkAndPromptSystemCertificates(
     if (selection === reloadAction) {
       vs.commands.executeCommand('workbench.action.reloadWindow');
     }
-  } else if (result === dismissAction) {
-    await context.globalState.update(dismissKey, true);
   }
 }

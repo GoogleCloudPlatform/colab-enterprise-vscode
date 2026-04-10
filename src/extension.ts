@@ -35,7 +35,7 @@ export async function activate(context: vscode.ExtensionContext) {
     new AuthStorage(context.secrets),
     authClient,
     (scopes: string[]) => login(vscode, authFlow, authClient, scopes),
-    createCertificateErrorHandler(vscode, context),
+    createCertificateErrorHandler(vscode),
   );
   const notebooksClient = new NotebooksClient(authClient);
   const projectsClient = new ProjectsClient(authClient);

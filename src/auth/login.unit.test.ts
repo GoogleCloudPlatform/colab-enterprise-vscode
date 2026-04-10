@@ -167,18 +167,11 @@ describe('login', () => {
 
 describe('createCertificateErrorHandler', () => {
   let vs: VsCodeStub;
-  let context: vscode.ExtensionContext;
   let handler: (err: unknown) => Promise<void>;
 
   beforeEach(() => {
     vs = newVsCodeStub();
-    context = {
-      globalState: {
-        get: sinon.stub(),
-        update: sinon.stub(),
-      } as unknown as vscode.Memento,
-    } as unknown as vscode.ExtensionContext;
-    handler = createCertificateErrorHandler(vs.asVsCode(), context);
+    handler = createCertificateErrorHandler(vs.asVsCode());
   });
 
   it('ignores non-certificate errors', async () => {
@@ -193,27 +186,36 @@ describe('createCertificateErrorHandler', () => {
       get: sinon.stub().returns(false),
       update: sinon.stub().resolves(),
     };
-    (
-      vs as unknown as { workspace: { getConfiguration: sinon.SinonStub } }
-    ).workspace.getConfiguration
-      .withArgs('http')
-      .returns(configStub as unknown as vscode.WorkspaceConfiguration);
-    (context.globalState.get as unknown as sinon.SinonStub)
-      .withArgs('dismissSystemCertificatesPrompt', false)
-      .returns(false);
+    const mockVsCode = {
+      workspace: {
+        getConfiguration: sinon
+          .stub()
+          .withArgs('http')
+          .returns(configStub as unknown as vscode.WorkspaceConfiguration),
+      },
+      ConfigurationTarget: {
+        Global: 1,
+      },
+      window: vs.asVsCode().window,
+      commands: vs.asVsCode().commands,
+    };
+
+    const localHandler = createCertificateErrorHandler(
+      mockVsCode as unknown as typeof vscode,
+    );
 
     vs.window.showInformationMessage.resolves(
       'Enable' as unknown as vscode.MessageItem,
     );
 
-    await handler(err);
-
-    expect(vs.window.showInformationMessage.calledOnce).to.be.true;
+    await localHandler(err);
+    expect((vs.window.showInformationMessage as sinon.SinonStub).calledTwice).to
+      .be.true;
     expect(
       configStub.update.calledWith(
         'systemCertificatesNode',
         true,
-        vscode.ConfigurationTarget.Global,
+        mockVsCode.ConfigurationTarget.Global,
       ),
     ).to.be.true;
   });

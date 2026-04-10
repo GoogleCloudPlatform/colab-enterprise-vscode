@@ -104,6 +104,7 @@ describe('GoogleAuthProvider', () => {
       storageStub,
       oauth2Client,
       loginStub,
+      sinon.stub().resolves(),
     );
     authProvider.onDidChangeSessions(onDidChangeSessionsStub);
   });
