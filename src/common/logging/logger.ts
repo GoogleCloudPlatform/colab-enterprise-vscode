@@ -118,7 +118,6 @@ export function initializeLogger(
   // Log environment info as expected by tests
   log.info(`Visual Studio Code: ${vs.version}`);
   log.info(`Remote: ${vs.env.remoteName || 'local'}`);
-  log.info(`App Host: ${vs.env.appHost}`);
   log.info(`Workbench extension version: ${context.extension.packageJSON.version}`);
 
   return {
