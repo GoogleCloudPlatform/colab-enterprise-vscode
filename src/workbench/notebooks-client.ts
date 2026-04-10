@@ -18,14 +18,12 @@ export class NotebooksClient {
    * @param authClient - An OAuth2Client instance used for authentication.
    */
   constructor(authClient: OAuth2Client) {
+    const {key, value} = getWorkbenchClientHeaderWithVersion()
     this.notebookServiceClient = new v2.NotebookServiceClient({
       authClient,
-      otherArgs: {
-        headers: {
-          [getWorkbenchClientHeaderWithVersion().key]:
-            getWorkbenchClientHeaderWithVersion().value,
-        },
-      },
+      fallback: true,
+      libName: key,
+      libVersion: value
     });
   }
 
