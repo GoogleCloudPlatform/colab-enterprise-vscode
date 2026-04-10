@@ -63,6 +63,31 @@ export async function login(
   );
 }
 
+/**
+ * Creates a callback handler for 'UNABLE_TO_GET_ISSUER_CERT' errors
+ * during login.
+ *
+ * If the error is 'UNABLE_TO_GET_ISSUER_CERT', it prompts the user to enable
+ * "http.systemCertificatesNode". This allows VS Code to use the system's
+ * trusted SSL certificates.
+ *
+ * See https://github.com/microsoft/vscode/issues/277300 for context.
+ *
+ * @param vs - The VS Code API.
+ * @param context - The extension context.
+ * @returns A callback function that handles the error.
+ */
+export function createCertificateErrorHandler(
+  vs: typeof vscode,
+  context: vscode.ExtensionContext,
+): (err: unknown) => Promise<void> {
+  return async (err: unknown) => {
+    if (isCertificateError(err)) {
+      await checkAndPromptSystemCertificates(vs, context);
+    }
+  };
+}
+
 async function exchangeCodeForCredentials(
   oAuth2Client: OAuth2Client,
   flowResult: FlowResult,
@@ -99,4 +124,59 @@ function isDefinedCredentials(
     credentials.expiry_date != null &&
     credentials.scope != null
   );
+}
+
+function isCertificateError(err: unknown): boolean {
+  if (err && typeof err === 'object' && 'code' in err) {
+    return err.code === 'UNABLE_TO_GET_ISSUER_CERT';
+  }
+  return false;
+}
+
+async function checkAndPromptSystemCertificates(
+  vs: typeof vscode,
+  context: vscode.ExtensionContext,
+) {
+  const config = vs.workspace.getConfiguration('http');
+  const systemCertificatesNode = config.get<boolean>('systemCertificatesNode');
+
+  if (systemCertificatesNode === true) {
+    return;
+  }
+
+  const dismissKey = 'dismissSystemCertificatesPrompt';
+  const isDismissed = context.globalState.get<boolean>(dismissKey, false);
+
+  if (isDismissed) {
+    return;
+  }
+
+  const message =
+    'Unable to get issuer certificate. Please enable "http.systemCertificatesNode" in VS Code settings. This allows VS Code to use the system\'s trusted SSL certificates.';
+  const enableAction = 'Enable';
+  const dismissAction = "Don't Show Again";
+
+  const result = await vs.window.showInformationMessage(
+    message,
+    enableAction,
+    dismissAction,
+  );
+
+  if (result === enableAction) {
+    await config.update(
+      'systemCertificatesNode',
+      true,
+      vs.ConfigurationTarget.Global,
+    );
+    const reloadAction = 'Reload Window';
+    const selection = await vs.window.showInformationMessage(
+      'Successfully enabled "http.systemCertificatesNode". Please reload the window for the change to take effect.',
+      reloadAction,
+    );
+    if (selection === reloadAction) {
+      vs.commands.executeCommand('workbench.action.reloadWindow');
+    }
+  } else if (result === dismissAction) {
+    await context.globalState.update(dismissKey, true);
+  }
 }

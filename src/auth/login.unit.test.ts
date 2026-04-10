@@ -11,7 +11,7 @@ import sinon from 'sinon';
 import vscode from 'vscode';
 import { newVsCodeStub, VsCodeStub } from '../test/helpers/vscode';
 import { OAuth2Flow } from './flows/flows';
-import { login } from './login';
+import { login, createCertificateErrorHandler } from './login';
 import { RefreshableAuthenticationSession } from './storage';
 
 const CODE = '123';
@@ -162,5 +162,59 @@ describe('login', () => {
         login(vs.asVsCode(), flow, oauth2Client, SCOPES),
       ).to.eventually.deep.equal(CREDENTIALS);
     });
+  });
+});
+
+describe('createCertificateErrorHandler', () => {
+  let vs: VsCodeStub;
+  let context: vscode.ExtensionContext;
+  let handler: (err: unknown) => Promise<void>;
+
+  beforeEach(() => {
+    vs = newVsCodeStub();
+    context = {
+      globalState: {
+        get: sinon.stub(),
+        update: sinon.stub(),
+      } as unknown as vscode.Memento,
+    } as unknown as vscode.ExtensionContext;
+    handler = createCertificateErrorHandler(vs.asVsCode(), context);
+  });
+
+  it('ignores non-certificate errors', async () => {
+    const err = new Error('Some other error');
+    await handler(err);
+    expect(vs.window.showInformationMessage.called).to.be.false;
+  });
+
+  it('prompts user when UNABLE_TO_GET_ISSUER_CERT error occurs', async () => {
+    const err = { code: 'UNABLE_TO_GET_ISSUER_CERT' };
+    const configStub = {
+      get: sinon.stub().returns(false),
+      update: sinon.stub().resolves(),
+    };
+    (
+      vs as unknown as { workspace: { getConfiguration: sinon.SinonStub } }
+    ).workspace.getConfiguration
+      .withArgs('http')
+      .returns(configStub as unknown as vscode.WorkspaceConfiguration);
+    (context.globalState.get as unknown as sinon.SinonStub)
+      .withArgs('dismissSystemCertificatesPrompt', false)
+      .returns(false);
+
+    vs.window.showInformationMessage.resolves(
+      'Enable' as unknown as vscode.MessageItem,
+    );
+
+    await handler(err);
+
+    expect(vs.window.showInformationMessage.calledOnce).to.be.true;
+    expect(
+      configStub.update.calledWith(
+        'systemCertificatesNode',
+        true,
+        vscode.ConfigurationTarget.Global,
+      ),
+    ).to.be.true;
   });
 });

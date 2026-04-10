@@ -72,6 +72,7 @@ export class GoogleAuthProvider
     private readonly storage: AuthStorage,
     private readonly oAuth2Client: OAuth2Client,
     private readonly login: (scopes: string[]) => Promise<Credentials>,
+    private readonly onCertificateError: (err: unknown) => Promise<void>,
   ) {
     this.emitter = new vs.EventEmitter<AuthChangeEvent>();
     this.onDidChangeSessions = this.emitter.event;
@@ -273,6 +274,7 @@ export class GoogleAuthProvider
       );
       return this.session;
     } catch (err: unknown) {
+      await this.onCertificateError(err);
       const msg = err instanceof Error ? err.message : 'unknown error';
       this.vs.window.showErrorMessage(`Sign in failed: ${msg}`);
       throw err;
