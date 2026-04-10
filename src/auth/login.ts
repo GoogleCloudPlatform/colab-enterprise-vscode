@@ -124,9 +124,11 @@ function isDefinedCredentials(
   );
 }
 
+const UNABLE_TO_GET_ISSUER_CERT = 'UNABLE_TO_GET_ISSUER_CERT';
+
 function isCertificateError(err: unknown): boolean {
   if (err && typeof err === 'object' && 'code' in err) {
-    return err.code === 'UNABLE_TO_GET_ISSUER_CERT';
+    return err.code === UNABLE_TO_GET_ISSUER_CERT;
   }
   return false;
 }
