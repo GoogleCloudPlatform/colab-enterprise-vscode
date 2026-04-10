@@ -61,10 +61,63 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   await authProvider.initialize();
+  void checkAndPromptSystemCertificates(context);
   context.subscriptions.push(
     authFlow,
     authProvider,
     workbenchServerProvider,
     serverChangeEmitter,
   );
+}
+
+async function checkAndPromptSystemCertificates(
+  context: vscode.ExtensionContext,
+) {
+  const config = vscode.workspace.getConfiguration('http');
+  const systemCertificatesNode = config.get<boolean>('systemCertificatesNode');
+  console.log('systemCertificatesNode value:', systemCertificatesNode);
+  console.log(
+    'systemCertificatesNode inspect:',
+    config.inspect('systemCertificatesNode'),
+  );
+
+  if (systemCertificatesNode === true) {
+    return;
+  }
+
+  const dismissKey = 'dismissSystemCertificatesPrompt';
+  const isDismissed = context.globalState.get<boolean>(dismissKey, false);
+
+  if (isDismissed) {
+    return;
+  }
+
+  const message =
+    'To ensure secure connections work correctly, it is recommended to enable "http.systemCertificatesNode" in VS Code.';
+  const enableAction = 'Enable';
+  const dismissAction = "Don't Show Again";
+
+  const result = await vscode.window.showInformationMessage(
+    message,
+    enableAction,
+    dismissAction,
+  );
+
+  if (result === enableAction) {
+    await config.update(
+      'systemCertificatesNode',
+      true,
+      vscode.ConfigurationTarget.Global,
+    );
+    const reloadAction = 'Reload Window';
+    const selection = await vscode.window.showInformationMessage(
+      'Successfully enabled "http.systemCertificatesNode". Please reload the window for the change to take effect.',
+      reloadAction,
+    );
+    if (selection === reloadAction) {
+      vscode.commands.executeCommand('workbench.action.reloadWindow');
+    }
+  } else if (result === dismissAction) {
+    await context.globalState.update(dismissKey, true);
+  }
 }
