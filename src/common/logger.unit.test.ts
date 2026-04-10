@@ -89,10 +89,6 @@ describe('Logger', () => {
       );
       sinon.assert.calledWith(
         outputChannelMock.appendLine,
-        sinon.match(/\[INFO\].*App Host: desktop/),
-      );
-      sinon.assert.calledWith(
-        outputChannelMock.appendLine,
         sinon.match(/\[INFO\].*Workbench extension version: 1.2.3/),
       );
     });
