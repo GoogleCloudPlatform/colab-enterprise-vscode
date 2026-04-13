@@ -36,10 +36,17 @@ enum QuickPickItemKind {
   Default = 0,
 }
 
+<<<<<<< fix-cert-issue
 enum ConfigurationTarget {
   Global = 1,
   Workspace = 2,
   WorkspaceFolder = 3,
+=======
+enum ExtensionMode {
+  Production = 1,
+  Development = 2,
+  Test = 3,
+>>>>>>> main
 }
 
 export interface VsCodeStub {
@@ -87,8 +94,19 @@ export interface VsCodeStub {
     createQuickPick: sinon.SinonStubbedMember<
       typeof vscode.window.createQuickPick
     >;
+
+    createOutputChannel: sinon.SinonStub;
+  };
+  workspace: {
+    getConfiguration: sinon.SinonStubbedMember<
+      typeof vscode.workspace.getConfiguration
+    >;
+    onDidChangeConfiguration: sinon.SinonStubbedMember<
+      typeof vscode.workspace.onDidChangeConfiguration
+    >;
   };
   ProgressLocation: typeof ProgressLocation;
+  ExtensionMode: typeof ExtensionMode;
   QuickInputButtons: typeof TestQuickInputButtons;
   extensions: {
     getExtension: sinon.SinonStubbedMember<
@@ -116,6 +134,7 @@ export function newVsCodeStub(): VsCodeStub {
     asVsCode: function (): typeof vscode {
       return {
         ...this,
+        version: '1.109.5',
         env: { ...this.env } as Partial<typeof vscode.env> as typeof vscode.env,
         window: {
           ...this.window,
@@ -135,6 +154,9 @@ export function newVsCodeStub(): VsCodeStub {
         authentication: { ...this.authentication } as Partial<
           typeof vscode.authentication
         > as typeof vscode.authentication,
+        workspace: { ...this.workspace } as Partial<
+          typeof vscode.workspace
+        > as typeof vscode.workspace,
       } as Partial<typeof vscode> as typeof vscode;
     },
     Uri: TestUri,
@@ -163,8 +185,14 @@ export function newVsCodeStub(): VsCodeStub {
       showQuickPick: sinon.stub(),
       createInputBox: sinon.stub(),
       createQuickPick: sinon.stub(),
+      createOutputChannel: sinon.stub(),
+    },
+    workspace: {
+      getConfiguration: sinon.stub(),
+      onDidChangeConfiguration: sinon.stub(),
     },
     ProgressLocation: ProgressLocation,
+    ExtensionMode: ExtensionMode,
     QuickInputButtons: TestQuickInputButtons,
     extensions: {
       getExtension: sinon.stub(),

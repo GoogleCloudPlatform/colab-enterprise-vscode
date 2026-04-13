@@ -10,6 +10,7 @@ import * as http from 'http';
 import * as path from 'path';
 import { OAuth2Client } from 'google-auth-library';
 import vscode from 'vscode';
+import { log } from '../../common/logging/logger';
 import { LoopbackHandler, LoopbackServer } from '../../common/loopback-server';
 import { CodeManager } from '../code-manager';
 import {
@@ -130,7 +131,7 @@ class Handler implements LoopbackHandler {
         break;
       }
       default: {
-        console.warn('Received unhandled request: ', req);
+        log.warn('Received unhandled request: ', req);
         res.writeHead(404);
         res.end('Not Found');
         break;
@@ -156,7 +157,7 @@ class Handler implements LoopbackHandler {
 function sendFile(res: http.ServerResponse, filepath: string): void {
   fs.readFile(filepath, (err, body) => {
     if (err) {
-      console.error(err);
+      log.error('Error reading file', err);
       res.writeHead(500);
       res.end('Internal Server Error');
     } else {

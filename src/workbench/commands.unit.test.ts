@@ -164,6 +164,24 @@ describe('selectProjectCommand', () => {
       expect(result).to.deep.equal({ label: 'Instance 1', id: 'i-1' });
     });
 
+    it('enables matching by detail for project selection', async () => {
+      const commandPromise = selectProjectCommand(
+        vsCodeStub,
+        resourceManagerStub,
+        instanceManagerStub,
+      );
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(quickPicks.length).to.equal(1);
+      const qp = quickPicks[0];
+      expect(qp.matchOnDetail).to.be.true;
+
+      // Cancel the flow to resolve the promise
+      qp.onDidHide.getCall(0).args[0]();
+      await commandPromise;
+    });
+
     it('opens external URL when project has no instances', async () => {
       instanceManagerStub.getWorkbenchServers.resolves([]);
 

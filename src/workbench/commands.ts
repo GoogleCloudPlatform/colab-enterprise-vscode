@@ -6,6 +6,7 @@
 
 import { JupyterServer } from '@vscode/jupyter-extension';
 import type vscode from 'vscode';
+import { log } from '../common/logging/logger';
 import { InputStep, MultiStepInput } from '../common/multi-step-quickpick';
 import {
   WorkbenchInstanceManager,
@@ -45,7 +46,7 @@ export async function selectProjectCommand(
           detail: p.id,
         }));
       } catch (error: unknown) {
-        console.error('Failed to fetch initial projects:', error);
+        log.error('Failed to fetch initial projects:', error);
       }
 
       selectedProject = await input.showQuickPick<vscode.QuickPickItem>({
@@ -53,6 +54,9 @@ export async function selectProjectCommand(
         ignoreFocusOut: true,
         placeholder: 'Select a Google Cloud Project',
         items: initialItems,
+        onDidCreate: (quickPick) => {
+          quickPick.matchOnDetail = true;
+        },
         onDidChangeValue: (value, quickPick) => {
           if (searchTimeout) {
             clearTimeout(searchTimeout);
@@ -61,7 +65,7 @@ export async function selectProjectCommand(
             const qp = quickPick as vscode.QuickPick<vscode.QuickPickItem>;
             void updateProjectList(projectsClient, qp, value).catch(
               (err: unknown) => {
-                console.error('Unhandled promise rejection in timeout:', err);
+                log.error('Unhandled promise rejection in timeout:', err);
               },
             );
           }, SEARCH_DEBOUNCE_MS);
@@ -169,7 +173,7 @@ async function updateProjectList(
       detail: p.id,
     }));
   } catch (error: unknown) {
-    console.error('Failed to fetch projects:', error);
+    log.error('Failed to fetch projects:', error);
   } finally {
     quickPick.busy = false;
   }
