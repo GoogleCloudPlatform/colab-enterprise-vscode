@@ -36,17 +36,16 @@ enum QuickPickItemKind {
   Default = 0,
 }
 
-<<<<<<< fix-cert-issue
 enum ConfigurationTarget {
   Global = 1,
   Workspace = 2,
   WorkspaceFolder = 3,
-=======
+}
+
 enum ExtensionMode {
   Production = 1,
   Development = 2,
   Test = 3,
->>>>>>> main
 }
 
 export interface VsCodeStub {
@@ -62,11 +61,6 @@ export interface VsCodeStub {
   commands: {
     executeCommand: sinon.SinonStubbedMember<
       typeof vscode.commands.executeCommand
-    >;
-  };
-  workspace: {
-    getConfiguration: sinon.SinonStubbedMember<
-      typeof vscode.workspace.getConfiguration
     >;
   };
   UIKind: typeof UIKind;
@@ -154,9 +148,6 @@ export function newVsCodeStub(): VsCodeStub {
         authentication: { ...this.authentication } as Partial<
           typeof vscode.authentication
         > as typeof vscode.authentication,
-        workspace: { ...this.workspace } as Partial<
-          typeof vscode.workspace
-        > as typeof vscode.workspace,
       } as Partial<typeof vscode> as typeof vscode;
     },
     Uri: TestUri,
@@ -166,9 +157,6 @@ export function newVsCodeStub(): VsCodeStub {
     ConfigurationTarget: ConfigurationTarget,
     commands: {
       executeCommand: sinon.stub(),
-    },
-    workspace: {
-      getConfiguration: sinon.stub(),
     },
     UIKind: UIKind,
     env: {
