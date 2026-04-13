@@ -34,14 +34,12 @@ export class ProjectsClient {
    * Google Cloud services.
    */
   constructor(authClient: OAuth2Client) {
+    const { key: libName, value: libVersion } =
+      getWorkbenchClientHeaderWithVersion();
     this.projectClient = new v3.ProjectsClient({
       authClient: authClient,
-      otherArgs: {
-        headers: {
-          [getWorkbenchClientHeaderWithVersion().key]:
-            getWorkbenchClientHeaderWithVersion().value,
-        },
-      },
+      libName,
+      libVersion,
     });
   }
 

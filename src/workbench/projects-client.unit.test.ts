@@ -67,7 +67,7 @@ describe('ProjectsClient', () => {
     sinon.restore();
   });
 
-  it('sets the correct client agent header', () => {
+  it('sets the correct client agent header in constructor', () => {
     const fakeConstructor = sinon.stub();
     sinon.stub(v3, 'ProjectsClient').get(() => fakeConstructor);
 
@@ -75,12 +75,11 @@ describe('ProjectsClient', () => {
 
     sinon.assert.calledOnce(fakeConstructor);
     const args = fakeConstructor.firstCall.args[0] as {
-      otherArgs: {
-        headers: Record<string, string>;
-      };
+      libName: string;
+      libVersion: string;
     };
-    expect(args.otherArgs.headers['X-Goog-Api-Client']).to.match(
-      /^vertex-ai-workbench-vscode-ext\//,
+    expect(`${args.libName}/${args.libVersion}`).to.match(
+      /vertex-ai-workbench-vscode-ext\/([0-9A-Za-z._-]+)/,
     );
   });
 
