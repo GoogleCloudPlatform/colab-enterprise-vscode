@@ -11,7 +11,7 @@ import sinon from 'sinon';
 import vscode from 'vscode';
 import { newVsCodeStub, VsCodeStub } from '../test/helpers/vscode';
 import { OAuth2Flow } from './flows/flows';
-import { login, createCertificateErrorHandler } from './login';
+import { login } from './login';
 import { RefreshableAuthenticationSession } from './storage';
 
 const CODE = '123';
@@ -162,61 +162,5 @@ describe('login', () => {
         login(vs.asVsCode(), flow, oauth2Client, SCOPES),
       ).to.eventually.deep.equal(CREDENTIALS);
     });
-  });
-});
-
-describe('createCertificateErrorHandler', () => {
-  let vs: VsCodeStub;
-  let handler: (err: unknown) => Promise<void>;
-
-  beforeEach(() => {
-    vs = newVsCodeStub();
-    handler = createCertificateErrorHandler(vs.asVsCode());
-  });
-
-  it('ignores non-certificate errors', async () => {
-    const err = new Error('Some other error');
-    await handler(err);
-    expect(vs.window.showInformationMessage.called).to.be.false;
-  });
-
-  it('prompts user when UNABLE_TO_GET_ISSUER_CERT error occurs', async () => {
-    const err = { code: 'UNABLE_TO_GET_ISSUER_CERT' };
-    const configStub = {
-      get: sinon.stub().returns(false),
-      update: sinon.stub().resolves(),
-    };
-    const mockVsCode = {
-      workspace: {
-        getConfiguration: sinon
-          .stub()
-          .withArgs('http')
-          .returns(configStub as unknown as vscode.WorkspaceConfiguration),
-      },
-      ConfigurationTarget: {
-        Global: 1,
-      },
-      window: vs.asVsCode().window,
-      commands: vs.asVsCode().commands,
-    };
-
-    const localHandler = createCertificateErrorHandler(
-      mockVsCode as unknown as typeof vscode,
-    );
-
-    vs.window.showInformationMessage.resolves(
-      'Enable' as unknown as vscode.MessageItem,
-    );
-
-    await localHandler(err);
-    expect((vs.window.showInformationMessage as sinon.SinonStub).calledTwice).to
-      .be.true;
-    expect(
-      configStub.update.calledWith(
-        'systemCertificatesNode',
-        true,
-        mockVsCode.ConfigurationTarget.Global,
-      ),
-    ).to.be.true;
   });
 });

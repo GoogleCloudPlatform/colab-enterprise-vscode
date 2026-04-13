@@ -8,7 +8,7 @@ import { OAuth2Client } from 'google-auth-library';
 import vscode from 'vscode';
 import { GoogleAuthProvider } from './auth/auth-provider';
 import { getOAuth2Flow } from './auth/flows/flows';
-import { login, createCertificateErrorHandler } from './auth/login';
+import { login } from './auth/login';
 import { AuthStorage } from './auth/storage';
 import { CONFIG } from './config';
 import { ConnectionManager } from './jupyter/connection-manager';
@@ -35,7 +35,6 @@ export async function activate(context: vscode.ExtensionContext) {
     new AuthStorage(context.secrets),
     authClient,
     (scopes: string[]) => login(vscode, authFlow, authClient, scopes),
-    createCertificateErrorHandler(vscode),
   );
   const notebooksClient = new NotebooksClient(authClient);
   const projectsClient = new ProjectsClient(authClient);

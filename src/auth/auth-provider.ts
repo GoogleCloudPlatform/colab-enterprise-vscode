@@ -22,6 +22,8 @@ export const REQUIRED_SCOPES = [
 const PROVIDER_ID = 'google-cloud-platform';
 const PROVIDER_LABEL = 'Google Cloud Platform';
 const REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes
+const UNABLE_TO_GET_ISSUER_CERT = 'UNABLE_TO_GET_ISSUER_CERT';
+const SYSTEM_CERTIFICATES_NODE = 'systemCertificatesNode';
 
 /**
  * An {@link vscode.Event} which fires when an authentication session is added,
@@ -72,7 +74,6 @@ export class GoogleAuthProvider
     private readonly storage: AuthStorage,
     private readonly oAuth2Client: OAuth2Client,
     private readonly login: (scopes: string[]) => Promise<Credentials>,
-    private readonly onCertificateError: (err: unknown) => Promise<void>,
   ) {
     this.emitter = new vs.EventEmitter<AuthChangeEvent>();
     this.onDidChangeSessions = this.emitter.event;
@@ -274,7 +275,7 @@ export class GoogleAuthProvider
       );
       return this.session;
     } catch (err: unknown) {
-      await this.onCertificateError(err);
+      await this.handleCertificateError(err);
       const msg = err instanceof Error ? err.message : 'unknown error';
       this.vs.window.showErrorMessage(`Sign in failed: ${msg}`);
       throw err;
@@ -352,6 +353,51 @@ export class GoogleAuthProvider
     }
     const json: unknown = await response.json();
     return UserInfoSchema.parse(json);
+  }
+
+  private isCertificateError(err: unknown): boolean {
+    if (err && typeof err === 'object' && 'code' in err) {
+      return err.code === UNABLE_TO_GET_ISSUER_CERT;
+    }
+    return false;
+  }
+
+  private shouldPromptSystemCertificates(): boolean {
+    const config = this.vs.workspace.getConfiguration('http');
+    return config.get<boolean>(SYSTEM_CERTIFICATES_NODE) !== true;
+  }
+
+  private async promptSystemCertificates(): Promise<void> {
+    const config = this.vs.workspace.getConfiguration('http');
+    const message = `Unable to get issuer certificate. Please enable "http.${SYSTEM_CERTIFICATES_NODE}" in VS Code settings. This allows VS Code to use the system's trusted SSL certificates.`;
+    const enableAction = 'Enable';
+
+    const result = await this.vs.window.showInformationMessage(
+      message,
+      enableAction,
+    );
+
+    if (result === enableAction) {
+      await config.update(
+        SYSTEM_CERTIFICATES_NODE,
+        true,
+        this.vs.ConfigurationTarget.Global,
+      );
+      const reloadAction = 'Reload Window';
+      const selection = await this.vs.window.showInformationMessage(
+        `Successfully enabled "http.${SYSTEM_CERTIFICATES_NODE}". Please reload the window for the change to take effect.`,
+        reloadAction,
+      );
+      if (selection === reloadAction) {
+        this.vs.commands.executeCommand('workbench.action.reloadWindow');
+      }
+    }
+  }
+
+  private async handleCertificateError(err: unknown): Promise<void> {
+    if (this.isCertificateError(err) && this.shouldPromptSystemCertificates()) {
+      await this.promptSystemCertificates();
+    }
   }
 
   private assertReady(): void {

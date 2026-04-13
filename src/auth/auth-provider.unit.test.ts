@@ -104,7 +104,6 @@ describe('GoogleAuthProvider', () => {
       storageStub,
       oauth2Client,
       loginStub,
-      sinon.stub().resolves(),
     );
     authProvider.onDidChangeSessions(onDidChangeSessionsStub);
   });
@@ -517,6 +516,71 @@ describe('GoogleAuthProvider', () => {
         vsCodeStub.window.showErrorMessage,
         sinon.match(/Sign in failed.+/),
       );
+    });
+
+    it('handles certificate error by prompting user', async () => {
+      await authProvider.initialize();
+      const certErr = { code: 'UNABLE_TO_GET_ISSUER_CERT' };
+      loginStub.rejects(certErr);
+
+      const configStub = {
+        get: sinon.stub().returns(false),
+        update: sinon.stub().resolves(),
+      };
+
+      vsCodeStub.workspace.getConfiguration
+        .withArgs('http')
+        .returns(configStub as unknown as vscode.WorkspaceConfiguration);
+
+      vsCodeStub.window.showInformationMessage.resolves(
+        'Enable' as unknown as vscode.MessageItem,
+      );
+
+      await expect(authProvider.createSession(SCOPES)).to.eventually.be
+        .rejected;
+
+      expect(
+        (vsCodeStub.window.showInformationMessage as sinon.SinonStub)
+          .calledTwice,
+      ).to.be.true;
+      expect(
+        configStub.update.calledWith(
+          'systemCertificatesNode',
+          true,
+          vsCodeStub.ConfigurationTarget.Global,
+        ),
+      ).to.be.true;
+    });
+
+    it('executes reloadWindow command when user selects Reload Window', async () => {
+      await authProvider.initialize();
+      const certErr = { code: 'UNABLE_TO_GET_ISSUER_CERT' };
+      loginStub.rejects(certErr);
+
+      const configStub = {
+        get: sinon.stub().returns(false),
+        update: sinon.stub().resolves(),
+      };
+
+      vsCodeStub.workspace.getConfiguration
+        .withArgs('http')
+        .returns(configStub as unknown as vscode.WorkspaceConfiguration);
+
+      vsCodeStub.window.showInformationMessage
+        .onFirstCall()
+        .resolves('Enable' as unknown as vscode.MessageItem);
+      vsCodeStub.window.showInformationMessage
+        .onSecondCall()
+        .resolves('Reload Window' as unknown as vscode.MessageItem);
+
+      await expect(authProvider.createSession(SCOPES)).to.eventually.be
+        .rejected;
+
+      expect(
+        (vsCodeStub.commands.executeCommand as sinon.SinonStub).calledWith(
+          'workbench.action.reloadWindow',
+        ),
+      ).to.be.true;
     });
 
     describe('with a successful login', () => {
