@@ -34,11 +34,12 @@ export class ProjectsClient {
    * Google Cloud services.
    */
   constructor(authClient: OAuth2Client) {
-    const { key, value } = getWorkbenchClientHeaderWithVersion();
+    const { key: libName, value: libVersion } =
+      getWorkbenchClientHeaderWithVersion();
     this.projectClient = new v3.ProjectsClient({
       authClient: authClient,
-      libName: key,
-      libVersion: value,
+      libName,
+      libVersion,
     });
   }
 
@@ -55,11 +56,9 @@ export class ProjectsClient {
       query: `(id:"*${escapedQuery}*" OR name:"*${escapedQuery}*") AND state:ACTIVE`,
     };
 
-    const response = await this.projectClient.searchProjects(request, {
+    const [projectsList] = await this.projectClient.searchProjects(request, {
       autoPaginate: false,
     });
-
-    const projectsList = response[0];
 
     return projectsList
       .filter((project) => project.projectId)
