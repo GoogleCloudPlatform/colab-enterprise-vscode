@@ -197,5 +197,5 @@ function getConfiguredLogLevel(vs: typeof vscode): LogLevel {
     .getConfiguration('workbench.logging')
     .get<Lowercase<keyof typeof LogLevel>>('level', 'info');
 
-  return LOG_CONFIG_TO_LEVEL[configLevel] ?? LogLevel.Info;
+  return LOG_CONFIG_TO_LEVEL[configLevel] || LogLevel.Info;
 }
