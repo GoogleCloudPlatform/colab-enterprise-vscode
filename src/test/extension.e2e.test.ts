@@ -47,6 +47,10 @@ describe('Workbench Extension', function () {
     // Wait for VS Code UI to settle before running tests.
     workbench = new Workbench();
     driver = workbench.getDriver();
+
+    // Dismiss any modal window that appears at start.
+    await driver.sleep(ELEMENT_WAIT_MS);
+    await driver.actions().sendKeys(Key.ESCAPE).perform();
     await driver.sleep(ELEMENT_WAIT_MS);
   });
 
