@@ -194,7 +194,7 @@ const LOG_CONFIG_TO_LEVEL: Record<
 
 function getConfiguredLogLevel(vs: typeof vscode): LogLevel {
   const configLevel = vs.workspace
-    .getConfiguration('workbench-notebooks.logging')
+    .getConfiguration('workbench.logging')
     .get<Lowercase<keyof typeof LogLevel>>('level', 'info');
 
   return LOG_CONFIG_TO_LEVEL[configLevel] || LogLevel.Info;
