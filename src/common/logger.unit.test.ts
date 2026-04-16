@@ -72,9 +72,9 @@ describe('Logger', () => {
   });
 
   describe('initializeLogger', () => {
-    it('creates output channel "Workbench"', () => {
+    it('creates output channel "Workbench Notebooks"', () => {
       loggerDisposable = initializeLogger(vscode, mockContext);
-      sinon.assert.calledWith(createOutputChannelStub, 'Workbench');
+      sinon.assert.calledWith(createOutputChannelStub, 'Workbench Notebooks');
     });
 
     it('logs environment info on initialization', () => {
@@ -89,7 +89,7 @@ describe('Logger', () => {
       );
       sinon.assert.calledWith(
         outputChannelMock.appendLine,
-        sinon.match(/\[INFO\].*Workbench extension version: 1.2.3/),
+        sinon.match(/\[INFO\].*Workbench Notebooks extension version: 1.2.3/),
       );
     });
 

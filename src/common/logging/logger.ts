@@ -101,13 +101,13 @@ export function initializeLogger(
 
   level = getConfiguredLogLevel(vs);
   const configListener = vs.workspace.onDidChangeConfiguration((e) => {
-    if (e.affectsConfiguration('workbench.logging')) {
+    if (e.affectsConfiguration('workbench-notebooks.logging')) {
       level = getConfiguredLogLevel(vs);
     }
   });
 
   // Create the output channel once.
-  const outputChannel = vs.window.createOutputChannel('Workbench');
+  const outputChannel = vs.window.createOutputChannel('Workbench Notebooks');
   loggers.push(new OutputChannelLogger(outputChannel));
 
   if (context.extensionMode === vs.ExtensionMode.Development) {
@@ -119,7 +119,7 @@ export function initializeLogger(
   log.info(`Visual Studio Code: ${vs.version}`);
   log.info(`Remote: ${vs.env.remoteName ?? 'local'}`);
   log.info(
-    `Workbench extension version: ${(context.extension.packageJSON as { version: string }).version}`,
+    `Workbench Notebooks extension version: ${(context.extension.packageJSON as { version: string }).version}`,
   );
 
   return {
@@ -194,7 +194,7 @@ const LOG_CONFIG_TO_LEVEL: Record<
 
 function getConfiguredLogLevel(vs: typeof vscode): LogLevel {
   const configLevel = vs.workspace
-    .getConfiguration('workbench.logging')
+    .getConfiguration('workbench-notebooks.logging')
     .get<Lowercase<keyof typeof LogLevel>>('level', 'info');
 
   return LOG_CONFIG_TO_LEVEL[configLevel] || LogLevel.Info;

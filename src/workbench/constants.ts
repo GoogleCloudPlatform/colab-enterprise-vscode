@@ -27,7 +27,7 @@ export interface RegisteredCommand extends Command {
  * server.
  */
 export const WORKBENCH_COMMAND: JupyterServerCommand = {
-  label: 'Workbench',
+  label: 'Workbench Notebooks',
   description: 'Connect to Vertex AI Workbench',
 };
 
