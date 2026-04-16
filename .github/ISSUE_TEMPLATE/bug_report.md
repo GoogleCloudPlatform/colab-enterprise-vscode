@@ -13,7 +13,7 @@ TODO A clear and concise description of what the bug is.
 ## Environment
 
 - VS Code version: TODO
-- Workbench extension version: TODO
+- Workbench Notebooks extension version: TODO
 - Jupyter extension version: TODO
 - OS (Linux | Mac | Windows): TODO
 

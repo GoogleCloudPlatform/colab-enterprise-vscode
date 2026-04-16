@@ -15,8 +15,8 @@ this extension exposes Workbench Jupyter servers directly in VS Code!
 
 1. Install [VS Code](https://code.visualstudio.com).
 1. Install the Workbench extension from either the [Visual Studio
-   Marketplace](https://marketplace.visualstudio.com/items?itemName=googlecloudtools.workbench)
-   or [Open VSX](https://open-vsx.org/extension/googlecloudtools/workbench).
+   Marketplace](https://marketplace.visualstudio.com/items?itemName=googlecloudtools.workbench-notebooks)
+   or [Open VSX](https://open-vsx.org/extension/googlecloudtools/workbench-notebooks).
 1. Install the [Jupyter
    extension](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter) if not already installed.
 1. Open or create a notebook file.
