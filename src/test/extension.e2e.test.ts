@@ -79,7 +79,7 @@ describe('Workbench Notebooks Extension', function () {
       }
 
       await selectQuickPickItem({
-        item: 'Workbench Notebooks',
+        item: 'Workbench',
         quickPick: 'Select a Jupyter Server',
       });
 
