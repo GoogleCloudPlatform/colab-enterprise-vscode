@@ -9,7 +9,9 @@ import vscode from 'vscode';
 
 describe('Extension', () => {
   it('should be present', () => {
-    assert.ok(vscode.extensions.getExtension('googlecloudtools.workbench-notebooks'));
+    assert.ok(
+      vscode.extensions.getExtension('googlecloudtools.workbench-notebooks'),
+    );
   });
 
   it('should activate', async () => {
