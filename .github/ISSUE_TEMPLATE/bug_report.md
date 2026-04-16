@@ -37,7 +37,7 @@ TODO: Optionally add any other context about the problem here.
 
 ## Logs
 
-Logs from `Workbench` in the `Output` panel (`View` > `Output`, change the drop-down the upper-right of the `Output` panel to `Workbench`).
+Logs from `Workbench Notebooks` in the `Output` panel (`View` > `Output`, change the drop-down the upper-right of the `Output` panel to `Workbench Notebooks`).
 
 ```txt
 TODO
