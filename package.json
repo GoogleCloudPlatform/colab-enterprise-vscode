@@ -1,7 +1,7 @@
 {
-  "name": "workbench",
+  "name": "workbench-notebooks",
   "publisher": "googlecloudtools",
-  "displayName": "Workbench",
+  "displayName": "Workbench Notebooks",
   "description": "Connect notebooks to Vertex AI Workbench instances.",
   "icon": "icon.png",
   "version": "0.1.0",

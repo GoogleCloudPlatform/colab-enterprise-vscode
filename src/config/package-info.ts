@@ -28,9 +28,9 @@ export function getPackageInfo(ext: Extension<unknown>): PackageInfo {
 }
 
 export function getExtension(): Extension<unknown> {
-  const ext = extensions.getExtension('googlecloudtools.workbench');
+  const ext = extensions.getExtension('googlecloudtools.workbench-notebooks');
   if (!ext) {
-    throw new Error('Extension googlecloudtools.workbench not found');
+    throw new Error('Extension googlecloudtools.workbench-notebooks not found');
   }
   return ext;
 }
