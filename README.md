@@ -1,6 +1,6 @@
-# Vertex AI Workbench VS Code Extension
+# Workbench Notebooks VS Code Extension
 
-[Vertex AI Workbench](https://cloud.google.com/vertex-ai/docs/workbench/introduction) instances are Jupyter notebook-based development environments for the entire data science workflow. You can interact with Vertex AI and other Google Cloud services from within a Vertex AI Workbench instance's Jupyter notebook. Built atop
+[Workbench Notebooks](https://cloud.google.com/vertex-ai/docs/workbench/introduction) instances are Jupyter notebook-based development environments for the entire data science workflow. You can interact with other Google Cloud services from within a Workbench instance's Jupyter notebook. Built atop
 the [Jupyter
 extension](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter),
 this extension exposes Workbench Jupyter servers directly in VS Code!

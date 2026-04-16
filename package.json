@@ -2,7 +2,7 @@
   "name": "workbench-notebooks",
   "publisher": "googlecloudtools",
   "displayName": "Workbench Notebooks",
-  "description": "Connect notebooks to Vertex AI Workbench instances.",
+  "description": "Connect notebooks to Workbench instances.",
   "icon": "icon.png",
   "version": "0.1.0",
   "pricing": "Free",
