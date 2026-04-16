@@ -4,7 +4,8 @@
   "displayName": "Workbench Notebooks",
   "description": "Connect notebooks to Workbench instances.",
   "icon": "icon.png",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "preview": true,
   "pricing": "Free",
   "homepage": "https://github.com/GoogleCloudPlatform/colab-enterprise-vscode",
   "repository": {
