@@ -101,7 +101,7 @@ export function initializeLogger(
 
   level = getConfiguredLogLevel(vs);
   const configListener = vs.workspace.onDidChangeConfiguration((e) => {
-    if (e.affectsConfiguration('workbench-notebooks.logging')) {
+    if (e.affectsConfiguration('workbench.logging')) {
       level = getConfiguredLogLevel(vs);
     }
   });
