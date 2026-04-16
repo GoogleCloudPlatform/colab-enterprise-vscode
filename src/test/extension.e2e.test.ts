@@ -85,7 +85,8 @@ describe('Workbench Notebooks Extension', function () {
 
       await pushDialogButton({
         button: 'Allow',
-        dialog: "The extension 'Workbench Notebooks' wants to sign in using Google.",
+        dialog:
+          "The extension 'Workbench Notebooks' wants to sign in using Google.",
       });
 
       // Begin the sign-in process by copying the OAuth URL to the clipboard and
