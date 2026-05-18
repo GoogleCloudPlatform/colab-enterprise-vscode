@@ -141,7 +141,7 @@ class Handler implements LoopbackHandler {
 
   redirectSuccessfulAuth(res: http.ServerResponse): void {
     const redirectUri =
-      'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth';
+      'https://docs.cloud.google.com/gemini-enterprise-agent-platform/notebooks/workbench/auth';
     // Since we need to handle the request asynchronously, it's technically
     // possible that the response has already been closed by time we get here.
     // This is not foreseen to ever happen, under normal network conditions. In
