@@ -145,7 +145,7 @@ describe('LocalServerFlow', () => {
       });
     });
     const redirectUri =
-      'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth';
+      'https://docs.cloud.google.com/gemini-enterprise-agent-platform/notebooks/workbench/auth';
     const responseRedirected = new Promise<void>((resolve) => {
       resStub.writeHead
         .withArgs(302, sinon.match({ Location: redirectUri }))

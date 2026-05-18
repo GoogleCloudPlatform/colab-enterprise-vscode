@@ -298,7 +298,7 @@ describe('Workbench Notebooks Extension', function () {
       // Close the browser window.
       await oauthDriver.wait(
         until.urlContains(
-          'https://docs.cloud.google.com/vertex-ai/docs/workbench/auth',
+          'https://docs.cloud.google.com/gemini-enterprise-agent-platform/notebooks/workbench/auth',
         ),
         ELEMENT_WAIT_MS,
       );
