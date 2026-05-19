@@ -32,8 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: Workbench
     env:
-      WORKBENCH_EXTENSION_CLIENT_ID: ${{ secrets.WORKBENCH_EXTENSION_CLIENT_ID || 'client_id' }}
-      WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET: ${{ secrets.WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET || 'test_secret' }}
+      WORKBENCH_EXTENSION_CLIENT_ID: client_id
+      WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET: client_secret
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ env.NODE_VERSION }}
@@ -133,7 +133,13 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     environment: Workbench
-    needs: generateConfig
+    needs: unitTests
+    env:
+      # Secrets and variables are sourced from the "E2E Tests" environment.
+      TEST_ACCOUNT_EMAIL: ${{ secrets.TEST_ACCOUNT_EMAIL }}
+      TEST_ACCOUNT_PASSWORD: ${{ secrets.TEST_ACCOUNT_PASSWORD }}
+      WORKBENCH_EXTENSION_CLIENT_ID: ${{ secrets.WORKBENCH_EXTENSION_CLIENT_ID }}
+      WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET: ${{ secrets.WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET }}
 
     steps:
       - if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
