@@ -132,8 +132,8 @@ jobs:
         # For now, there's no sense acruing the cost of the runners.
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    environment: Workbench
     needs: unitTests
+    environment: Workbench
     env:
       # Secrets and variables are sourced from the "E2E Tests" environment.
       TEST_ACCOUNT_EMAIL: ${{ secrets.TEST_ACCOUNT_EMAIL }}

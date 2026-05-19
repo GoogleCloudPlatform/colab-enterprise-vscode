@@ -16,6 +16,10 @@ runs:
       with:
         name: generated-config
         path: src
+    # Tp run e2e test with real secrets
+    - name: Generate config with real secrets
+      run: npm run generate:config
+      shell: bash
     - name: npm run test:e2e:headless (Linux)
       if: runner.os == 'Linux'
       run: npm run test:e2e:headless
