@@ -4,37 +4,37 @@ description: "Runs VS Code End-to-End Tests for the Colab extension"
 runs:
   using: "composite"
   steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-      - run: npm ci
-      - name: Download generated config
-        uses: actions/download-artifact@v4
-        with:
-          name: generated-config
-          path: src
-      - name: npm run test:e2e:headless (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: npm run test:e2e:headless
-        env:
-          SCREENSHOTS_DIR: /tmp/test-resources/screenshots/
-      - name: npm run test:e2e
-        if: matrix.os != 'ubuntu-latest'
-        run: npm run test:e2e
-        env:
-          SCREENSHOTS_DIR: /tmp/test-resources/screenshots/
-      - name: upload screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: screenshots
-          path: /tmp/test-resources/screenshots/
-      - name: upload exthost.log
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: exthost log
-          path: /tmp/test-resources/settings/logs/*/window1/exthost/exthost.log  
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: "npm"
+    - run: npm ci
+    - name: Download generated config
+      uses: actions/download-artifact@v4
+      with:
+        name: generated-config
+        path: src
+    - name: npm run test:e2e:headless (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: npm run test:e2e:headless
+      env:
+        SCREENSHOTS_DIR: /tmp/test-resources/screenshots/
+    - name: npm run test:e2e
+      if: matrix.os != 'ubuntu-latest'
+      run: npm run test:e2e
+      env:
+        SCREENSHOTS_DIR: /tmp/test-resources/screenshots/
+    - name: upload screenshots
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: screenshots
+        path: /tmp/test-resources/screenshots/
+    - name: upload exthost.log
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: exthost log
+        path: /tmp/test-resources/settings/logs/*/window1/exthost/exthost.log
