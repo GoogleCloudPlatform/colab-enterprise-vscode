@@ -104,7 +104,7 @@
     "@types/node": "22.x",
     "@types/node-fetch": "^2.6.12",
     "@types/semver": "^7.7.1",
-    "@types/sinon": "^17.0.3",
+    "@types/sinon": "^21.0.1",
     "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.100.0",
     "@vscode/jupyter-extension": "1.0.93",
@@ -116,8 +116,8 @@
     "concurrently": "^9.1.2",
     "cspell": "^8.17.3",
     "dotenv": "^16.5.0",
-    "esbuild": "^0.25.2",
-    "esbuild-node-externals": "^1.18.0",
+    "esbuild": "^0.28.1",
+    "esbuild-node-externals": "^1.23.1",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-check-file": "^3.1.0",
@@ -127,8 +127,8 @@
     "mocha": "^10.8.2",
     "prettier": "3.4.2",
     "selenium-webdriver": "^4.34.0",
-    "sinon": "^19.0.2",
-    "tsx": "^4.19.4",
+    "sinon": "^22.0.0",
+    "tsx": "^4.22.4",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.15.0",
     "vscode-extension-tester": "^8.14.1"
@@ -142,5 +142,11 @@
     "semver": "^7.7.3",
     "uuid": "^14.0.0",
     "zod": "^4.0.17"
+  },
+  "overrides": {
+    "tsx": {
+      "esbuild": "^0.28.1"
+    },
+    "serialize-javascript": "^7.0.6"
   }
 }
