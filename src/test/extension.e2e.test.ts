@@ -256,7 +256,7 @@ describe('Workbench Notebooks Extension', function () {
 
       // Input the test account email address.
       const emailInput = await oauthDriver.findElement(
-        By.css("input[type='email']"),
+        By.css("input[aria-label*='email' i]"),
       );
       await emailInput.sendKeys(process.env.TEST_ACCOUNT_EMAIL ?? '');
       await emailInput.sendKeys(Key.ENTER);
