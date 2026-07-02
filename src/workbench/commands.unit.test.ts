@@ -70,7 +70,7 @@ describe('selectProjectCommand', () => {
   });
 
   it('initiates project selection', async () => {
-    multiStepRunStub.resolves();
+    multiStepRunStub.resolves(true);
 
     await selectProjectCommand(
       vsCodeStub,
@@ -94,6 +94,7 @@ describe('selectProjectCommand', () => {
           .resolves({ label: 'Project', detail: 'p-id' }),
       };
       await pickProject(inputStub as unknown as MultiStepInput);
+      return true;
     });
 
     // executingCommand is already stubbed by newVsCodeStub
@@ -177,9 +178,34 @@ describe('selectProjectCommand', () => {
       const qp = quickPicks[0];
       expect(qp.matchOnDetail).to.be.true;
 
-      // Cancel the flow to resolve the promise
+      // Cancel the flow to settle the promise.
       qp.onDidHide.getCall(0).args[0]();
-      await commandPromise;
+      await expect(commandPromise).to.eventually.be.rejectedWith(
+        vsCodeStub.CancellationError,
+      );
+    });
+
+    it('throws a CancellationError when the user dismisses the quick pick', async () => {
+      const commandPromise = selectProjectCommand(
+        vsCodeStub,
+        resourceManagerStub,
+        instanceManagerStub,
+      );
+
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(quickPicks.length).to.equal(1);
+      const qp = quickPicks[0];
+
+      // Dismiss the quick pick (e.g. by pressing ESC).
+      qp.onDidHide.getCall(0).args[0]();
+
+      await expect(commandPromise).to.eventually.be.rejectedWith(
+        vsCodeStub.CancellationError,
+      );
+      // The error message dialog must not be shown for a user cancellation.
+      const showErrorMessageStub = vsCodeStub.window
+        .showErrorMessage as sinon.SinonStub;
+      sinon.assert.notCalled(showErrorMessageStub);
     });
 
     it('opens external URL when project has no instances', async () => {

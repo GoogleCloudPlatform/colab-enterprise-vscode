@@ -102,18 +102,22 @@ export class MultiStepInput {
    *
    * @param vs - The vscode module.
    * @param start - The first step in the input flow.
-   * @returns A promise that resolves when the input flow is complete.
+   * @returns A promise that resolves to `true` when the flow runs to
+   * completion, or `false` when the user cancels it (e.g. by pressing ESC).
+   * Callers can use this to distinguish an intentional dismissal from a
+   * finished flow.
    * @throws {@link InputFlowAction.back} If the back button was clicked on the
    * first step, giving callers the chance to navigate back to the previous
    * input.
    */
-  static async run(vs: typeof vscode, start: InputStep): Promise<void> {
+  static async run(vs: typeof vscode, start: InputStep): Promise<boolean> {
     const input = new MultiStepInput(vs);
     return input.step(start);
   }
 
-  private async step(start: InputStep): Promise<void> {
+  private async step(start: InputStep): Promise<boolean> {
     let step: InputStep | undefined = start;
+    let cancelled = false;
     try {
       while (step) {
         this.steps.push(step);
@@ -134,6 +138,7 @@ export class MultiStepInput {
               step = this.steps.pop();
               break;
             case InputFlowAction.cancel:
+              cancelled = true;
               step = undefined;
               break;
             default:
@@ -141,6 +146,7 @@ export class MultiStepInput {
           }
         }
       }
+      return !cancelled;
     } finally {
       if (this.current) {
         this.current.dispose();

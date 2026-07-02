@@ -133,22 +133,22 @@ export async function selectProjectCommand(
       };
     };
 
-    await MultiStepInput.run(vs, pickProject);
+    const completed = await MultiStepInput.run(vs, pickProject);
+    if (!completed) {
+      // The user dismissed the quick pick (e.g. by pressing ESC). Surface
+      // this as a CancellationError so the Jupyter extension closes the
+      // kernel picker instead of re-displaying it. Returning `undefined`
+      // here is treated by Jupyter as "go back", which re-triggers the
+      // picker and forces the user to press ESC a second time.
+      throw new vs.CancellationError();
+    }
     return selectedServer;
   } catch (error: unknown) {
-    // If the user cancelled, MultiStepInput throws InputFlowAction.cancel
-    // Actually MultiStepInput swallows cancel and returns normally.
-    // So if cancelled, selectedServer stays undefined.
-    // If error occurs, we show message.
-    if (error instanceof Error && error.message === 'cancel') {
-      return;
+    if (error instanceof vs.CancellationError) {
+      throw error;
     }
 
-    // We should probably catch other errors
     const errMessage = error instanceof Error ? error.message : String(error);
-    if (errMessage === 'cancel') {
-      return;
-    }
     void vs.window.showErrorMessage(
       `Failed to start Workbench flow: ${errMessage}`,
     );
