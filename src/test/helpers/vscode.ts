@@ -20,6 +20,16 @@ class TestQuickInputButtons implements vscode.QuickInputButtons {
   };
 }
 
+/**
+ * Mirrors {@link vscode.CancellationError} for use in tests.
+ */
+class TestCancellationError extends Error {
+  constructor() {
+    super('Canceled');
+    this.name = 'Canceled';
+  }
+}
+
 enum UIKind {
   Desktop = 1,
   Web = 2,
@@ -54,6 +64,7 @@ export interface VsCodeStub {
    */
   asVsCode: () => typeof vscode;
   Uri: typeof TestUri;
+  CancellationError: typeof TestCancellationError;
   CancellationTokenSource: typeof TestCancellationTokenSource;
   EventEmitter: typeof TestEventEmitter;
   QuickPickItemKind: typeof QuickPickItemKind;
@@ -151,6 +162,7 @@ export function newVsCodeStub(): VsCodeStub {
       } as Partial<typeof vscode> as typeof vscode;
     },
     Uri: TestUri,
+    CancellationError: TestCancellationError,
     CancellationTokenSource: TestCancellationTokenSource,
     EventEmitter: TestEventEmitter,
     QuickPickItemKind: QuickPickItemKind,
