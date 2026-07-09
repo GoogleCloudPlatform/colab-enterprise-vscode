@@ -113,6 +113,25 @@ describe('selectProjectCommand', () => {
     sinon.assert.notCalled(executeCommandStub);
   });
 
+  it('shows an error message when the flow fails', async () => {
+    multiStepRunStub.rejects(new Error('boom'));
+
+    // A failure is not a cancellation, so it must not be re-thrown.
+    const result = await selectProjectCommand(
+      vsCodeStub,
+      resourceManagerStub,
+      instanceManagerStub,
+    );
+
+    expect(result).to.be.undefined;
+    const showErrorMessageStub = vsCodeStub.window
+      .showErrorMessage as sinon.SinonStub;
+    sinon.assert.calledOnceWithExactly(
+      showErrorMessageStub,
+      'Failed to start Workbench flow: boom',
+    );
+  });
+
   describe('instance selection flow', () => {
     let quickPicks: QuickPickStub[] = [];
 

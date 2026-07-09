@@ -25,8 +25,8 @@ class TestQuickInputButtons implements vscode.QuickInputButtons {
  */
 class TestCancellationError extends Error {
   constructor() {
-    super('Canceled');
-    this.name = 'Canceled';
+    super('Cancelled');
+    this.name = 'Cancelled';
   }
 }
 
