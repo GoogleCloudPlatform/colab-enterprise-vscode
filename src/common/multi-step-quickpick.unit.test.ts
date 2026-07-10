@@ -44,8 +44,9 @@ describe('MultiStepQuickPick', () => {
     it('runs a single step', async () => {
       const start = inputStepStub().returns(Promise.resolve(undefined));
 
-      await expect(MultiStepInput.run(vsCodeStub.asVsCode(), start)).to
-        .eventually.be.fulfilled;
+      await expect(
+        MultiStepInput.run(vsCodeStub.asVsCode(), start),
+      ).to.eventually.equal(true);
 
       sinon.assert.calledOnce(start);
     });
@@ -103,11 +104,12 @@ describe('MultiStepQuickPick', () => {
       sinon.assert.callOrder(first, second, third, second, third);
     });
 
-    it('stops when "cancel" is thrown', async () => {
+    it('resolves to false and stops when "cancel" is thrown', async () => {
       const start = inputStepStub().throws(InputFlowAction.cancel);
 
-      await expect(MultiStepInput.run(vsCodeStub.asVsCode(), start)).to
-        .eventually.be.fulfilled;
+      await expect(
+        MultiStepInput.run(vsCodeStub.asVsCode(), start),
+      ).to.eventually.equal(false);
 
       sinon.assert.calledOnce(start);
     });
@@ -177,7 +179,7 @@ describe('MultiStepQuickPick', () => {
       await inputShown;
       quickPickStub.onDidHide.yield();
 
-      await expect(input).to.eventually.be.fulfilled;
+      await expect(input).to.eventually.equal(false);
       expect(selected).to.equal(undefined);
       sinon.assert.calledOnce(quickPickStub.dispose);
     });
@@ -354,7 +356,7 @@ describe('MultiStepQuickPick', () => {
       await inputShown;
       inputBoxStub.onDidHide.yield();
 
-      await expect(input).to.eventually.be.fulfilled;
+      await expect(input).to.eventually.equal(false);
       expect(entered).to.equal(undefined);
       sinon.assert.calledOnce(inputBoxStub.dispose);
     });

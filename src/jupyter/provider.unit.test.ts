@@ -15,6 +15,7 @@ import { SinonStubbedInstance } from 'sinon';
 import vscode from 'vscode';
 import { GoogleAuthProvider, AuthChangeEvent } from '../auth/auth-provider';
 import { TestEventEmitter } from '../test/helpers/events';
+import { buildQuickPickStub, QuickPickStub } from '../test/helpers/quick-input';
 import { newVsCodeStub, VsCodeStub } from '../test/helpers/vscode';
 import { WORKBENCH_COMMAND } from '../workbench/constants';
 import { ProjectsClient } from '../workbench/projects-client';
@@ -289,6 +290,50 @@ describe('WorkbenchJupyterServerProvider', () => {
           'workbench.action.closeQuickOpen',
         );
       }
+    });
+
+    it('re-throws a CancellationError without closing the quick pick when the user cancels', async () => {
+      const getOrCreateSessionStub = sinon.stub(
+        GoogleAuthProvider,
+        'getOrCreateSession',
+      );
+      getOrCreateSessionStub.resolves({
+        id: 'id',
+        accessToken: 'token',
+        account: { id: 'user', label: 'User' },
+        scopes: [],
+      });
+
+      const quickPicks: QuickPickStub[] = [];
+      const createQuickPickStub = vsCodeStub.window
+        .createQuickPick as sinon.SinonStub;
+      createQuickPickStub.callsFake(() => {
+        const qp = buildQuickPickStub();
+        quickPicks.push(qp as unknown as QuickPickStub);
+        return qp;
+      });
+
+      const commandPromise = serverProvider.handleCommand(
+        WORKBENCH_COMMAND,
+        cancellationToken,
+      );
+
+      // Wait for the first quick pick to be shown, then dismiss it (ESC).
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(quickPicks.length).to.equal(1);
+      quickPicks[0].onDidHide.getCall(0).args[0]();
+
+      await expect(commandPromise).to.eventually.be.rejectedWith(
+        vsCodeStub.CancellationError,
+      );
+      // The picker must not be force-closed here; throwing the
+      // CancellationError is what tells Jupyter to dismiss it. Calling
+      // closeQuickOpen (or returning undefined) is what caused the picker to
+      // re-trigger and require a second ESC.
+      sinon.assert.neverCalledWith(
+        vsCodeStub.commands.executeCommand,
+        'workbench.action.closeQuickOpen',
+      );
     });
 
     it('ensures GoogleAuthProvider.getOrCreateSession is called', async () => {

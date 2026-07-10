@@ -142,6 +142,12 @@ export class WorkbenchJupyterServerProvider
 
       throw new Error(`Unknown command: ${JSON.stringify(command)}`);
     } catch (err: unknown) {
+      if (err instanceof this.vs.CancellationError) {
+        // The user dismissed the flow (e.g. pressed ESC). Re-throw so the
+        // Jupyter extension closes the kernel picker. Returning `undefined`
+        // instead makes Jupyter re-display the picker, forcing a second ESC.
+        throw err;
+      }
       await this.vs.commands.executeCommand('workbench.action.closeQuickOpen');
       log.error('Error handling command', err);
       throw err;
