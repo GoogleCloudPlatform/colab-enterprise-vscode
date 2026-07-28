@@ -5,14 +5,14 @@ runs:
   using: "composite"
   steps:
     - name: Use Node.js ${{ env.NODE_VERSION }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: "npm"
     - run: npm ci
       shell: bash
     - name: Download generated config
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: generated-config
         path: src
@@ -34,13 +34,13 @@ runs:
         SCREENSHOTS_DIR: /tmp/test-resources/screenshots/
     - name: upload screenshots
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: screenshots
         path: /tmp/test-resources/screenshots/
     - name: upload exthost.log
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: exthost log
         path: /tmp/test-resources/settings/logs/*/window1/exthost/exthost.log
