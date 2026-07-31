@@ -13,6 +13,7 @@ import { AuthStorage } from './auth/storage';
 import { initializeLogger } from './common/logging/logger';
 import { CONFIG } from './config';
 import { ConnectionManager } from './jupyter/connection-manager';
+import { ConnectionRefresher } from './jupyter/connection-refresher';
 import { getJupyterApi } from './jupyter/jupyter-extension';
 import { WorkbenchJupyterServerProvider } from './jupyter/provider';
 import { WorkbenchInstanceManager } from './jupyter/workbench-instance-manager';
@@ -48,15 +49,19 @@ export async function activate(context: vscode.ExtensionContext) {
     serverChangeEmitter,
   );
 
+  const connectionRefresher = new ConnectionRefresher(vscode, authClient);
+
+  const instanceManager = new WorkbenchInstanceManager(
+    vscode,
+    notebooksClient,
+    connectionRefresher,
+  );
+
   const workbenchServerProvider = new WorkbenchJupyterServerProvider(
     vscode,
     authProvider.onDidChangeSessions,
     projectsClient,
-    new WorkbenchInstanceManager(vscode, notebooksClient, () =>
-      GoogleAuthProvider.getOrCreateSession(vscode).then(
-        (session) => session.accessToken,
-      ),
-    ),
+    instanceManager,
     jupyter,
     connectionManager,
     serverChangeEmitter,
@@ -67,6 +72,7 @@ export async function activate(context: vscode.ExtensionContext) {
     authFlow,
     authProvider,
     workbenchServerProvider,
+    connectionRefresher,
     logger,
     serverChangeEmitter,
   );

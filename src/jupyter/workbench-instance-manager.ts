@@ -10,26 +10,42 @@ import vscode from 'vscode';
 import { withError } from '../utils/errors';
 import { AUTHORIZATION_HEADER } from '../workbench/headers';
 import { NotebooksClient } from '../workbench/notebooks-client';
+import { ConnectionRefresher } from './connection-refresher';
 
 import IInstance = protos.google.cloud.notebooks.v2.IInstance;
 
 const UNKNOWN_ID = 'UNKNOWN_ID';
 const UNKNOWN_NAME = 'UNKNOWN_NAME';
 
+/**
+ * The HTTP headers used to authenticate against a Workbench Jupyter server.
+ */
+export interface WorkbenchConnectionHeaders {
+  [AUTHORIZATION_HEADER.key]: string;
+  Cookie: string;
+  'X-XSRFToken': string;
+  Origin: string;
+}
+
+/**
+ * The connection information for a Workbench Jupyter server, including its
+ * current access token and the time that token expires. The token and its
+ * `Authorization` header are kept fresh in place by the
+ * {@link ConnectionRefresher}.
+ */
+export interface WorkbenchServerConnection {
+  baseUrl: vscode.Uri;
+  token: string;
+  tokenExpiry: Date;
+  headers: WorkbenchConnectionHeaders;
+}
+
 export interface WorkbenchJupyterServer extends JupyterServer {
   name: string;
   projectId: string;
   /** The proxy URI for connecting to the Jupyter server. */
   proxyUri: string;
-  connectionInformation?: {
-    baseUrl: vscode.Uri;
-    headers: {
-      [AUTHORIZATION_HEADER.key]: string;
-      Cookie: string;
-      'X-XSRFToken': string;
-      Origin: string;
-    };
-  };
+  connectionInformation?: WorkbenchServerConnection;
 }
 
 /**
@@ -68,13 +84,13 @@ export class WorkbenchInstanceManager {
    *
    * @param vs - The VS Code API instance.
    * @param notebooksClient - The client for interacting with the Notebooks API.
-   * @param getAccessToken - A function that returns a promise resolving to an
-   * access token.
+   * @param refresher - Keeps the connection's access token fresh; its current
+   * token is embedded into each server's connection headers.
    */
   constructor(
     private readonly vs: typeof vscode,
     private readonly notebooksClient: NotebooksClient,
-    private readonly getAccessToken: () => Promise<string>,
+    private readonly refresher: ConnectionRefresher,
   ) {}
 
   /**
@@ -87,22 +103,34 @@ export class WorkbenchInstanceManager {
   }
 
   /**
-   * Refreshes the connection information for a server.
+   * Builds connection information for a server and starts keeping its access
+   * token fresh.
    *
-   * This method reloads the server list and fetches a fresh access token to
-   * ensure the connection information is up-to-date. This is typically used
-   * when retrieving or refreshing kernels.
+   * A fresh token is stamped into the connection now, and the connection is
+   * watched so its token keeps refreshing ahead of expiry for the whole
+   * lifetime of the connection, not just at connect time (b/533128081).
    *
-   * @param id - The ID of the assigned server to refresh.
-   * @param projectId - The ID of the GCP project.
-   * @returns The server with updated connection information.
-   * @throws If the server with the given ID no longer exists in the project.
+   * @param workbenchServer - The server to build connection information for.
+   * @returns The server with connection information attached.
    */
   async refreshConnection(
     workbenchServer: WorkbenchJupyterServer,
   ): Promise<WorkbenchJupyterServer> {
-    const accessToken = await this.getAccessToken();
-    return this.enrichServerWithConnectionInfo(workbenchServer, accessToken);
+    const baseUrlString = `https://${workbenchServer.proxyUri}`;
+    const connectionInformation: WorkbenchServerConnection = {
+      baseUrl: this.vs.Uri.parse(baseUrlString),
+      token: '',
+      tokenExpiry: new Date(0),
+      headers: {
+        [AUTHORIZATION_HEADER.key]: '',
+        Cookie: '_xsrf=XSRF',
+        'X-XSRFToken': 'XSRF',
+        Origin: baseUrlString,
+      },
+    };
+    // Stamps a fresh token into the connection and keeps it refreshed in place.
+    await this.refresher.refresh(workbenchServer.id, connectionInformation);
+    return { ...workbenchServer, connectionInformation };
   }
 
   /**
@@ -170,39 +198,6 @@ export class WorkbenchInstanceManager {
       name,
       projectId,
       proxyUri,
-    };
-  }
-
-  /**
-   * Enriches a WorkbenchJupyterServer with connection information.
-   *
-   * Adds the base URL and authorization headers (including the access token)
-   * required to connect to the Jupyter server.
-   *
-   * @param server - The WorkbenchJupyterServer to enrich.
-   * @param accessToken - The Google Cloud access token.
-   * @returns A new WorkbenchJupyterServer object with connection information.
-   */
-  private enrichServerWithConnectionInfo(
-    server: WorkbenchJupyterServer,
-    accessToken: string,
-  ): WorkbenchJupyterServer {
-    const baseUrlString = `https://${server.proxyUri}`;
-    const baseUrl = this.vs.Uri.parse(baseUrlString);
-
-    const headers = {
-      [AUTHORIZATION_HEADER.key]: `Bearer ${accessToken}`,
-      Cookie: '_xsrf=XSRF',
-      'X-XSRFToken': 'XSRF',
-      Origin: baseUrlString,
-    };
-
-    return {
-      ...server,
-      connectionInformation: {
-        baseUrl,
-        headers,
-      },
     };
   }
 }
