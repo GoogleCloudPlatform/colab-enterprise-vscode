@@ -11,6 +11,7 @@ import { OAuth2Client } from 'google-auth-library';
 import sinon from 'sinon';
 import type { AuthenticationSession } from 'vscode';
 import { GoogleAuthProvider } from '../auth/auth-provider';
+import { log } from '../common/logging/logger';
 import { newVsCodeStub } from '../test/helpers/vscode';
 import { AUTHORIZATION_HEADER } from '../workbench/headers';
 import {
@@ -30,6 +31,9 @@ describe('ConnectionRefresher', () => {
   let getOrCreateSessionStub: sinon.SinonStub;
   let authClient: OAuth2Client;
   let refresher: ConnectionRefresher;
+  let logInfoStub: sinon.SinonStub;
+  let logWarnStub: sinon.SinonStub;
+  let logErrorStub: sinon.SinonStub;
 
   const sessionWith = (accessToken: string): AuthenticationSession => ({
     id: 'session-id',
@@ -67,6 +71,12 @@ describe('ConnectionRefresher', () => {
       GoogleAuthProvider,
       'getOrCreateSession',
     );
+    // The logger is a no-op until initialized; stub its methods so the emitted
+    // scheduled/refreshed/failed logs can be asserted on. Restored in afterEach
+    // by sinon.restore().
+    logInfoStub = sinon.stub(log, 'info');
+    logWarnStub = sinon.stub(log, 'warn');
+    logErrorStub = sinon.stub(log, 'error');
     refresher = new ConnectionRefresher(newVsCodeStub().asVsCode(), authClient);
   });
 
@@ -205,5 +215,74 @@ describe('ConnectionRefresher', () => {
     ).to.be.rejectedWith(
       'Cannot use ConnectionRefresher after it has been disposed',
     );
+  });
+
+  describe('logging', () => {
+    it('logs the refresh and the next schedule when watching a server', async () => {
+      getOrCreateSessionStub.callsFake(resolvesToken('token-1'));
+
+      await refresher.refresh('server-a', newConnection());
+
+      sinon.assert.calledWith(
+        logInfoStub,
+        sinon.match(/Refreshed access token for "server-a"/),
+      );
+      sinon.assert.calledWith(
+        logInfoStub,
+        sinon.match(/Scheduled next access token refresh for "server-a"/),
+      );
+    });
+
+    it('logs each scheduled refresh as it happens', async () => {
+      getOrCreateSessionStub.onCall(0).callsFake(resolvesToken('token-1'));
+      getOrCreateSessionStub.onCall(1).callsFake(resolvesToken('token-2'));
+      await refresher.refresh('server-a', newConnection());
+      // Ignore the logs from the initial watch; assert on the scheduled one.
+      logInfoStub.resetHistory();
+
+      await clock.tickAsync(HOUR_MS - REFRESH_BUFFER_MS);
+
+      sinon.assert.calledWith(
+        logInfoStub,
+        sinon.match(/Refreshed access token for "server-a"/),
+      );
+    });
+
+    it('logs a warning when a scheduled refresh fails and will retry', async () => {
+      getOrCreateSessionStub.onCall(0).callsFake(resolvesToken('token-1'));
+      getOrCreateSessionStub.onCall(1).rejects(new Error('network down'));
+      getOrCreateSessionStub.onCall(2).callsFake(resolvesToken('token-2'));
+      await refresher.refresh('server-a', newConnection());
+
+      await clock.tickAsync(HOUR_MS - REFRESH_BUFFER_MS);
+
+      sinon.assert.calledWith(logWarnStub, sinon.match(/retrying in/));
+    });
+
+    it('logs an error when it gives up retrying', async () => {
+      getOrCreateSessionStub
+        .onCall(0)
+        .callsFake(resolvesToken('token-1', 10 * 1000));
+      getOrCreateSessionStub.onCall(1).rejects(new Error('network down'));
+      await refresher.refresh('server-a', newConnection());
+
+      await clock.tickAsync(RETRY_BUFFER_MS + 1000);
+
+      sinon.assert.calledWith(logErrorStub, sinon.match(/not retrying/));
+    });
+
+    it('logs an error when the initial refresh fails', async () => {
+      getOrCreateSessionStub.rejects(new Error('network down'));
+
+      await expect(
+        refresher.refresh('server-a', newConnection()),
+      ).to.be.rejectedWith('network down');
+
+      sinon.assert.calledOnceWithExactly(
+        logErrorStub,
+        sinon.match(/Failed to refresh access token for "server-a"/),
+        sinon.match.instanceOf(Error),
+      );
+    });
   });
 });

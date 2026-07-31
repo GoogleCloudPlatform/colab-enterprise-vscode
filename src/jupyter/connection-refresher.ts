@@ -103,11 +103,23 @@ export class ConnectionRefresher implements vscode.Disposable {
     connection: RefreshableConnection,
   ): Promise<void> {
     this.guardNotDisposed();
-    const accessToken = await this.fetchAccessToken();
-    writeTokenToConnection(connection, accessToken);
+    // Register the connection before fetching so the shared core (which
+    // schedules by looking the server up in the map) can find it. Registering
+    // first also replaces any prior schedule for this server, making repeat
+    // calls idempotent. Unlike the scheduled path, failures here are allowed to
+    // propagate: the caller (initial connect) must learn the first token fetch
+    // failed rather than proceed with an unauthenticated connection.
     this.cancelScheduledRefresh(serverId);
     this.refreshByServerId.set(serverId, { connection });
-    this.scheduleNextRefresh(serverId, delayUntilRefresh(accessToken.expiry));
+    try {
+      await this.refreshAndReschedule(serverId, connection);
+    } catch (err: unknown) {
+      // The scheduled path logs its own failures (retryRefreshUnlessExpiring),
+      // but the initial attempt has no such handler, so log here before it
+      // propagates to keep failures visible in the output channel.
+      log.error(`Failed to refresh access token for "${serverId}"`, err);
+      throw err;
+    }
   }
 
   private async fetchAccessToken(): Promise<AccessToken> {
@@ -130,27 +142,63 @@ export class ConnectionRefresher implements vscode.Disposable {
       clearTimeout(scheduledRefresh.nextRefreshTimer);
     }
     scheduledRefresh.nextRefreshTimer = setTimeout(() => {
-      void this.refreshServer(serverId);
+      void this.runScheduledRefresh(serverId);
     }, delayMs);
     // Do not keep the extension host process alive solely for this timer.
     scheduledRefresh.nextRefreshTimer.unref();
-    log.trace(
-      `Scheduled access token refresh for "${serverId}" in ${delayMs.toString()}ms`,
+    // Info level (not trace) so the schedule is visible in the "Workbench
+    // Notebooks" output channel; this fires about once per token lifetime.
+    log.info(
+      `Scheduled next access token refresh for "${serverId}" in ${delayMs.toString()}ms`,
     );
   }
 
-  private async refreshServer(serverId: string): Promise<void> {
+  /**
+   * Runs a refresh that was triggered by a scheduled timer.
+   *
+   * This is the self-healing counterpart to {@link refresh}: the server is
+   * already being watched, so it is looked up rather than registered, and a
+   * failure must not escape the timer (there is no caller to catch it) so it is
+   * swallowed and retried instead. It shares its token-stamping core with the
+   * initial refresh via {@link refreshAndReschedule}.
+   */
+  private async runScheduledRefresh(serverId: string): Promise<void> {
     const scheduledRefresh = this.refreshByServerId.get(serverId);
     if (!scheduledRefresh || this.isDisposed) {
       return;
     }
     try {
-      const accessToken = await this.fetchAccessToken();
-      writeTokenToConnection(scheduledRefresh.connection, accessToken);
-      this.scheduleNextRefresh(serverId, delayUntilRefresh(accessToken.expiry));
+      await this.refreshAndReschedule(serverId, scheduledRefresh.connection);
     } catch (err: unknown) {
       this.retryRefreshUnlessExpiring(serverId, err);
     }
+  }
+
+  /**
+   * The core shared by the initial {@link refresh} and each
+   * {@link runScheduledRefresh}: fetch a fresh token, stamp it into the
+   * connection in place, and schedule the next refresh ahead of the new token's
+   * expiry.
+   *
+   * Factored out because both paths do exactly this; they differ only in how
+   * they obtain the connection (registered vs. looked up) and how they treat
+   * failures (propagated vs. retried), which stays in the two callers.
+   *
+   * The server must already be registered in {@link refreshByServerId} before
+   * this is called, since {@link scheduleNextRefresh} keys off that entry.
+   */
+  private async refreshAndReschedule(
+    serverId: string,
+    connection: RefreshableConnection,
+  ): Promise<void> {
+    const accessToken = await this.fetchAccessToken();
+    writeTokenToConnection(connection, accessToken);
+    // Record that a refresh actually happened so token rotation is observable
+    // over a long-lived session, not just when something goes wrong.
+    log.info(
+      `Refreshed access token for "${serverId}"; expires at ${accessToken.expiry.toISOString()}`,
+    );
+    this.scheduleNextRefresh(serverId, delayUntilRefresh(accessToken.expiry));
   }
 
   private retryRefreshUnlessExpiring(
