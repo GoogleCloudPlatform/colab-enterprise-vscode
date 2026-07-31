@@ -13,15 +13,28 @@ import { SinonStubbedInstance } from 'sinon';
 import { newVsCodeStub, VsCodeStub } from '../test/helpers/vscode';
 import { AUTHORIZATION_HEADER } from '../workbench/headers';
 import { NotebooksClient } from '../workbench/notebooks-client';
+import {
+  ConnectionRefresher,
+  RefreshableConnection,
+} from './connection-refresher';
 import { WorkbenchInstanceManager } from './workbench-instance-manager';
 
 import IInstance = protos.google.cloud.notebooks.v2.IInstance;
 import State = protos.google.cloud.notebooks.v2.State;
 
+/**
+ * A lightweight fake {@link ConnectionRefresher} whose `refresh` stamps a
+ * token into the connection, mirroring what the real refresher does on connect.
+ */
+interface FakeRefresher {
+  refresh: sinon.SinonStub;
+  dispose: sinon.SinonStub;
+}
+
 describe('WorkbenchInstanceManager', () => {
   let vsCodeStub: VsCodeStub;
   let notebooksClientStub: SinonStubbedInstance<NotebooksClient>;
-  let getAccessTokenStub: sinon.SinonStub<[], Promise<string>>;
+  let refresher: FakeRefresher;
   let manager: WorkbenchInstanceManager;
 
   const PROJECT_ID = 'test-project';
@@ -50,12 +63,23 @@ describe('WorkbenchInstanceManager', () => {
   beforeEach(() => {
     vsCodeStub = newVsCodeStub();
     notebooksClientStub = sinon.createStubInstance(NotebooksClient);
-    getAccessTokenStub = sinon.stub();
+    refresher = {
+      // Mirror the real refresher: stamp a token into the connection in place.
+      refresh: sinon
+        .stub()
+        .callsFake((_id: string, c: RefreshableConnection) => {
+          c.token = ACCESS_TOKEN;
+          c.tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+          c.headers[AUTHORIZATION_HEADER.key] = `Bearer ${ACCESS_TOKEN}`;
+          return Promise.resolve();
+        }),
+      dispose: sinon.stub(),
+    };
 
     manager = new WorkbenchInstanceManager(
       vsCodeStub.asVsCode(),
       notebooksClientStub,
-      getAccessTokenStub,
+      refresher as unknown as ConnectionRefresher,
     );
 
     vsCodeStub.window.withProgress.callsFake(async (_options, task) => {
@@ -161,27 +185,34 @@ describe('WorkbenchInstanceManager', () => {
   });
 
   describe('refreshConnection', () => {
-    it('should enrich server with token', async () => {
-      getAccessTokenStub.resolves(ACCESS_TOKEN);
-
+    it('should build per-server connection info with token and expiry', async () => {
       // clone MOCK_SERVER to avoid modifying constant
-      const serverInput = { ...MOCK_SERVER };
-
-      const server = await manager.refreshConnection(serverInput);
+      const server = await manager.refreshConnection({ ...MOCK_SERVER });
+      const connection = server.connectionInformation;
 
       expect(server.id).to.equal(INSTANCE_ID);
-      expect(server.connectionInformation).to.exist;
-      expect(server.connectionInformation?.baseUrl.toString()).to.equal(
+      expect(connection).to.exist;
+      expect(connection?.baseUrl.toString()).to.equal(
         `https://${PROXY_URI.toLowerCase()}/`,
       );
-      expect(
-        server.connectionInformation?.headers[AUTHORIZATION_HEADER.key],
-      ).to.equal(`Bearer ${ACCESS_TOKEN}`);
-      expect(server.connectionInformation?.headers['X-XSRFToken']).to.equal(
-        'XSRF',
+      expect(connection?.token).to.equal(ACCESS_TOKEN);
+      expect(connection?.tokenExpiry).to.be.instanceOf(Date);
+      expect(connection?.headers[AUTHORIZATION_HEADER.key]).to.equal(
+        `Bearer ${ACCESS_TOKEN}`,
       );
+      expect(connection?.headers['X-XSRFToken']).to.equal('XSRF');
+    });
 
-      sinon.assert.calledOnce(getAccessTokenStub);
+    it('should keep fresh the exact connection object it returns so refreshes apply in place', async () => {
+      const server = await manager.refreshConnection({ ...MOCK_SERVER });
+
+      // The connection handed to the refresher is the same object returned, so
+      // in-place token refreshes reach the live connection.
+      sinon.assert.calledOnceWithExactly(
+        refresher.refresh,
+        INSTANCE_ID,
+        server.connectionInformation,
+      );
     });
   });
 });

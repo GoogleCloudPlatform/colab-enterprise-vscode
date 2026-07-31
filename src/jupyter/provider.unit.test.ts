@@ -50,6 +50,8 @@ describe('WorkbenchJupyterServerProvider', () => {
     proxyUri: 'http://server-1.com',
     connectionInformation: {
       baseUrl: undefined as unknown as vscode.Uri,
+      token: 'token',
+      tokenExpiry: new Date(Date.now() + 60 * 60 * 1000),
       headers: {
         Authorization: 'Bearer token',
         Cookie: 'cookie',
@@ -203,6 +205,8 @@ describe('WorkbenchJupyterServerProvider', () => {
         ...serverArg,
         connectionInformation: {
           baseUrl: {} as unknown as vscode.Uri,
+          token: 'mock-token',
+          tokenExpiry: new Date(Date.now() + 60 * 60 * 1000),
           headers: {
             Cookie: 'mock-cookie',
             'X-XSRFToken': 'mock-token',
