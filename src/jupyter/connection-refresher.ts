@@ -62,13 +62,7 @@ interface ScheduledConnectionRefresh {
  * refreshes are tracked per server, keyed by server id. The VS Code Jupyter
  * extension caches each connection's authorization headers by reference and
  * re-reads them on every REST request and WebSocket handshake, so a refresh
- * simply updates the connection in place; no re-resolution is required
- * (b/533128081).
- *
- * Modeled on the Colab VS Code extension's `ConnectionRefresher`, each server's
- * refresh is scheduled a fixed buffer *before* its token expires (rather than
- * polling on a fixed interval), rescheduled from each new token's expiry, and
- * retried on failure.
+ * simply updates the connection in place;
  */
 export class ConnectionRefresher implements vscode.Disposable {
   private readonly refreshByServerId = new Map<
@@ -103,20 +97,11 @@ export class ConnectionRefresher implements vscode.Disposable {
     connection: RefreshableConnection,
   ): Promise<void> {
     this.guardNotDisposed();
-    // Register the connection before fetching so the shared core (which
-    // schedules by looking the server up in the map) can find it. Registering
-    // first also replaces any prior schedule for this server, making repeat
-    // calls idempotent. Unlike the scheduled path, failures here are allowed to
-    // propagate: the caller (initial connect) must learn the first token fetch
-    // failed rather than proceed with an unauthenticated connection.
     this.cancelScheduledRefresh(serverId);
     this.refreshByServerId.set(serverId, { connection });
     try {
       await this.refreshAndReschedule(serverId, connection);
     } catch (err: unknown) {
-      // The scheduled path logs its own failures (retryRefreshUnlessExpiring),
-      // but the initial attempt has no such handler, so log here before it
-      // propagates to keep failures visible in the output channel.
       log.error(`Failed to refresh access token for "${serverId}"`, err);
       throw err;
     }
