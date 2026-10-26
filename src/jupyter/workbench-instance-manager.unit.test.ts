@@ -68,7 +68,6 @@ describe('WorkbenchInstanceManager', () => {
       refresh: sinon
         .stub()
         .callsFake((_id: string, c: RefreshableConnection) => {
-          c.token = ACCESS_TOKEN;
           c.tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
           c.headers[AUTHORIZATION_HEADER.key] = `Bearer ${ACCESS_TOKEN}`;
           return Promise.resolve();
@@ -195,7 +194,7 @@ describe('WorkbenchInstanceManager', () => {
       expect(connection?.baseUrl.toString()).to.equal(
         `https://${PROXY_URI.toLowerCase()}/`,
       );
-      expect(connection?.token).to.equal(ACCESS_TOKEN);
+      expect(connection?.token).to.equal('');
       expect(connection?.tokenExpiry).to.be.instanceOf(Date);
       expect(connection?.headers[AUTHORIZATION_HEADER.key]).to.equal(
         `Bearer ${ACCESS_TOKEN}`,
