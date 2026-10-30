@@ -86,13 +86,13 @@ describe('ConnectionRefresher', () => {
     sinon.restore();
   });
 
-  it('stamps token, expiry, and Authorization header on watch', async () => {
+  it('stamps expiry and Authorization header on watch without setting Jupyter token', async () => {
     getOrCreateSessionStub.callsFake(resolvesToken('token-1'));
     const connection = newConnection();
 
     await refresher.refresh('server-a', connection);
 
-    expect(connection.token).to.equal('token-1');
+    expect(connection.token).to.equal('');
     expect(authOf(connection)).to.equal('Bearer token-1');
     expect(connection.tokenExpiry.getTime()).to.equal(Date.now() + HOUR_MS);
     sinon.assert.calledOnce(getOrCreateSessionStub);
@@ -105,20 +105,19 @@ describe('ConnectionRefresher', () => {
     const connection = newConnection();
 
     await refresher.refresh('server-a', connection);
-    expect(connection.token).to.equal('token-1');
+    expect(authOf(connection)).to.equal('Bearer token-1');
 
     // Nothing should happen until the refresh buffer before expiry.
     await clock.tickAsync(HOUR_MS - REFRESH_BUFFER_MS - 1);
-    expect(connection.token).to.equal('token-1');
+    expect(authOf(connection)).to.equal('Bearer token-1');
 
     // Crossing the refresh point triggers a refresh, updating in place.
     await clock.tickAsync(1);
-    expect(connection.token).to.equal('token-2');
     expect(authOf(connection)).to.equal('Bearer token-2');
 
     // The next refresh is scheduled from the new token's expiry.
     await clock.tickAsync(HOUR_MS - REFRESH_BUFFER_MS);
-    expect(connection.token).to.equal('token-3');
+    expect(authOf(connection)).to.equal('Bearer token-3');
   });
 
   it('refreshes each watched server independently', async () => {
@@ -132,14 +131,12 @@ describe('ConnectionRefresher', () => {
 
     await refresher.refresh('server-a', connectionA);
     await refresher.refresh('server-b', connectionB);
-    expect(connectionA.token).to.equal('initial');
-    expect(connectionB.token).to.equal('initial');
+    expect(authOf(connectionA)).to.equal('Bearer initial');
+    expect(authOf(connectionB)).to.equal('Bearer initial');
 
     currentToken = 'rotated';
     await clock.tickAsync(HOUR_MS - REFRESH_BUFFER_MS);
 
-    expect(connectionA.token).to.equal('rotated');
-    expect(connectionB.token).to.equal('rotated');
     expect(authOf(connectionA)).to.equal('Bearer rotated');
     expect(authOf(connectionB)).to.equal('Bearer rotated');
   });
@@ -155,11 +152,11 @@ describe('ConnectionRefresher', () => {
     const connection = newConnection();
 
     await refresher.refresh('server-a', connection);
-    expect(connection.token).to.equal('token-1');
+    expect(authOf(connection)).to.equal('Bearer token-1');
 
     // With no reported expiry it assumes ~1h and refreshes the buffer before.
     await clock.tickAsync(HOUR_MS - REFRESH_BUFFER_MS);
-    expect(connection.token).to.equal('token-2');
+    expect(authOf(connection)).to.equal('Bearer token-2');
   });
 
   it('retries after a failure while the token is still valid', async () => {
@@ -172,11 +169,11 @@ describe('ConnectionRefresher', () => {
 
     // First scheduled refresh fails.
     await clock.tickAsync(HOUR_MS - REFRESH_BUFFER_MS);
-    expect(connection.token).to.equal('token-1'); // retained
+    expect(authOf(connection)).to.equal('Bearer token-1'); // retained
 
     // A retry is scheduled shortly after and succeeds.
     await clock.tickAsync(RETRY_BUFFER_MS);
-    expect(connection.token).to.equal('token-2');
+    expect(authOf(connection)).to.equal('Bearer token-2');
   });
 
   it('gives up retrying when the token is about to expire', async () => {
@@ -193,7 +190,7 @@ describe('ConnectionRefresher', () => {
     await clock.tickAsync(RETRY_BUFFER_MS + 1000);
     // No retry scheduled: only watch + the single failed attempt.
     sinon.assert.calledTwice(getOrCreateSessionStub);
-    expect(connection.token).to.equal('token-1');
+    expect(authOf(connection)).to.equal('Bearer token-1');
   });
 
   it('stops refreshing after dispose', async () => {
