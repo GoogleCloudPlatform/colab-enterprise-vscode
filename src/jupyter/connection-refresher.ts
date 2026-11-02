@@ -244,7 +244,6 @@ function writeTokenToConnection(
   connection: RefreshableConnection,
   accessToken: AccessToken,
 ): void {
-  connection.token = accessToken.token;
   connection.tokenExpiry = accessToken.expiry;
   connection.headers[AUTHORIZATION_HEADER.key] = `Bearer ${accessToken.token}`;
 }
