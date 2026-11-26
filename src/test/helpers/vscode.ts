@@ -9,6 +9,7 @@ import vscode from 'vscode';
 import { FakeAuthenticationProviderManager } from './authentication';
 import { TestCancellationTokenSource } from './cancellation';
 import { TestEventEmitter } from './events';
+import { TestMcpHttpServerDefinition } from './mcp';
 import { TestUri } from './uri';
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -124,6 +125,12 @@ export interface VsCodeStub {
     getSession: typeof vscode.authentication.getSession;
     onDidChangeSessions: typeof vscode.authentication.onDidChangeSessions;
   };
+  McpHttpServerDefinition: typeof TestMcpHttpServerDefinition;
+  lm: {
+    registerMcpServerDefinitionProvider: sinon.SinonStubbedMember<
+      typeof vscode.lm.registerMcpServerDefinitionProvider
+    >;
+  };
 }
 
 /**
@@ -159,6 +166,7 @@ export function newVsCodeStub(): VsCodeStub {
         authentication: { ...this.authentication } as Partial<
           typeof vscode.authentication
         > as typeof vscode.authentication,
+        lm: { ...this.lm } as Partial<typeof vscode.lm> as typeof vscode.lm,
       } as Partial<typeof vscode> as typeof vscode;
     },
     Uri: TestUri,
@@ -204,6 +212,17 @@ export function newVsCodeStub(): VsCodeStub {
         ),
       getSession: fakeAuthentication.getSession.bind(fakeAuthentication),
       onDidChangeSessions: sinon.stub().returns({ dispose: sinon.stub() }),
+    },
+    McpHttpServerDefinition: TestMcpHttpServerDefinition,
+    lm: {
+      registerMcpServerDefinitionProvider: sinon
+        .stub<
+          Parameters<typeof vscode.lm.registerMcpServerDefinitionProvider>,
+          vscode.Disposable
+        >()
+        .returns({
+          dispose: sinon.stub(),
+        } as Partial<vscode.Disposable> as vscode.Disposable),
     },
   };
 }

@@ -14,9 +14,18 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
+// Unset or empty means prod.
+const controlPlaneMcpUrl = (
+  process.env.WORKBENCH_EXTENSION_CONTROL_PLANE_MCP_URL ?? ''
+).trim();
+
 const envConfig = {
   clientId: process.env.WORKBENCH_EXTENSION_CLIENT_ID,
   clientNotSoSecret: process.env.WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET,
+  controlPlaneMcpUrl:
+    controlPlaneMcpUrl === ''
+      ? 'https://notebooks.googleapis.com/mcp'
+      : controlPlaneMcpUrl,
 };
 
 try {
@@ -34,6 +43,7 @@ try {
 const config = {
   ClientId: envConfig.clientId,
   ClientNotSoSecret: envConfig.clientNotSoSecret,
+  ControlPlaneMcpUrl: envConfig.controlPlaneMcpUrl,
 };
 
 const currentYear = new Date().getFullYear();

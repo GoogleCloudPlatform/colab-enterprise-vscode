@@ -17,6 +17,7 @@ import { ConnectionRefresher } from './jupyter/connection-refresher';
 import { getJupyterApi } from './jupyter/jupyter-extension';
 import { WorkbenchJupyterServerProvider } from './jupyter/provider';
 import { WorkbenchInstanceManager } from './jupyter/workbench-instance-manager';
+import { ControlPlaneMcpProvider } from './mcp/mcp-provider';
 import { NotebooksClient } from './workbench/notebooks-client';
 import { ProjectsClient } from './workbench/projects-client';
 
@@ -67,12 +68,19 @@ export async function activate(context: vscode.ExtensionContext) {
     serverChangeEmitter,
   );
 
+  const mcpProvider = new ControlPlaneMcpProvider(
+    vscode,
+    authProvider.onDidChangeSessions,
+    connectionRefresher,
+  );
+
   await authProvider.initialize();
   context.subscriptions.push(
     authFlow,
     authProvider,
     workbenchServerProvider,
     connectionRefresher,
+    mcpProvider,
     logger,
     serverChangeEmitter,
   );
