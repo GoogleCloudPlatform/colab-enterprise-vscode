@@ -14,18 +14,13 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
-// Unset or empty means prod.
-const controlPlaneMcpUrl = (
-  process.env.WORKBENCH_EXTENSION_CONTROL_PLANE_MCP_URL ?? ''
-).trim();
-
 const envConfig = {
   clientId: process.env.WORKBENCH_EXTENSION_CLIENT_ID,
   clientNotSoSecret: process.env.WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET,
+  // Unset or empty means prod.
   controlPlaneMcpUrl:
-    controlPlaneMcpUrl === ''
-      ? 'https://notebooks.googleapis.com/mcp'
-      : controlPlaneMcpUrl,
+    (process.env.WORKBENCH_EXTENSION_CONTROL_PLANE_MCP_URL ?? '').trim() ||
+    'https://notebooks.googleapis.com/mcp',
 };
 
 try {
