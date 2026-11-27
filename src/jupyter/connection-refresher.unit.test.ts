@@ -193,6 +193,20 @@ describe('ConnectionRefresher', () => {
     expect(authOf(connection)).to.equal('Bearer token-1');
   });
 
+  it('calls onDidRefresh after a scheduled refresh but not the initial one', async () => {
+    getOrCreateSessionStub.onCall(0).callsFake(resolvesToken('token-1'));
+    getOrCreateSessionStub.onCall(1).callsFake(resolvesToken('token-2'));
+    const onDidRefresh = sinon.stub();
+    const connection = { ...newConnection(), onDidRefresh };
+
+    await refresher.refresh('server-a', connection);
+    sinon.assert.notCalled(onDidRefresh);
+
+    await clock.tickAsync(HOUR_MS - REFRESH_BUFFER_MS);
+    sinon.assert.calledOnce(onDidRefresh);
+    expect(authOf(connection)).to.equal('Bearer token-2');
+  });
+
   it('stops refreshing after dispose', async () => {
     getOrCreateSessionStub.callsFake(resolvesToken('token-1'));
 

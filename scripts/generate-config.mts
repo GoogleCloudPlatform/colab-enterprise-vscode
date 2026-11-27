@@ -17,6 +17,9 @@ dotenv.config();
 const envConfig = {
   clientId: process.env.WORKBENCH_EXTENSION_CLIENT_ID,
   clientNotSoSecret: process.env.WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET,
+  controlPlaneMcpUrl:
+    process.env.WORKBENCH_EXTENSION_CONTROL_PLANE_MCP_URL ??
+    'https://notebooks.googleapis.com/mcp',
 };
 
 try {
@@ -34,6 +37,7 @@ try {
 const config = {
   ClientId: envConfig.clientId,
   ClientNotSoSecret: envConfig.clientNotSoSecret,
+  ControlPlaneMcpUrl: envConfig.controlPlaneMcpUrl,
 };
 
 const currentYear = new Date().getFullYear();

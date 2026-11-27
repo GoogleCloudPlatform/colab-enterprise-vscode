@@ -46,6 +46,8 @@ export interface RefreshableConnection {
   token: string;
   tokenExpiry: Date;
   headers: Record<string, string>;
+  /** Called after a scheduled refresh has updated the connection. */
+  onDidRefresh?: () => void;
 }
 
 /** A watched connection and the timer for its next scheduled refresh. */
@@ -156,7 +158,9 @@ export class ConnectionRefresher implements vscode.Disposable {
       await this.refreshAndReschedule(serverId, scheduledRefresh.connection);
     } catch (err: unknown) {
       this.retryRefreshUnlessExpiring(serverId, err);
+      return;
     }
+    scheduledRefresh.connection.onDidRefresh?.();
   }
 
   /**

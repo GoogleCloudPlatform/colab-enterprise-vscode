@@ -46,6 +46,12 @@
         "id": "google-cloud-platform"
       }
     ],
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "control-plane-mcp",
+        "label": "Workbench Control Plane"
+      }
+    ],
     "configuration": {
       "title": "Workbench Notebooks",
       "properties": {
