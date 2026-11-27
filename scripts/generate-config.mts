@@ -17,9 +17,8 @@ dotenv.config();
 const envConfig = {
   clientId: process.env.WORKBENCH_EXTENSION_CLIENT_ID,
   clientNotSoSecret: process.env.WORKBENCH_EXTENSION_CLIENT_NOT_SO_SECRET,
-  // Unset or empty means prod.
   controlPlaneMcpUrl:
-    (process.env.WORKBENCH_EXTENSION_CONTROL_PLANE_MCP_URL ?? '').trim() ||
+    process.env.WORKBENCH_EXTENSION_CONTROL_PLANE_MCP_URL ??
     'https://notebooks.googleapis.com/mcp',
 };
 
